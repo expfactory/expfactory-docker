@@ -19,8 +19,7 @@ matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-ADMINS = (
-    (('vsochat', 'vsochat@gmail.com'))
+ADMINS = (('vsochat', 'vsochat@gmail.com'))
 
 MANAGERS = ADMINS
 

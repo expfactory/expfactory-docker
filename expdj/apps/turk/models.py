@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models.signals import pre_init
 
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
-from expdj.apps.assessments.models import Experiment
+from expdj.apps.experiments.models import Experiment
 
 def init_connection_callback(sender, **signal_args):
     """Mechanical Turk connection signal callback
