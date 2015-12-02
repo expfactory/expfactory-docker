@@ -3,7 +3,7 @@ db:
 
 uwsgi:
   restart: always
-  image: vanessa/expfactory
+  image: vanessa/expfactory-docker
   volumes:
     - .:/code
     - /var/www/static
