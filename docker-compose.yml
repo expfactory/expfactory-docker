@@ -1,0 +1,24 @@
+db:
+  image: postgres
+
+uwsgi:
+  restart: always
+  image: vanessa/expdj
+  volumes:
+    - .:/code
+    - /var/www/static
+  links:
+    - db
+
+nginx:
+  restart: always
+  image: nginx
+  ports:
+    - "80:80"
+  volumes:
+    - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    - ./uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
+  volumes_from:
+    - uwsgi
+  links:
+    - uwsgi

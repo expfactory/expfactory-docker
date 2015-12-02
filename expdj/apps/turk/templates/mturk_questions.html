@@ -1,0 +1,56 @@
+{% extends "turkbase.html" %}
+{% block head %}
+{% endblock %}
+{% block content %}
+
+<h3>What descriptive word best describes the quality that this statement is asking about?</h3>
+        <form action="{{ amazon_host }}" method="POST" class="turkey_form">
+
+            {% for question,synsets in questions %}
+                <fieldset>
+		    <div class="form-top">
+		        <div class="form-top-left">
+		        </div>
+		        <div class="form-top-right">
+		            <i class="fa fa-question"></i>
+		        </div>
+		    </div>
+		    <div class="form-bottom">
+		            <h4>The following question or statement:</h4>
+                        <div class="well" style="margin-bottom:50px">    
+                          {{ question.text }}
+                        </div>
+                        <div style="padding-bottom:30px">
+		            <h3>has been asserted to measure <span style="font-style:italic;color:blue">{{ question.behavioral_trait.name }}</span></h3>
+                       </div>
+                       <h3>What is the best definition?</h3>
+                       {% for syn in synsets %}
+                       <div class="form-group radio">
+                              <label><input type="radio" id="{{ question.pk }}" name="{{ question.pk }}" value="{{ syn.name }}" type="radio">{{ syn.definition }}</label>
+     	               </div>
+                       {% endfor %}                
+ 
+                       <div style="padding-top:50px">
+                      {% if forloop.counter != 0 %} 
+                      <button type="button" class="btn btn-cogat btn-previous">Previous</button>
+                      {% endif %}
+
+                      {% if forloop.counter != forloop.length %} 
+	  	      <button type="button" class="btn btn-cogat btn-next">Next</button>
+                      {% endif %}
+
+                      {% if forloop.counter == forloop.length %}
+                      <button type="submit" class="btn btn-cogat">Submit</button>
+                      {% endif %}
+                      </div>                    
+		    </div>
+		</fieldset>
+            {% endfor %}
+
+            <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
+            <br/>
+            <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
+            <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
+        </form>
+
+{% endblock %}
