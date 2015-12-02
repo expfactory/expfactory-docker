@@ -1,13 +1,11 @@
 from optparse import make_option
 from numpy.random import choice
-from cogpheno.apps.assessments.utils import get_synsets
-from cogpheno.apps.assessments.models import Question as QuestionModel
 from django.core.management.base import BaseCommand
 from boto.mturk.question import (AnswerSpecification, Overview, Question,
         QuestionContent, QuestionForm, FreeTextAnswer, FormattedContent)
-from cogpheno.apps.turk.utils import get_connection, get_worker_url, get_worker_ids_past_tasks, get_host
+from expdj.apps.turk.utils import get_connection, get_worker_url, get_worker_ids_past_tasks, get_host
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from cogpheno.apps.turk.models import Worker
+from expdj.apps.turk.models import Worker
 
 
 def get_flagged_questions(number=None):

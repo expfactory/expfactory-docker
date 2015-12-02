@@ -1,4 +1,4 @@
-from .views import experiments_view, edit_experiment, delete_experiment, add_experiment, view_experiments
+from .views import experiments_view, edit_experiment, delete_experiment, add_experiment, view_experiment, export_experiment
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
 
