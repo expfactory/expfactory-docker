@@ -1,0 +1,87 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>{% block title %}The Experiment Factory{% endblock %}</title>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            {% block includes %}{% endblock %}
+            {% block global_includes %}
+            <!--[if lte IE 8]><script src="{% static "js/ie/html5shiv.js"%}"></script><![endif]-->
+            <link rel="stylesheet" href="{% static "css/main.css"%}" />
+            <!--[if lte IE 8]><link rel="stylesheet" href="{% static "css/ie8.css"%}" /><![endif]-->
+            <!--[if lte IE 9]><link rel="stylesheet" href="{% static "css/ie9.css"%}" /><![endif]-->
+            {% endblock %}
+            {% block head %}{% endblock %}
+	    {% block functions %}{% endblock %}
+    </head>
+        {% block body %}
+        <body class="left-sidebar">
+            <div id="page-wrapper">
+
+            <!-- Header -->
+                <div id="header-wrapper">
+                    <div id="header" class="container">
+                        <h1 id="logo"><a href="/">Experiment Factory</a></h1>
+
+                        <!-- Nav -->
+                        <nav id="nav">
+                            <ul>
+                                <li><a href="{% url 'experiments' %}">Experiments</a>
+                                <ul>
+                                    <li><a href="{% url 'experiments' %}">View Experiments</a></li>
+                                    <li><a href="#">Update Experiments</a></li>
+                                </ul>
+                                </li>
+                                <li><a href="#">Results</a></li>
+                                <li class="break"><a href="#">Deployment</a></li>
+                                {% if request.user.is_authenticated %}
+	                        <li class="dropdown">
+	                            <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
+	                                {{ request.user.username }}
+	                                <b class="caret"></b>
+	                            </a>
+	                            <ul class="dropdown-menu">
+	                                <li><a href="{% url 'logout' %}">Logout</a></li>
+	                                <li><a href="{% url 'edit_user' %}">Edit</a></li>
+	                            </ul>
+	                        </li>
+	                        {% else %}
+                                <li><a href="{% url 'login' %}">Log in</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+               </div> 
+               {% block hero %}{% endblock %}
+               <div class="wrapper">
+                   <section class="container">
+                       {% block content %}{% endblock %}
+                   </section>
+               </div>                     
+
+               {% block footer %}
+               <div id="footer-wrapper">
+                   <div id="footer" class="container">
+                       <div class="row">
+                       </div>
+                   </div>
+                   <div id="copyright" class="container">
+                       <ul class="menu">
+                           <li>&copy; Poldracklab. All rights reserved.</li> - <a href="http://www.github.com/expfactory"><li class="icon fa-github"></li></a>  
+                       </ul>
+                   </div>
+               </div>
+               {% endblock %}
+        </div>
+
+        <!-- Scripts -->
+        <script src="{% static "js/jquery.min.js"%}"></script>
+        <script src="{% static "js/jquery.dropotron.min.js"%}"></script>
+        <script src="{% static "js/skel.min.js"%}"></script>
+        <script src="{% static "js/util.js"%}"></script>
+        <!--[if lte IE 8]><script src="{% static "js/ie/respond.min.js"%}"></script><![endif]-->
+        <script src="{% static "js/main.js"%}"></script>
+
+    </body>
+    {% endblock %}
+</html>

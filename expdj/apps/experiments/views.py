@@ -99,9 +99,10 @@ def add_experiment(request):
     View for presenting available experiments to user (from expfactory-experiements repo)
     '''
     experiment_selection = get_experiment_selection()
-    current_experiments = [x.tag for x in Experiment.Objects.all()]
-    experiments = [e for e in experiment_selection if e[0].tag not in current_experiments]
-    context = {"experiments": experiments}
+    current_experiments = [x.tag for x in Experiment.objects.all()]
+    experiments = [e for e in experiment_selection if e["tag"] not in current_experiments]
+    context = {"newexperiments": experiments,
+               "experiments": current_experiments}
     return render(request, "add_experiment.html", context)
 
 
@@ -110,6 +111,16 @@ def add_experiments(request):
     '''add_experiments
     view for actually adding new experiments (files, etc) to application and database
     '''
+    newexperiments = request.POST.keys()
+    experiment_selection = get_experiment_selection()
+    selected_experiments = [e for e in experiment_selection if e["tag"] in experiment_selection]
+    errored_experiments = install_experiments(experiment_tags=selected_experiments)
+    message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
+    experiments = Experiment.objects.all()
+    context = {"experiments":experiments,
+               "message":message}
+    return render(request, "all_experiments.html", context)
+
 
 def edit_experiment(request,eid=None):
     '''edit_experiment

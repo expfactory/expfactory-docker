@@ -73,3 +73,11 @@ Coming soon
 
 Coming soon
 
+## Getting Started
+
+You should first log in with the super user account, with the following credentials:
+
+      username: expfactory
+      password: expfactory
+
+You will be prompted to change this password immediately, to ensure the protection of your database.
