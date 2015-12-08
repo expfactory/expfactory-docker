@@ -113,9 +113,12 @@ def add_experiments(request):
     '''
     newexperiments = request.POST.keys()
     experiment_selection = get_experiment_selection()
-    selected_experiments = [e for e in experiment_selection if e["tag"] in experiment_selection]
+    selected_experiments = [e["tag"] for e in experiment_selection if e["tag"] in newexperiments]
     errored_experiments = install_experiments(experiment_tags=selected_experiments)
-    message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
+    if len(errored_experiments) > 0:
+        message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
+    else:
+        message = "Experiments installed successfully."
     experiments = Experiment.objects.all()
     context = {"experiments":experiments,
                "message":message}

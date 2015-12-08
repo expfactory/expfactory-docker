@@ -3,10 +3,10 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.db import models
 
-
-class CognitiveAtlasTask(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
+class CognitiveAtlasConcept(models.Model):
+    name = models.CharField(max_length=1000, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    definition = models.CharField(max_length=5000, null=False, blank=False,default=None)
     
     def __str__(self):
         return self.name
@@ -17,10 +17,11 @@ class CognitiveAtlasTask(models.Model):
     class Meta:
         ordering = ['name']
 
-class CognitiveAtlasConcept(models.Model):
-    name = models.CharField(max_length=1000, null=False, blank=False)
+
+class CognitiveAtlasTask(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    definition = models.CharField(max_length=5000, null=False, blank=False,default=None)
+    concepts = models.ManyToManyField(CognitiveAtlasConcept,related_name="concepts",related_query_name="concepts", blank=True,help_text="These are concepts associated with the task.",verbose_name="cognitive atlas associated concepts")
     
     def __str__(self):
         return self.name

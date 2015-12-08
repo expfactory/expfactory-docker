@@ -4,14 +4,19 @@ from expfactory.experiment import validate, load_experiment, get_experiments, ma
 from expfactory.utils import copy_directory, get_installdir, sub_template
 from expfactory.battery import generate, generate_config
 from expdj.settings import STATIC_ROOT,BASE_DIR
-from expdj.apps.experiments.models import Experiment
+from cognitiveatlas.api import get_task, get_concept
+from expdj.apps.experiments.models import Experiment, CognitiveAtlasTask, CognitiveAtlasConcept
 from datetime import datetime
 import tempfile
 import shutil
 import random
+import pandas
+import json
 import os
 
 static_dir = os.path.join(BASE_DIR,STATIC_ROOT)
+
+# EXPERIMENT FACTORY PYTHON FUNCTIONS #####################################################
 
 def update_battery_static(tmpdir=None):
     '''update_battery_static
@@ -42,19 +47,15 @@ def install_experiments(experiment_tags=None):
     if experiment_tags != None:
         experiments = [e for e in experiments if e[0]["tag"] in experiment_tags]
 
-    #TODO: we need these assigned to cognitive atlas tasks, and the concept should NOT be represented
     for experiment in experiments:
 
-        try: #eww eww eww
-            try:
-                cognitive_atlas_task = CognitiveAtlasTask.objects.filter(id=experiment[0]["cognitive_atlas_task_id"])
-            except:
-                cognitive_atlas_task = None
+        try:
+            cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
             new_experiment = Experiment(tag=experiment[0]["tag"],
                                     name=experiment[0]["name"],
                                     cognitive_atlas_task=cognitive_atlas_task,
                                     publish=bool(experiment[0]["publish"]),
-                                    time=datetime.now(),
+                                    time=experiment[0]["time"],
                                     reference=experiment[0]["reference"])
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])        
@@ -64,3 +65,29 @@ def install_experiments(experiment_tags=None):
 
     shutil.rmtree(tmpdir)
     return errored_experiments
+
+
+# COGNITIVE ATLAS FUNCTIONS ###############################################################
+
+def get_cognitiveatlas_task(task_id):
+    '''get_cognitiveatlas_task
+    return the database entry for CognitiveAtlasTask if it exists, and update concepts for that task. If not, create it.
+    :param task_id: the unique id for the cognitive atlas task
+    '''    
+    try:
+        task = get_task(id=task_id).json[0]
+        cogatlas_task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"], defaults={"name":task["name"]})
+        concept_list = []
+        for concept in task["concepts"]:
+            cogatlas_concept = get_concept(id=concept["concept_id"]).json[0]
+            cogatlas_concept, _ = CognitiveAtlasConcept.objects.update_or_create(cog_atlas_id=cogatlas_concept["id"], 
+                                                        defaults={"name":cogatlas_concept["name"]},
+                                                        definition=cogatlas_concept["definition_text"])
+            cogatlas_concept.save()
+            concept_list.append(cogatlas_concept)
+        cogatlas_task.concepts = concept_list
+        cogatlas_task.save()
+        return cogatlas_task
+    except:
+        # Any error with API, etc, return None
+        return None

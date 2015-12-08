@@ -40,7 +40,8 @@
                 {% for newexperiment in newexperiments %}
                 <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
                 {% endfor %}
-                <input type="submit" value="Add">
+                {% csrf_token %}
+                <input class="submit" type="submit" value="Add">
             </form>
          {% endif %}
         </article>
