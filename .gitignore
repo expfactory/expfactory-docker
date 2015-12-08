@@ -1,0 +1,9 @@
+# Compiled pyc #
+################
+*.pyc
+.*
+!/.gitignore
+
+# Static #
+##########
+/static
