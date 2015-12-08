@@ -8,6 +8,8 @@
    >> He started using Docker.
 
 
+![home](scripts/img/expfactory.png)
+
 ## Setup for Local Development
 Thanks to @NeuroVault for these steps.
 

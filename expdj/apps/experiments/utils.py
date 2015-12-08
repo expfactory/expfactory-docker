@@ -4,7 +4,8 @@ from expfactory.experiment import validate, load_experiment, get_experiments, ma
 from expfactory.utils import copy_directory, get_installdir, sub_template
 from expfactory.battery import generate, generate_config
 from expdj.settings import STATIC_ROOT,BASE_DIR
-from expdj.models import Experiment
+from expdj.apps.experiments.models import Experiment
+from datetime import datetime
 import tempfile
 import shutil
 import random
@@ -53,7 +54,7 @@ def install_experiments(experiment_tags=None):
                                     name=experiment[0]["name"],
                                     cognitive_atlas_task=cognitive_atlas_task,
                                     publish=bool(experiment[0]["publish"]),
-                                    time=,
+                                    time=datetime.now(),
                                     reference=experiment[0]["reference"])
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])        
