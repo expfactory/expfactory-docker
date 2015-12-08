@@ -1,14 +1,12 @@
 ### Docker and The Experiment Factory
 
+![home](scripts/img/expfactory.png)
 
    >> Don't forget what happened to the researcher who suddenly got everything he wanted.
    
    >> What happened?
    
    >> He started using Docker.
-
-
-![home](scripts/img/expfactory.png)
 
 ## Setup for Local Development
 Thanks to @NeuroVault for these steps.
