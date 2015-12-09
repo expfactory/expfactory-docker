@@ -2,15 +2,20 @@ from django.shortcuts import get_object_or_404, render_to_response, render, redi
 from expdj.apps.experiments.models import Experiment
 from expdj.apps.experiments.forms import ExperimentForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
+from expfactory.views import embed_experiment
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+import shutil
 import uuid
 import json
 import csv
 import os
+
+media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 ### AUTHENTICATION ####################################################
 
@@ -26,10 +31,9 @@ def owner_or_super(request,assessment):
             return True
     return False
 
-def check_question_edit_permission(request, assessment):
+def check_experiment_edit_permission(request):
     if not request.user.is_anonymous():
-        if owner_or_contrib(request,assessment):
-            return True
+        return True
     return False
 
 def check_behavior_edit_permission(request):
@@ -71,24 +75,31 @@ def view_experiment(request, eid):
     experiment = get_experiment(eid,request)
     
     # Determine permissions for edit and deletion
-    edit_permission = True if owner_or_contrib(request,assessment) else False
-    delete_permission = True if owner_or_super(request,assessment) else False
-    edit_question_permission = True if check_question_edit_permission(request,assessment) else False
+    edit_permission = check_experiment_edit_permission(request)
+    delete_permission = check_experiment_edit_permission(request)
 
     context = {'experiment': experiment,
                'edit_permission':edit_permission,
-               'delete_permission':delete_permission,
-               'question_permission':edit_question_permission,
-               'eid':eid}
+               'delete_permission':delete_permission}
 
     return render_to_response('experiment_details.html', context)
+
+# All experiments
+@login_required
+def preview_experiment(request,eid):
+    experiment = get_experiment(eid,request)
+    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)    
+    experiment_html = embed_experiment(experiment_folder,url_prefix="/")
+    return render_to_response('experiment_preview.html', {"preview_html":experiment_html})
 
 
 # All experiments
 @login_required
 def experiments_view(request):
     experiments = Experiment.objects.all()
-    context = {'experiments': experiments}
+    delete_permission = check_experiment_edit_permission(request)
+    context = {'experiments': experiments,
+               'delete_permission':delete_permission}
     return render(request, 'all_experiments.html', context)
 
 
@@ -124,7 +135,7 @@ def add_experiments(request):
                "message":message}
     return render(request, "all_experiments.html", context)
 
-
+@login_required
 def edit_experiment(request,eid=None):
     '''edit_experiment
     view for editing a single experiment. Likely only will be useful to change publication status
@@ -135,9 +146,6 @@ def edit_experiment(request,eid=None):
         experiment = get_experiment(eid,request)
     else:
         return HttpResponseRedirect("add_experiment")
-
-    if not owner_or_contrib(request,experiment):
-        return HttpResponseForbidden()
 
     if request.method == "POST":
         form = ExperimentForm(request.POST, instance=experiment)
@@ -153,7 +161,8 @@ def edit_experiment(request,eid=None):
     else:
         form = ExperimentForm(instance=experiment)
 
-    context = {"form": form}
+    context = {"form": form,
+               "experiment":experiment}
     return render(request, "edit_experiment.html", context)
 
 
@@ -161,10 +170,16 @@ def edit_experiment(request,eid=None):
 @login_required
 def delete_experiment(request, eid):
     experiment = get_experiment(eid,request)
-    if request.user.owner == experiment.owner:
-        experiment.delete()
-        return redirect('experiments')
-    return HttpResponseForbidden()
+    # Static Files
+    static_files_dir = os.path.join(static_dir,experiment[0]["tag"])
+    shutil.rmtree(static_files_dir)
+    # Cognitive Atlas Task
+    task = exp.cognitive_atlas_task
+    if exp.cognitive_atlas_task.experiment_set.count() == 1:
+       # We might want to delete concepts too? Ok for now.
+       task.delete() 
+    experiment.delete()
+    return redirect('experiments')
 
 
 #### EXPORT #############################################################

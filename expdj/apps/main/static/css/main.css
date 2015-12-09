@@ -1947,6 +1947,10 @@
 			border-color: rgba(243, 88, 88, 0.5);
 		}
 
+                .float_right {
+                    float: right
+                }
+
 /* Icons */
 
 	.icon {

@@ -1,11 +1,11 @@
+from expdj.apps.experiments.models import Experiment, CognitiveAtlasTask, CognitiveAtlasConcept
 from expfactory.vm import custom_battery_download, prepare_vm, specify_experiments
-from expfactory.interface import get_field
 from expfactory.experiment import validate, load_experiment, get_experiments, make_lookup
 from expfactory.utils import copy_directory, get_installdir, sub_template
 from expfactory.battery import generate, generate_config
-from expdj.settings import STATIC_ROOT,BASE_DIR
 from cognitiveatlas.api import get_task, get_concept
-from expdj.apps.experiments.models import Experiment, CognitiveAtlasTask, CognitiveAtlasConcept
+from expdj.settings import STATIC_ROOT,BASE_DIR,MEDIA_ROOT
+from expfactory.interface import get_field
 from datetime import datetime
 import tempfile
 import shutil
@@ -14,7 +14,7 @@ import pandas
 import json
 import os
 
-static_dir = os.path.join(BASE_DIR,STATIC_ROOT)
+media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 # EXPERIMENT FACTORY PYTHON FUNCTIONS #####################################################
 
@@ -59,7 +59,7 @@ def install_experiments(experiment_tags=None):
                                     reference=experiment[0]["reference"])
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])        
-            copy_directory(experiment_folder,"%s/experiments/%s" %(static_dir,experiment[0]["tag"]))
+            copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["tag"]))
         except:
             errored_experiments.append(experiment[0]["tag"])
 

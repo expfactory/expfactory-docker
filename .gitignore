@@ -6,4 +6,5 @@
 
 # Static #
 ##########
-/static
+/assets
+/static/experiments

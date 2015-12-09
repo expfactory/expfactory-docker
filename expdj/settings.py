@@ -26,7 +26,6 @@ MANAGERS = ADMINS
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 DEBUG = False
-
 TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
@@ -130,8 +129,10 @@ ANONYMOUS_USER_ID = -1
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
-STATIC_ROOT = '/var/www/static/'
-STATIC_URL = '/static/'
+STATIC_ROOT = '/var/www/assets/'
+STATIC_URL = '/assets/'
+MEDIA_ROOT = '/var/www/static'
+MEDIA_URL  = '/static/'
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -139,6 +140,10 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
+
+#STATICFILES_DIRS = (
+#    ('site', os.path.join(BASE_DIR,'static')), #store site-specific media here.
+#)
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (

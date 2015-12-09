@@ -51,5 +51,5 @@ class Experiment(models.Model):
 
     # Get the url for an experiment
     def get_absolute_url(self):
-        return_cid = self.id
+        return_cid = self.tag
         return reverse('experiment_details', args=[str(return_cid)])
