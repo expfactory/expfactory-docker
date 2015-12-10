@@ -26,7 +26,7 @@
         </header>
         {% endif %}
              <ul>
-             {% for battery in experiments %}
+             {% for experiment in experiments %}
                 <li><a href="{% url 'experiment_details' experiment.tag %}" class="button sidebar_button">{{ experiment.name }}</a></li>
              {% endfor %}
              <a href="{% url 'new_battery' %}" class="button btn-primary sidebar_button">New Battery</a>

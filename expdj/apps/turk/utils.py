@@ -37,7 +37,6 @@ def amazon_string_to_datetime(amazon_string):
             amazon_string,
             amazon_iso_format)
 
-
 def get_host():
     """Read configuration file and get proper host
 
@@ -99,7 +98,7 @@ def get_worker_url():
         return PRODUCTION_WORKER_URL
 
 
-def get_connection():
+def get_connection(aws_access_key_id,aws_secret_access_key):
     """Create connection based upon settings/configuration parameters
 
     The object returned from this function is a Mechanical Turk
@@ -121,8 +120,6 @@ def get_connection():
     syntax similar to the following:
 
     TURK = {
-        'aws_access_key_id': 'BJLBD8MOPC4ZDEB37QFB',
-        'aws_secret_access_key': 'g8Xw/sCOLY5WYtS091kcVdy0cMUZgdSdS',
         'host': 'mturk.com/mturk/externalSubmit',
         'sandbox_host':'workersandbox.mturk.com/mturk/externalSubmit'
         'app_url': 'brainmeta.org'
@@ -140,8 +137,6 @@ def get_connection():
     example of these contents follow:
 
     [Connection]
-    aws_access_key_id: 'BJLBD8MOPC4ZDEB37QFB'
-    aws_secret_access_key: 'g8Xw/sCOLY5WYtS091kcVdy0cMUZgdSdS'
     host: 'mturk.com/mturk/externalSubmit'
     app_url: 'brainmeta.org'
     debug: 1
@@ -151,8 +146,6 @@ def get_connection():
     debug = 1
 
     if hasattr(settings, 'TURK') and settings.TURK is not None:
-        aws_access_key_id = settings.TURK['aws_access_key_id']
-        aws_secret_access_key = settings.TURK['aws_secret_access_key']
         if 'debug' in settings.TURK:
             debug = settings.TURK['debug']
     elif hasattr(settings, 'TURK_CONFIG_FILE') and\
@@ -160,10 +153,6 @@ def get_connection():
         config = ConfigParser.ConfigParser()
         config.read(settings.TURK_CONFIG_FILE)
 
-        aws_access_key_id = config.get('Connection',
-                                       'aws_access_key_id')
-        aws_secret_access_key = config.get('Connection',
-                                           'aws_secret_access_key')
         if config.has_option('Connection', 'debug'):
             debug = config.get('Connection', 'debug')
     else:
@@ -198,7 +187,8 @@ def make_hit(title,description,keywords,amount=0.0,frame_height=800,number_hits=
     """make_hit
     make a set of hits to send to Amazon
     """
- 
+
+    #TODO: the params for aws will come from associated battery 
     connection = get_connection()
     url = get_app_url()
 

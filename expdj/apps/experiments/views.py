@@ -58,6 +58,7 @@ def is_behavior_editor(request):
 #### GETS #############################################################
 
 # get experiment
+@login_required
 def get_experiment(eid,request,mode=None):
     keyargs = {'pk':eid}
     try:
@@ -69,11 +70,12 @@ def get_experiment(eid,request,mode=None):
 
 
 # get experiment
+@login_required
 def get_battery(bid,request,mode=None):
     keyargs = {'pk':bid}
     try:
         battery = Battery.objects.get(**keyargs)
-    except Batter.DoesNotExist:
+    except Battery.DoesNotExist:
         raise Http404
     else:
         return battery
@@ -109,7 +111,7 @@ def view_battery(request, bid):
                'edit_permission':edit_permission,
                'delete_permission':delete_permission}
 
-    return render_to_response('battery_details.html', context)
+    return render(request,'battery_details.html', context)
 
 # All experiments
 @login_required
@@ -240,10 +242,10 @@ def add_battery(request):
 def edit_battery(request, bid=None):
     header_text = "Add new battery"
     if bid:
-        battery = get_battery(cid,request)
+        battery = get_battery(bid,request)
         is_owner = battery.owner == request.user
         header_text = battery.name 
-        if not request.user.has_perm('experiments.edit_battery', battery):
+        if not request.user.has_perm('battery.edit_battery', battery):
             return HttpResponseForbidden()
     else:
         is_owner = True
@@ -281,7 +283,7 @@ def edit_battery(request, bid=None):
 @login_required
 def delete_battery(request, bid):
     battery = get_battery(bid,request)
-    if request.user.has_perm('experiments.delete_battery', battery):
+    if request.user.has_perm('battery.delete_battery', battery):
         battery.delete()
     return redirect('batteries')
 

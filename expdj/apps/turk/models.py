@@ -5,10 +5,11 @@ import boto
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q, DO_NOTHING
 from django.db.models.signals import pre_init
-
+from django.contrib.auth.models import User
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
-from expdj.apps.experiments.models import Experiment
+from expdj.apps.experiments.models import Experiment, Battery
 
 def init_connection_callback(sender, **signal_args):
     """Mechanical Turk connection signal callback
@@ -18,8 +19,10 @@ def init_connection_callback(sender, **signal_args):
     signal.
     """
     sender.args = sender
+    aws_secret_key_id = sender.battery_id.aws_secret_access_key_id
+    aws_access_key_id = sender.battery_id.aws_access_key_id
     object_args = signal_args['kwargs']
-    sender.connection = get_connection()
+    sender.connection = get_connection(aws_access_key_id,aws_secret_key_id)
 
 
 class DisposeException(Exception):
@@ -32,23 +35,18 @@ class DisposeException(Exception):
     __str__ = __unicode__
 
 
-# A worker is associated with a HIT, and a set of Questions. Amazon will store the answers 
-# provided by the workers, and we keep track of who has answered what. 
-# TODO: Each question should be answered 10 times, each worker can only
-# see each question once. 
 class Worker(models.Model):
     worker_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     experiments = models.ManyToManyField(Experiment,related_name="experiments_completed",related_query_name="experiments", blank=True,help_text="These are experiments that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
-        return "%s: questions[%s]" %(self.worker_id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
     
     def __unicode__(self):
-        return "%s: questions[%s]" %(self.worker_id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
     
     class Meta:
         ordering = ['worker_id']
-
 
 
 class HIT(models.Model):
@@ -85,147 +83,28 @@ class HIT(models.Model):
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
     reverse_review_lookup = dict((v, k) for k, v in REVIEW_CHOICES)
 
-    mturk_id = models.CharField(
-            "HIT ID",
-            max_length=255,
-            unique=True,
-            null=True,
-            help_text="A unique identifier for the HIT"
-    )
-    hit_type_id = models.CharField(
-            "HIT Type ID",
-            max_length=255,
-            null=True,
-            blank=True,
-            help_text="The ID of the HIT type of this HIT"
-    )
-    creation_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text="The UTC date and time the HIT was created"
-    )
-    title = models.CharField(
-            max_length=255,
-            null=True,
-            blank=True,
-            help_text="The title of the HIT"
-    )
-    description = models.TextField(
-            null=True,
-            blank=True,
-            help_text="A general description of the HIT",
-    )
-    keywords = models.TextField(
-            "Keywords",
-            null=True,
-            blank=True,
-            help_text=("One or more words or phrases that describe "
-                       "the HIT, separated by commas."),
-    )
-    status = models.CharField(
-            "HIT Status",
-            max_length=1,
-            choices=STATUS_CHOICES,
-            null=True,
-            blank=True,
-            help_text="The status of the HIT and its assignments"
-    )
-    reward = models.DecimalField(
-            max_digits=5,
-            decimal_places=3,
-            null=True,
-            blank=True,
-            help_text=("The amount of money the requester will pay a "
-                       "worker for successfully completing the HIT")
-    )
-    lifetime_in_seconds = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The amount of time, in seconds, after which the "
-                       "HIT is no longer available for users to accept.")
-    )
-    assignment_duration_in_seconds = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The length of time, in seconds, that a worker has "
-                       "to complete the HIT after accepting it.")
-    )
-    max_assignments = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            default=1,
-            help_text=("The number of times the HIT can be accepted and "
-                       "completed before the HIT becomes unavailable.")
-    )
-    auto_approval_delay_in_seconds = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The amount of time, in seconds after the worker "
-                       "submits an assignment for the HIT that the results "
-                       "are automatically approved by the requester.")
-    )
-    requester_annotation = models.TextField(
-            null=True,
-            blank=True,
-            help_text=("An arbitrary data field the Requester who created "
-                       "the HIT can use. This field is visible only to the "
-                       "creator of the HIT.")
-    )
-    number_of_similar_hits = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The number of HITs with fields identical to this "
-                       "HIT, other than the Question field.")
-    )
-    review_status = models.CharField(
-            "HIT Review Status",
-            max_length=1,
-            choices=REVIEW_CHOICES,
-            null=True,
-            blank=True,
-            help_text="Indicates the review status of the HIT."
-    )
-    number_of_assignments_pending = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The number of assignments for this HIT that have "
-                       "been accepted by Workers, but have not yet been "
-                       "submitted, returned, abandoned.")
-    )
-    number_of_assignments_available = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The number of assignments for this HIT that are "
-                       "available for Workers to accept"),
-    )
-    number_of_assignments_completed = models.PositiveIntegerField(
-            null=True,
-            blank=True,
-            help_text=("The number of assignments for this HIT that "
-                       "have been approved or rejected.")
-    )
+    # A HIT must be associated with a battery
+    battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
 
-    # To allow attachment of Generic Django instances
-    content_type = models.ForeignKey(
-            ContentType,
-            verbose_name="Content type",
-            related_name="hit",
-            help_text=("Any Django model can be generically attached to "
-                       "this HIT. This is the content type of that model "
-                       "instance."),
-            blank=True,
-            null=True)
-
-    content_id = models.PositiveIntegerField(
-            "Content id",
-            blank=True,
-            null=True,
-            help_text=("Any Django model can be generically attached to "
-                       "this HIT. This is the id of that model instance."))
-    attached_object = generic.GenericForeignKey(
-            ct_field="content_type",
-            fk_field="content_id",
-            )
+    owner = models.ForeignKey(User)
+    mturk_id = models.CharField("HIT ID",max_length=255,unique=True,null=True,help_text="A unique identifier for the HIT")
+    hit_type_id = models.CharField("HIT Type ID",max_length=255,null=True,blank=True,help_text="The ID of the HIT type of this HIT")
+    creation_time = models.DateTimeField(null=True,blank=True,help_text="The UTC date and time the HIT was created")
+    title = models.CharField(max_length=255,null=False,blank=False,help_text="The title of the HIT")
+    description = models.TextField(null=False,blank=False,help_text="A general description of the HIT")
+    keywords = models.TextField("Keywords",null=True,blank=True,help_text=("One or more words or phrases that describe the HIT, separated by commas."))
+    status = models.CharField("HIT Status",max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the HIT and its assignments")
+    reward = models.DecimalField(max_digits=5,decimal_places=3,null=False,blank=False,help_text=("The amount of money the requester will pay a worker for successfully completing the HIT"))
+    lifetime_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in seconds, after which the HIT is no longer available for users to accept."))
+    assignment_duration_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The length of time, in seconds, that a worker has to complete the HIT after accepting it."))
+    max_assignments = models.PositiveIntegerField(null=True,blank=True,default=1,help_text=("The number of times the HIT can be accepted and  completed before the HIT becomes unavailable."))
+    auto_approval_delay_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in seconds after the worker submits an assignment for the HIT that the results are automatically approved by the requester."))
+    requester_annotation = models.TextField(null=True,blank=True,help_text=("An arbitrary data field the Requester who created the HIT can use. This field is visible only to the creator of the HIT."))
+    number_of_similar_hits = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of HITs with fields identical to this HIT, other than the Question field."))
+    review_status = models.CharField("HIT Review Status",max_length=1,choices=REVIEW_CHOICES,null=True,blank=True,help_text="Indicates the review status of the HIT.")
+    number_of_assignments_pending = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that have been accepted by Workers, but have not yet been submitted, returned, abandoned."))
+    number_of_assignments_available = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that are available for Workers to accept"))
+    number_of_assignments_completed = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that have been approved or rejected."))
 
     def disable(self):
         """Disable/Destroy HIT that is no longer needed
@@ -356,6 +235,10 @@ class HIT(models.Model):
         self.connection.set_reviewing(self.mturk_id, revert=revert)
         self.update()
 
+    def create(self):
+        #TODO: look up how this works. I don't think I want this.
+        pre_init.connect(init_connection_callback, sender=HIT)
+
     def update(self, mturk_hit=None, do_update_assignments=False):
         """Update self with Mechanical Turk API data
 
@@ -417,7 +300,7 @@ class HIT(models.Model):
 
     def __unicode__(self):
         return u"HIT: %s" % self.mturk_id
-pre_init.connect(init_connection_callback, sender=HIT)
+
 
 
 class Assignment(models.Model):

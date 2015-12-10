@@ -1,23 +1,77 @@
 from optparse import make_option
 from numpy.random import choice
 from expdj.apps.turk.models import HIT
+from expdj.apps.turk.forms import HITForm
+from expdj.apps.experiments.models import Battery
 from django.core.management.base import BaseCommand
+from django.contrib.auth.decorators import login_required
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_worker_ids_past_tasks, get_host
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.models import Worker
 
+#### GETS #############################################################
 
-def view_hits():
-    '''view_hits
+# get experiment
+@login_required
+def get_hit(hid,request,mode=None):
+    keyargs = {'pk':hid}
+    try:
+        hit = HIT.objects.get(**keyargs)
+    except HIT.DoesNotExist:
+        raise Http404
+    else:
+        return hit
+
+#### VIEWS ############################################################
+
+@login_required
+def view_hit():
+    '''view_hit
     a table to review a history of past hits
     '''
     print "WRITE ME"
 
-def generate_hits():
-    '''generate_hits
-    a form to generate new hits
-    '''
-    print "WRITE ME"
+@login_required
+def edit_hit(request, bid, hid=None):
+    battery = Battery.objects.get(pk=bid)
+    header_text = "%s HIT" %(battery.name)
+    if not request.user.has_perm('battery.edit_battery', battery):
+        return HttpResponseForbidden()
+    
+    if hid:
+        hit = get_hit(hid,request)
+        is_owner = battery.owner == request.user
+        header_text = hit.title 
+    else:
+        is_owner = True
+        hit = HIT(owner=request.user,battery=battery)
+    if request.method == "POST":
+        if is_owner:
+            form = HITForm(request.POST,instance=hit)
+        if form.is_valid():
+            hit = form.save(commit=False)
+            hit.save()
+            return HttpResponseRedirect(battery.get_absolute_url())
+    else:
+        if is_owner:
+            form = HITForm(instance=hit)
+        else:
+            form = HITForm(instance=hit)
+
+    context = {"form": form, 
+               "is_owner": is_owner,
+               "header_text":header_text}
+
+    return render(request, "new_hit.html", context)
+
+
+# Delete a hit
+@login_required
+def delete_hit(request, hid):
+    hit = get_hit(hid,request)
+    # TODO: check if user has permissions to delete HIT
+    hit.delete()
+    return redirect('batteries')
 
 
 def get_flagged_questions(number=None):
