@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.experiments.models import Experiment
-from expdj.apps.experiments.forms import ExperimentForm
+from expdj.apps.experiments.models import Experiment, Battery
+from expdj.apps.experiments.forms import ExperimentForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from expfactory.views import embed_experiment
@@ -32,12 +32,13 @@ def owner_or_super(request,assessment):
     return False
 
 def check_experiment_edit_permission(request):
-    if not request.user.is_anonymous():
+    if request.user.is_superuser:
         return True
     return False
 
-def check_behavior_edit_permission(request):
+def check_battery_edit_permission(request):
     if not request.user.is_anonymous():
+        #TODO: Add in check for battery owner here
         if request.user.is_superuser:
             return True
     return False
@@ -56,7 +57,7 @@ def is_behavior_editor(request):
 
 #### GETS #############################################################
 
-# get assessment
+# get experiment
 def get_experiment(eid,request,mode=None):
     keyargs = {'pk':eid}
     try:
@@ -65,6 +66,17 @@ def get_experiment(eid,request,mode=None):
         raise Http404
     else:
         return experiment
+
+
+# get experiment
+def get_battery(bid,request,mode=None):
+    keyargs = {'pk':bid}
+    try:
+        battery = Battery.objects.get(**keyargs)
+    except Batter.DoesNotExist:
+        raise Http404
+    else:
+        return battery
 
 
 #### VIEWS #############################################################
@@ -84,14 +96,20 @@ def view_experiment(request, eid):
 
     return render_to_response('experiment_details.html', context)
 
-# All experiments
+# View a battery
 @login_required
-def preview_experiment(request,eid):
-    experiment = get_experiment(eid,request)
-    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)    
-    experiment_html = embed_experiment(experiment_folder,url_prefix="/")
-    return render_to_response('experiment_preview.html', {"preview_html":experiment_html})
+def view_battery(request, bid):
+    battery = get_battery(bid,request)
+    
+    # Determine permissions for edit and deletion
+    edit_permission = check_battery_edit_permission(request)
+    delete_permission = check_battery_edit_permission(request)
 
+    context = {'battery': battery,
+               'edit_permission':edit_permission,
+               'delete_permission':delete_permission}
+
+    return render_to_response('battery_details.html', context)
 
 # All experiments
 @login_required
@@ -103,7 +121,35 @@ def experiments_view(request):
     return render(request, 'all_experiments.html', context)
 
 
-#### EDIT/ADD/DELETE #############################################################
+# All batteries
+@login_required
+def batteries_view(request):
+    batteries = Battery.objects.all()
+    context = {'batteries': batteries}
+    return render(request, 'all_batteries.html', context)
+
+
+# Previews -------------------------------------------------------------
+# Preview experiments
+@login_required
+def preview_experiment(request,eid):
+    experiment = get_experiment(eid,request)
+    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)    
+    experiment_html = embed_experiment(experiment_folder,url_prefix="/")
+    return render_to_response('experiment_preview.html', {"preview_html":experiment_html})
+
+# Preview battery
+@login_required
+def preview_battery(request,bid):
+    battery = get_battery(bid,request)
+    # TODO: write function to generate battery and preview
+    return render_to_response('battery_preview.html', {"preview_html":""})
+
+
+#### EDIT/ADD/DELETE ###################################################
+
+# Experiments ----------------------------------------------------------
+
 @login_required
 def add_experiment(request):
     '''add_experiment
@@ -115,7 +161,6 @@ def add_experiment(request):
     context = {"newexperiments": experiments,
                "experiments": current_experiments}
     return render(request, "add_experiment.html", context)
-
 
 @login_required
 def add_experiments(request):
@@ -165,24 +210,92 @@ def edit_experiment(request,eid=None):
                "experiment":experiment}
     return render(request, "edit_experiment.html", context)
 
-
 # Delete an experiment
 @login_required
 def delete_experiment(request, eid):
     experiment = get_experiment(eid,request)
-    # Static Files
-    static_files_dir = os.path.join(static_dir,experiment[0]["tag"])
-    shutil.rmtree(static_files_dir)
-    # Cognitive Atlas Task
-    task = exp.cognitive_atlas_task
-    if exp.cognitive_atlas_task.experiment_set.count() == 1:
-       # We might want to delete concepts too? Ok for now.
-       task.delete() 
-    experiment.delete()
+    if check_experiment_edit_permission(request):
+        # Static Files
+        static_files_dir = os.path.join(static_dir,experiment[0]["tag"])
+        shutil.rmtree(static_files_dir)
+        # Cognitive Atlas Task
+        task = exp.cognitive_atlas_task
+        if exp.cognitive_atlas_task.experiment_set.count() == 1:
+            # We might want to delete concepts too? Ok for now.
+            task.delete() 
+        experiment.delete()
     return redirect('experiments')
 
 
+# Battery --------------------------------------------------------------
+
+@login_required
+def add_battery(request):
+    '''add_battery
+    Function for adding new battery to database
+    '''
+    return redirect('batteries')
+
+@login_required
+def edit_battery(request, bid=None):
+    header_text = "Add new battery"
+    if bid:
+        battery = get_battery(cid,request)
+        is_owner = battery.owner == request.user
+        header_text = battery.name 
+        if not request.user.has_perm('experiments.edit_battery', battery):
+            return HttpResponseForbidden()
+    else:
+        is_owner = True
+        battery = Battery(owner=request.user)
+    if request.method == "POST":
+        if is_owner:
+            form = BatteryForm(request.POST,instance=battery)
+        if form.is_valid():
+            previous_contribs = set()
+            if form.instance.pk is not None:
+                previous_contribs = set(form.instance.contributors.all())
+            battery = form.save(commit=False)
+            battery.save()
+
+            if is_owner:
+                form.save_m2m()  # save contributors
+                current_contribs = set(battery.contributors.all())
+                new_contribs = list(current_contribs.difference(previous_contribs))
+
+            return HttpResponseRedirect(battery.get_absolute_url())
+    else:
+        if is_owner:
+            form = BatteryForm(instance=battery)
+        else:
+            form = BatteryForm(instance=battery)
+
+    context = {"form": form, 
+               "is_owner": is_owner,
+               "header_text":header_text}
+
+    return render(request, "edit_battery.html", context)
+
+
+# Delete a battery
+@login_required
+def delete_battery(request, bid):
+    battery = get_battery(bid,request)
+    if request.user.has_perm('experiments.delete_battery', battery):
+        battery.delete()
+    return redirect('batteries')
+
+
+
 #### EXPORT #############################################################
+
+# Export specific experiment data
+@login_required
+def export_battery(request,bid):
+    battery = get_battery(bid,request)
+    output_name = "%s.tsv" %(battery.id)
+    print "WRITEME"
+
 
 # Export specific experiment data
 @login_required

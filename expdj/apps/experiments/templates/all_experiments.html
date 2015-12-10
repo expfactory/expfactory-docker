@@ -3,26 +3,9 @@
 {% endblock %}
 {% block content %}
 <div class="row 150%">
-    <div class="4u 12u(narrower)">
 
-    <!-- Sidebar -->
-    <section id="sidebar">
-    <section>
-        <header>
-            <h3>Experiments</h3>
-        </header>
-             {% if experiments %}
-             <ul>
-             {% for experiment in experiments %}
-                <li><a href="{% url 'experiment_details' experiment.tag %}" class="button" style="width:325px;text-align:center">{{ experiment.name }}</a></li>
-             {% endfor %}
-             {% else %}
-                <a href="{% url 'add_experiment' %}" class="button">Add Experiments</a>
-             {% endif %}
-            </ul>
-        </section>
-    </section>
-    </div>
+    {% include "sidebar.html" %}
+
     <div class="8u 12u(narrower) important(narrower)">
 
         <!-- Content -->
@@ -45,7 +28,7 @@
                     <th>Name</th>
                     <th>Cognitive Atlas Task</th>
                     {% if delete_permission %}
-                    <th>Delete</th>
+                    <th></th>
                     {% endif %}
                </tr>
            </thead>
@@ -53,10 +36,13 @@
            {% for experiment in experiments %}
                <tr>
                    <td><a href="{% url 'experiment_details' experiment.tag %}">{{ experiment.name }}</a></td>
-                   <td>{{ experiment.cognitive_atlas_task }}</td>
-                   {% if delete_permission %}
-                   <td><a class="btn btn-danger" href="{% url 'delete_experiment' experiment.tag %}" id="delete_experiment"> Delete experiment</a></td>
+                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.cognitive_atlas_task }}</a></td>
+                   <td>
+                      {% if delete_permission %}
+                      <a class="btn btn-danger" title="delete" href="{% url 'delete_experiment' experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
                    {% endif %}
+                      <a class="btn btn-default" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
+                   </td>
                </tr>
           {% endfor %}
           </tbody>

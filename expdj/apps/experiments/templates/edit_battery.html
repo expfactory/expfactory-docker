@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block head %}
+{% endblock %}
+{% block content %}
+
+<div class="row 150%">
+
+    <div class="12u 12u(narrower) important(narrower)">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+                <h2>{{ header_text }}</h2>
+            </header>
+
+            {% crispy form %}
+
+        </article>
+    </div>
+</div>
+{% endblock %}

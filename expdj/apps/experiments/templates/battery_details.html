@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block head %}
+{% endblock %}
+{% block content %}
+<h2>{{ experiment.name }}</h2>
+
+<div class="row" style="margin-top:0px">
+    <div class="col-lg-12">
+        <div>
+            {% if edit_permission %}
+            <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
+            {% endif %}
+            <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a> 
+            <a class='button' href='{% url 'preview_battery' battery.id %}'>Preview</a>
+            {% if delete_permission %}
+            <div class="float_right">
+                <a class='button' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
+            </div>
+            {% endif %}
+      </div>
+</div>
+
+
+    <div class="col-lg-12">
+        <div class="panel panel-default">
+            <div class="panel-body">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#details" data-toggle="tab">Details</a></li>
+                <li><a href="#experiments" data-toggle="tab">Experiments</a></li>
+                <li><a href="#completed" data-toggle="tab">Completed</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane fade in active" id="details">
+                    <h4>Battery Details</h4>
+ 
+    <table class="table table-condensed table-striped table-hover" id="details-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr><td>Battery Name</td><td>{{ battery.name }}</td></tr>
+          <tr><td>Experiments</td><td>{{ battery.experiments.count }}</td></tr>
+          <tr><td>Max Time</td><td>{{ battery.maximum_time }}</td></tr>
+          <tr><td>Max Experiments</td><td>{{ battery.number_of_experiments }}</td></tr>
+          <tr><td>Active</td><td>{{ battery.active }}</td></tr>
+      </tbody>
+    </table>
+
+    </div>
+        <!-- Experiments Pane -->
+        <div class="tab-pane fade" id="experiments">
+            <h4>Experiments</h4>
+	              {% if battery.experiments %}
+            <table class="hover" cellspacing="0" width="100%" id="experiments_table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Cognitive Atlas Task</th>
+                    {% if delete_permission %}
+                    <th></th>
+                    {% endif %}
+               </tr>
+           </thead>
+           <tbody>
+           {% for experiment in battery.experiments.all %}
+               <tr>
+                   <td><a href="{% url 'experiment_details' experiment.tag %}">{{ experiment.name }}</a></td>
+                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.cognitive_atlas_task }}</a></td>
+                   <td>
+                      {% if delete_permission %}
+                      <a class="btn btn-danger" title="delete" href="{% url 'delete_experiment' experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
+                   {% endif %}
+                      <a class="btn btn-default" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
+                   </td>
+               </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+         {% endif %}
+        </div>
+
+        <!-- Completion/Stats Pane -->
+        <div class="tab-pane fade" id="completed">
+            <h4>Completion</h4>
+                       <table class="table table-condensed table-striped table-hover" id="completion_table">
+                         <thead>
+                             <tr>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             <tr></tr>
+                         </tbody>
+                       </table>
+                </div>
+            </div>
+        </div>
+
+
+   </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#battery_table').dataTable({
+      responsive: true
+    });
+    $('#experiments_table').dataTable({
+      responsive: true
+    });
+    $('#completion_table').dataTable({
+      responsive: true
+    });
+    $('#delete_battery').click(function(e) {
+      return confirm("Are you sure you want to delete this battery?");
+    });
+} );
+</script>
+
+</script>
+{% endblock %}

@@ -3,26 +3,9 @@
 {% endblock %}
 {% block content %}
 <div class="row 150%">
-    <div class="4u 12u(narrower)">
 
-    <!-- Sidebar -->
-    <section id="sidebar">
-    <section>
-        <header>
-            <h3>Experiments</h3>
-        </header>
-             {% if experiments %}
-             <ul class="actions">
-             {% for experiment in experiments %}
-                <li><a href="{% url 'experiment_detail' experiment.tag  %}" class="button">{{ experiment.name }}</a></li>
-             {% endfor %}
-             {% else %}
-                <a href="http://expfactory.github.io/table.html" target="_blank" class="button">Experiment Details</a>
-             {% endif %}
-            </ul>
-        </section>
-    </section>
-    </div>
+    {% include sidebar.html %}
+
     <div class="8u 12u(narrower) important(narrower)">
 
         <!-- Content -->
@@ -47,7 +30,8 @@
         </article>
     </div>
 </div>
-
+{% endblock %}
+{% scripts block %}
 <script>
 $(document).ready(function() {
     $('#assessments-table').dataTable({

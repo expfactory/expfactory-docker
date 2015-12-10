@@ -1,3 +1,5 @@
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from django.db.models.signals import m2m_changed
 from django.db.models import Q, DO_NOTHING
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -16,7 +18,7 @@ class CognitiveAtlasConcept(models.Model):
     
     class Meta:
         ordering = ['name']
-
+        app_label = 'experiments'
 
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
@@ -53,3 +55,54 @@ class Experiment(models.Model):
     def get_absolute_url(self):
         return_cid = self.tag
         return reverse('experiment_details', args=[str(return_cid)])
+
+
+class Battery(models.Model):
+    '''A battery is a collection of experiments'''
+    name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
+    description = models.TextField(blank=True, null=True)
+    owner = models.ForeignKey(User)
+    aws_access_key_id = models.CharField(max_length=250, unique = False, null=False, verbose_name="AWS Access Key ID",help_text="Will only be accessible to the battery owner.")
+    aws_secret_access_key_id = models.CharField(max_length=250, unique = False, null=False, verbose_name="AWS Secret Access Key",help_text="Will only be accessible to the battery owner.")
+    contributors = models.ManyToManyField(User,related_name="battery_contributors",related_query_name="contributor", blank=True,help_text="Select other Experiment Factory users to add as contributes to the battery.  Contributors can view results, deploy HITS, and edit the battery itself.",verbose_name="Contributors")
+    experiments = models.ManyToManyField(Experiment,related_name="battery_experiments",related_query_name="battery_experiments", blank=True,help_text="Select the Experiments to include in the battery. Experiments will be selected randomly from this set to fit within the maximum allowed time per HIT, and only include those experiments that a MTurk user has not completed.",verbose_name="Experimental paradigms")
+    add_date = models.DateTimeField('date published', auto_now_add=True)
+    modify_date = models.DateTimeField('date modified', auto_now=True)
+    maximum_time = models.IntegerField(help_text="Maximum number of minutes for the battery to endure.", null=False, verbose_name="Maxiumum time", blank=False)
+    number_of_experiments = models.IntegerField(help_text="Maximum number of experiments to select per HIT.", null=False, verbose_name="Number of experiments per HIT", blank=False)
+    active = models.BooleanField(choices=((False, 'Inactive'),
+                                          (True, 'Active')),
+                                           default=True,verbose_name="Active")
+    def get_absolute_url(self):
+        return_cid = self.id
+        return reverse('battery_details', args=[str(return_cid)])
+
+    def __unicode__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        super(Battery, self).save(*args, **kwargs)
+        assign_perm('del_battery', self.owner, self)
+        assign_perm('edit_battery', self.owner, self)
+        
+    class Meta:
+        app_label = 'experiments'
+        permissions = (
+            ('del_battery', 'Delete battery'),
+            ('edit_battery', 'Edit battery')
+        )
+
+def contributors_changed(sender, instance, action, **kwargs):
+    if action in ["post_remove", "post_add", "post_clear"]:
+        current_contributors = set([user.pk for user in get_users_with_perms(instance)])
+        new_contributors = set([user.pk for user in [instance.owner, ] + list(instance.contributors.all())])
+         
+        for contributor in list(new_contributors - current_contributors):
+            contributor = User.objects.get(pk=contributor)
+            assign_perm('edit_battery', contributor, instance)
+                
+        for contributor in (current_contributors - new_contributors):
+            contributor = User.objects.get(pk=contributor)
+            remove_perm('edit_battery', contributor, instance)
+
+m2m_changed.connect(contributors_changed, sender=Battery.contributors.through)

@@ -53,12 +53,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
     'expdj.apps.main',
     'expdj.apps.turk',
     'expdj.apps.experiments',
     'expdj.apps.users',
     'social.apps.django_app.default',
     'crispy_forms',
+    'guardian',
     'dbbackup',
     'djrill'
 )
@@ -68,6 +70,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social.backends.facebook.FacebookOAuth2',
     'social.backends.google.GoogleOAuth2',
+    'guardian.backends.ObjectPermissionBackend'
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -124,7 +127,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 SITE_ID = 1
-ANONYMOUS_USER_ID = -1
+ANONYMOUS_USER_ID = -1 # django-guardian
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/

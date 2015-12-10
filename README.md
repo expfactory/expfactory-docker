@@ -80,4 +80,8 @@ You should first log in with the super user account, with the following credenti
       username: expfactory
       password: expfactory
 
-You will be prompted to change this password immediately, to ensure the protection of your database.
+You should change this password immediately to ensure the security of your application.
+
+### Configuration with Mechanical Turk
+
+Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but with a battery object. Thus, you will need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.

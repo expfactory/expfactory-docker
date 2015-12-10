@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block head %}
+{% endblock %}
+{% block content %}
+<div class="row 150%">
+
+    {% include "sidebar.html" %}
+
+    <div class="8u 12u(narrower) important(narrower)">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+                <h2>Batteries</h2>
+                {% if message %}
+                <p>{{ message }}</p>
+                {% endif %}
+                {% if batteries %}
+                <p>You have generated the following batteries:</p>
+                {% else %}
+                <p>You have not generated any batteries.</p>
+                {% endif %}
+            </header>
+            {% if batteries %}
+            <table class="hover" cellspacing="0" width="100%" id="batteries_table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Number of Experiments</th>
+                    <th>Max Time Per Hit</th>
+                    <th>Max Experiments Per Hit</th>
+                    {% if delete_permission %}
+                    <th></th>
+                    {% endif %}
+               </tr>
+           </thead>
+           <tbody>
+           {% for battery in batteries %}
+               <tr>
+                   <td>
+                   {% if battery.active %}
+                   <a style="color:green" href="{% url 'battery_details' battery.id %}">{{ battery.name }}</a></td>
+                   {% else %}
+                   <a style="color:red" href="{% url 'battery_details' battery.id %}">{{ battery.name }}</a></td>
+                   {% endif %}
+                   <td>{{ battery.experiments.count }}</td>
+                   <td>{{ battery.maximum_time }}</td>
+                   <td>{{ battery.number_of_experiments }}</td>
+                   <td>
+                    {% if delete_permission %}
+                      <a class="btn btn-danger" title="delete" href="{% url 'delete_battery' battery.id %}" id="delete_battery"><i class="fa fa-trash"></i></a>
+                   {% endif %}
+                   </td>
+               </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+         {% endif %}
+        </article>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#experiments-table').dataTable();
+});
+
+$('#delete_battery').click(function(e) {
+  return confirm("Are you sure you want to delete this battery?");
+});
+</script>
+{% endblock %}

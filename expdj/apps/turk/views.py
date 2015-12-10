@@ -1,11 +1,23 @@
 from optparse import make_option
 from numpy.random import choice
+from expdj.apps.turk.models import HIT
 from django.core.management.base import BaseCommand
-from boto.mturk.question import (AnswerSpecification, Overview, Question,
-        QuestionContent, QuestionForm, FreeTextAnswer, FormattedContent)
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_worker_ids_past_tasks, get_host
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.models import Worker
+
+
+def view_hits():
+    '''view_hits
+    a table to review a history of past hits
+    '''
+    print "WRITE ME"
+
+def generate_hits():
+    '''generate_hits
+    a form to generate new hits
+    '''
+    print "WRITE ME"
 
 
 def get_flagged_questions(number=None):
@@ -68,7 +80,7 @@ def turk_questions(request,number_questions=10):
         "questions":questions
     }
 
-    response = render_to_response("mturk_questions.html", context)
+    response = render_to_response("mturk_battery.html", context)
     # without this header, your iFrame will not render in Amazon
     response['x-frame-options'] = 'this_can_be_anything'
     return response

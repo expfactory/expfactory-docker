@@ -1950,6 +1950,10 @@
                 .float_right {
                     float: right
                 }
+                .sidebar_button {
+                    width:325px;
+                    text-align:center;
+                }
 
 /* Icons */
 
