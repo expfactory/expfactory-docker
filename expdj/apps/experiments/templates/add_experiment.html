@@ -4,7 +4,7 @@
 {% block content %}
 <div class="row 150%">
 
-    {% include sidebar.html %}
+    {% include "sidebar.html" %}
 
     <div class="8u 12u(narrower) important(narrower)">
 
@@ -31,7 +31,7 @@
     </div>
 </div>
 {% endblock %}
-{% scripts block %}
+{% block scripts %}
 <script>
 $(document).ready(function() {
     $('#assessments-table').dataTable({

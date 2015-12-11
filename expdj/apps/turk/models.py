@@ -10,6 +10,7 @@ from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from expdj.apps.experiments.models import Experiment, Battery
+from expdj.settings import DOMAIN_NAME
 
 def init_connection_callback(sender, **signal_args):
     """Mechanical Turk connection signal callback
@@ -19,8 +20,8 @@ def init_connection_callback(sender, **signal_args):
     signal.
     """
     sender.args = sender
-    aws_secret_key_id = sender.battery_id.aws_secret_access_key_id
-    aws_access_key_id = sender.battery_id.aws_access_key_id
+    aws_secret_key_id = sender.battery.aws_secret_access_key_id
+    aws_access_key_id = sender.battery.aws_access_key_id
     object_args = signal_args['kwargs']
     sender.connection = get_connection(aws_access_key_id,aws_secret_key_id)
 
@@ -51,6 +52,13 @@ class Worker(models.Model):
 
 class HIT(models.Model):
     """An Amazon Mechanical Turk Human Intelligence Task as a Django Model"""
+
+    def __str__(self):
+        return "%s: %s" %(self.title,self.battery)
+    
+    def __unicode__(self):
+        return "%s: %s" %(self.title,self.battery)
+
 
     (ASSIGNABLE, UNASSIGNABLE, REVIEWABLE, REVIEWING, DISPOSED) = (
           'A', 'U', 'R', 'G', 'D')
@@ -85,7 +93,6 @@ class HIT(models.Model):
 
     # A HIT must be associated with a battery
     battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
-
     owner = models.ForeignKey(User)
     mturk_id = models.CharField("HIT ID",max_length=255,unique=True,null=True,help_text="A unique identifier for the HIT")
     hit_type_id = models.CharField("HIT Type ID",max_length=255,null=True,blank=True,help_text="The ID of the HIT type of this HIT")
@@ -236,8 +243,30 @@ class HIT(models.Model):
         self.update()
 
     def create(self):
-        #TODO: look up how this works. I don't think I want this.
-        pre_init.connect(init_connection_callback, sender=HIT)
+        aws_secret_key_id = self.battery.aws_secret_access_key_id
+        aws_access_key_id = self.battery.aws_access_key_id
+        self.connection = get_connection(aws_access_key_id,aws_secret_key_id)
+        self.save()
+
+    def send_hits(self,N=100):
+
+        url = "%s/turk/%s" %(DOMAIN_NAME,self.id)
+        frame_height = 900
+        questionform = ExternalQuestion(url, frame_height)
+
+        for _ in xrange(N):
+            #TODO: we may want to save these create_hit_result somewhere...
+            # When battery is ready and working, test and see what comes out
+            create_hit_result = self.connection.create_hit(
+                title=self.title,
+                description=self.description,
+                keywords=self.keywords,
+                max_assignments=self.max_assignments,
+                question=questionform,
+                reward=Price(amount=self.reward),
+                response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
+             )
+
 
     def update(self, mturk_hit=None, do_update_assignments=False):
         """Update self with Mechanical Turk API data
@@ -317,77 +346,17 @@ class Assignment(models.Model):
     # Convenience lookup dictionaries for the above lists
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
 
-    mturk_id = models.CharField(
-            "Assignment ID",
-            max_length=255,
-            unique=True,
-            null=True,
-            help_text="A unique identifier for the assignment"
-    )
-    worker_id = models.CharField(
-            max_length=255,
-            null=True,
-            blank=True,
-            help_text="The ID of the Worker who accepted the HIT"
-    )
-    hit = models.ForeignKey(
-            HIT,
-            null=True,
-            blank=True,
-            related_name='assignments',
-    )
-    status = models.CharField(
-            max_length=1,
-            choices=STATUS_CHOICES,
-            null=True,
-            blank=True,
-            help_text="The status of the assignment"
-    )
-    auto_approval_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("If results have been submitted, this is the date "
-                       "and time, in UTC,  the results of the assignment are "
-                       "considered approved automatically if they have not "
-                       "already been explicitly approved or rejected by the "
-                       "requester")
-    )
-    accept_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("The date and time, in UTC, the Worker accepted "
-                       " the assignment")
-    )
-    submit_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("If the Worker has submitted results, this is the date "
-                       "and time, in UTC, the assignment was submitted")
-    )
-    approval_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("If requester has approved the results, this is the "
-                       "date and time, in UTC, the results were approved")
-    )
-    rejection_time = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("If requester has rejected the results, this is the "
-                       "date and time, in UTC, the results were rejected")
-    )
-    deadline = models.DateTimeField(
-            null=True,
-            blank=True,
-            help_text=("The date and time, in UTC, of the deadline for "
-                       "the assignment")
-    )
-    requester_feedback = models.TextField(
-            null=True,
-            blank=True,
-            help_text=("The optional text included with the call to either "
-                       "approve or reject the assignment.")
-    )
+    mturk_id = models.CharField("Assignment ID",max_length=255,unique=True,null=True,help_text="A unique identifier for the assignment")
+    worker_id = models.CharField(max_length=255,null=True,blank=True,help_text="The ID of the Worker who accepted the HIT")
+    hit = models.ForeignKey(HIT,null=True,blank=True,related_name='assignments')
+    status = models.CharField(max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the assignment")
+    auto_approval_time = models.DateTimeField(null=True,blank=True,help_text=("If results have been submitted, this is the date and time, in UTC,  the results of the assignment are considered approved automatically if they have not already been explicitly approved or rejected by the requester"))
+    accept_time = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, the Worker accepted the assignment"))
+    submit_time = models.DateTimeField(null=True,blank=True,help_text=("If the Worker has submitted results, this is the date and time, in UTC, the assignment was submitted"))
+    approval_time = models.DateTimeField(null=True,blank=True,help_text=("If requester has approved the results, this is the date and time, in UTC, the results were approved"))
+    rejection_time = models.DateTimeField(null=True,blank=True,help_text=("If requester has rejected the results, this is the date and time, in UTC, the results were rejected"))
+    deadline = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, of the deadline for the assignment"))
+    requester_feedback = models.TextField(null=True,blank=True,help_text=("The optional text included with the call to either approve or reject the assignment."))
 
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""

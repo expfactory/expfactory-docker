@@ -3,9 +3,11 @@ from numpy.random import choice
 from expdj.apps.turk.models import HIT
 from expdj.apps.turk.forms import HITForm
 from expdj.apps.experiments.models import Battery
+from expdj.apps.experiments.views import check_battery_edit_permission
 from django.core.management.base import BaseCommand
 from django.contrib.auth.decorators import login_required
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_worker_ids_past_tasks, get_host
+from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, experiment_selection_time
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.models import Worker
 
@@ -24,12 +26,55 @@ def get_hit(hid,request,mode=None):
 
 #### VIEWS ############################################################
 
-@login_required
-def view_hit():
-    '''view_hit
-    a table to review a history of past hits
-    '''
-    print "WRITE ME"
+
+def serve_hit(request,hid):
+    hit =  get_hit(hid,request)
+    battery = hit.battery
+     
+    # This is the submit URL, either external or sandbox
+    host = get_host()
+
+    # worker has not accepted the task   
+    if request.GET.get("assignmentId") == "ASSIGNMENT_ID_NOT_AVAILABLE":
+        template = "mturk_battery_preview.html"
+        task_list = hit.battery.experiments
+        context = {
+            "experiments":task_list
+        }
+
+    # worker has accepted the task
+    else:
+        template = "mturk_battery.html"
+        worker_id = request.GET.get("workerId","")
+        hit_id = request.GET.get("hitId","")
+        turk_submit_to = request.GET.get("turkSubmitTo","")
+        worker = get_worker(worker_id)
+        assignment_id = request.GET.get("assignmentId","")
+
+        # Get experiments the worker has not yet completed
+        experiments = [x for x in battery.experiments.all() if x not in worker.experiments.all()]
+
+        # If the worker has completed all that we have available
+        if len(experiments) == 0:
+            return render_to_response("worker_sorry.html")
+
+        # Random selection of subset of tasks that do not exceed maximum time allowed
+        task_list = experiment_selection_time(maximum_time_allower=hit.assignment_duration_in_seconds,
+                                              experiments=experiments)
+
+        context = {
+            "worker_id": worker_id,
+            "assignment_id": assignment_id,
+            "amazon_host": host,
+            "hit_id": hit_id,
+            "experiments":task_list
+        }
+
+    response = render_to_response(template, context)
+    # without this header, the iFrame will not render in Amazon
+    response['x-frame-options'] = 'this_can_be_anything'
+    return response
+
 
 @login_required
 def edit_hit(request, bid, hid=None):
@@ -69,10 +114,9 @@ def edit_hit(request, bid, hid=None):
 @login_required
 def delete_hit(request, hid):
     hit = get_hit(hid,request)
-    # TODO: check if user has permissions to delete HIT
-    hit.delete()
-    return redirect('batteries')
-
+    if check_battery_edit_permission(request,hit.battery):
+        hit.delete()
+    return redirect(hit.battery.get_absolute_url())
 
 def get_flagged_questions(number=None):
     """get_flagged_questions
@@ -89,52 +133,5 @@ def get_flagged_questions(number=None):
 
 
 def get_worker(worker_id):
-    # (<Worker: WORKER_ID: questions[0]>, True)    
-    return Worker.objects.update_or_create(worker_id=worker_id)[0]    
-
-def turk_questions(request,number_questions=10):
-
-    host = get_host()
-
-    
-    #if request.GET.get("assignmentId") == "ASSIGNMENT_ID_NOT_AVAILABLE":
-        # worker hasn't accepted the HIT (task) yet
-    #    pass
-    #else:
-        # worked accepted the task
-    #    pass
-    # Under if worker accepted task:
-    worker_id = "WORKER_ID"
-    questions = get_flagged_questions()
-    worker = get_worker(worker_id)
-    assignment_id = "assignment_id"
-
-    # Filter questions to those that the worker has not seen, and choose randomly
-    questions = list(set(questions).difference(set(worker.questions.all())))
-    questions = choice(questions,int(number_questions))
-
-    # For each question, get all synsets
-    synsets = [get_synsets(q.behavioral_trait.name) for q in questions]
-
-    questions = zip(questions,synsets)
-    #TODO: Some function here to select questions not seen?
-
-    #worker_id = request.GET.get("workerId", "")
-    #if worker_id in get_worker_ids_past_tasks():
-        # you might want to guard against this case somehow
-    #    pass
-
-    # Get a random sample of questions
-
-    context = {
-        "worker_id": worker_id,#request.GET.get("workerId", ""),
-        "assignment_id": assignment_id,#request.GET.get("assignmentId", ""),
-        "amazon_host": host,
-        "hit_id": "hitID",#request.GET.get("hitId", ""),
-        "questions":questions
-    }
-
-    response = render_to_response("mturk_battery.html", context)
-    # without this header, your iFrame will not render in Amazon
-    response['x-frame-options'] = 'this_can_be_anything'
-    return response
+    # (<Worker: WORKER_ID: experiments[0]>, True)    
+    return Worker.objects.update_or_create(worker_id=worker_id)[0]

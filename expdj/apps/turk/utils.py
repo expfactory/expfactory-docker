@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-import ConfigParser
-import datetime
-
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.price import Price
+from numpy.random import choice
+import ConfigParser
+import datetime
 import os
 
 from django.conf import settings
@@ -210,10 +207,26 @@ def make_hit(title,description,keywords,amount=0.0,frame_height=800,number_hits=
 
 
 def save_worker(worker_id):
-    """
+    '''save_worker
     We need to keep track of worker's we've already seen
-    """
+    '''
     return "WRITEME"
 
-def get_worker_ids_past_tasks():
-    return "WRITE ME"
+
+# Selection Algorithms ###############################################################################
+
+def select_experiments_time(maximum_time_allowed,experiments):
+    '''select_experiments_time
+    a selection algorithm that selects experiments from list based on not exceeding some max time
+    :param maximum_time_allowed: the maximum time allowed, in seconds
+    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
+    '''
+    # Add tasks with random selection until we reach the time limit
+    task_list = []
+    total_time = 0
+    while total_time < maximum_time_allowed:
+        # Randomly select an experiment
+        experiment = experiments.pop(choice(range(len(experiments))) 
+        if total_time + experiment.time*60.0 <= total_time
+        task_list.append(experiment)
+    return task_list

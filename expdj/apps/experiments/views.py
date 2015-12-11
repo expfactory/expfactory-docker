@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.experiments.models import Experiment, Battery
+from expdj.apps.turk.models import HIT
 from expdj.apps.experiments.forms import ExperimentForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
@@ -36,9 +37,10 @@ def check_experiment_edit_permission(request):
         return True
     return False
 
-def check_battery_edit_permission(request):
+def check_battery_edit_permission(request,battery):
     if not request.user.is_anonymous():
-        #TODO: Add in check for battery owner here
+        if request.user == battery.owner or request.user in battery.contributors.all():
+            return True
         if request.user.is_superuser:
             return True
     return False
@@ -58,7 +60,6 @@ def is_behavior_editor(request):
 #### GETS #############################################################
 
 # get experiment
-@login_required
 def get_experiment(eid,request,mode=None):
     keyargs = {'pk':eid}
     try:
@@ -70,7 +71,6 @@ def get_experiment(eid,request,mode=None):
 
 
 # get experiment
-@login_required
 def get_battery(bid,request,mode=None):
     keyargs = {'pk':bid}
     try:
@@ -103,13 +103,17 @@ def view_experiment(request, eid):
 def view_battery(request, bid):
     battery = get_battery(bid,request)
     
+    # Get associated HITS
+    hits = HIT.objects.filter(battery=battery)
+
     # Determine permissions for edit and deletion
-    edit_permission = check_battery_edit_permission(request)
-    delete_permission = check_battery_edit_permission(request)
+    edit_permission = check_battery_edit_permission(request,battery)
+    delete_permission = check_battery_edit_permission(request,battery)
 
     context = {'battery': battery,
                'edit_permission':edit_permission,
-               'delete_permission':delete_permission}
+               'delete_permission':delete_permission,
+               'hits':hits}
 
     return render(request,'battery_details.html', context)
 
@@ -138,7 +142,8 @@ def preview_experiment(request,eid):
     experiment = get_experiment(eid,request)
     experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)    
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
-    return render_to_response('experiment_preview.html', {"preview_html":experiment_html})
+    context = {"preview_html":experiment_html}
+    return render_to_response('experiment_preview.html', context)
 
 # Preview battery
 @login_required
@@ -218,7 +223,7 @@ def delete_experiment(request, eid):
     experiment = get_experiment(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
-        static_files_dir = os.path.join(static_dir,experiment[0]["tag"])
+        static_files_dir = os.path.join(media_dir,experiment[0]["tag"])
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task
         task = exp.cognitive_atlas_task
@@ -227,6 +232,17 @@ def delete_experiment(request, eid):
             task.delete() 
         experiment.delete()
     return redirect('experiments')
+
+
+@login_required
+def remove_experiment(request,bid,eid):
+   '''remove_experiment
+   removes an experiment from a battery
+   '''
+   battery = get_battery(bid,request)
+   if check_battery_edit_permission(request,battery):
+       battery.experiments = [x for x in battery.experiments.all() if x.tag != eid]    
+   return HttpResponseRedirect(battery.get_absolute_url())
 
 
 # Battery --------------------------------------------------------------

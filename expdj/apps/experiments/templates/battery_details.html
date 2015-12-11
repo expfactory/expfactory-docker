@@ -28,7 +28,7 @@
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#details" data-toggle="tab">Details</a></li>
                 <li><a href="#experiments" data-toggle="tab">Experiments</a></li>
-                <li><a href="#hits" data-toggle="tab">Deployment</a></li>
+                <li><a href="#hits" title="A HIT is a deployment of experiments to Amazon Mechanical Turk" data-toggle="tab">HITS</a></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade in active" id="details">
@@ -72,8 +72,8 @@
                    <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.cognitive_atlas_task }}</a></td>
                    <td>
                       {% if delete_permission %}
-                      <a class="btn btn-danger" title="delete" href="{% url 'delete_experiment' experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
-                   {% endif %}
+                      <a class="btn btn-danger" title="remove experiment from battery" href="{% url 'remove_experiment' battery.id experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
+                      {% endif %}
                       <a class="btn btn-default" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
                    </td>
                </tr>
@@ -86,15 +86,32 @@
         <!-- Completion/Stats Pane -->
         <div class="tab-pane fade" id="hits">
             <h4>Amazon Mechanical Turk HITS</h4>
-                       <table class="table table-condensed table-striped table-hover" id="hits_table">
-                         <thead>
-                             <tr>
-                             </tr>
-                         </thead>
-                         <tbody>
-                             <tr></tr>
-                         </tbody>
-                       </table>
+                {% if hits %}
+                <table class="table table-condensed table-striped table-hover" id="hits_table">
+                    <thead>
+                        <th>title</th>
+                        <th>keywords</th>
+                        <th>description</th>
+                        <th>reward</th>
+                        <th>approval delay</th>
+                        <th>approval delay</th>
+                        <th>assign duration</th>
+                    </thead>
+                    <tbody>
+                        {% for hit in hits %}
+                        <tr><td>{{ hit.title }}</td>
+                        <td>{{ hit.keywords }}</td>
+                        <td>{{ hit.description }}</td>
+                        <td>{{ hit.reward }}</td>
+                        <td>{{ hit.title }}</td>
+                        <td>{{ hit.auto_approval_delay_in_seconds }}</td>
+                        <td>{{ hit.assignment_duration_in_seconds }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+               </table>
+               {% else %}
+                <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+               {% endif %}
                 </div>
             </div>
         </div>
@@ -115,8 +132,8 @@ $(document).ready(function() {
     $('#hits_table').dataTable({
       responsive: true
     });
-    $('#delete_battery').click(function(e) {
-      return confirm("Are you sure you want to delete this battery?");
+    $('#delete_experiment').click(function(e) {
+      return confirm("This will remove the experiment from the battery, and not delete it from the application. Are you sure you want to do this?");
     });
 } );
 </script>
