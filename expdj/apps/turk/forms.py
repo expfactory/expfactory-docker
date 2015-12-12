@@ -11,7 +11,7 @@ class HITForm(ModelForm):
 
     class Meta:
         model = HIT
-        fields = ("title","description","keywords","reward","lifetime_in_seconds"
+        fields = ("title","description","keywords","reward","lifetime_in_seconds",
                   "assignment_duration_in_seconds","max_assignments",
                   "auto_approval_delay_in_seconds")
 

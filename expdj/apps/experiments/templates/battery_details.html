@@ -10,8 +10,10 @@
             {% if edit_permission %}
             <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
             {% endif %}
-            <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a> 
-            <a class='button' href='{% url 'preview_battery' battery.id %}'>Preview</a>
+            <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
+            {% if hits %}
+            <a class='button' href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+            {% endif %}
             <div class="float_right">
                 <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                 {% if delete_permission %}
@@ -54,7 +56,7 @@
         <!-- Experiments Pane -->
         <div class="tab-pane fade" id="experiments">
             <h4>Experiments</h4>
-	              {% if battery.experiments %}
+	    {% if battery.experiments.all %}
             <table class="hover" cellspacing="0" width="100%" id="experiments_table">
             <thead>
                 <tr>
@@ -80,6 +82,10 @@
           {% endfor %}
           </tbody>
           </table>
+         {% else %}
+             {% if edit_permission %}
+             <a class='button' href='{% url 'edit_battery' battery.id %}'>Add Experiments to Battery</a>
+             {% endif %}
          {% endif %}
         </div>
 

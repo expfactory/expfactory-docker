@@ -1,0 +1,83 @@
+<html>
+{% load static %}
+  <head>
+    <title>The Experiment Factory</title>
+
+    <script type="text/javascript" src="{% static "js/jquery.min.js"%}"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/underscore-min.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js""></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/d3.v3.min.js""></script>
+
+    <script type="text/javascript">
+        var uniqueId = "{{ uniqueId }}";
+    </script>
+
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/jspsych.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-text.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-instructions.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-single-stim.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-categorize.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-consent.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-survey-text.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>    
+    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>    
+    {{ experiment_load | safe }}
+
+    <link rel="stylesheet" href="{% get_media_prefix %}css/jspsych.css" />
+    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />	
+</head>
+<body>
+
+<script> 
+
+    experiment_list = []
+    experiment_names = []
+
+    /*Just to store task data as we go*/
+    var expfactory = new ExpFactory(uniqueId);
+
+    {% for experiment in experiments %}
+        experiment_list.push({"name":"{{ experiment.tag }}","time":{{ experiment.time }}})
+        experiment_names.push("{{ experiment.tag }}")
+    {% endfor %}
+
+    /* takes an experiment array and concatenates it with the array of each experiment \
+    identified in 'experiment_names' */
+    function cat_experiments(experiment_array) {
+        for (i = 0; i < experiment_names.length; i++) {
+            switch (experiment_names[i]) {
+                {{ experiment_concat | safe }}
+            }
+        }
+    }
+    
+
+    var task_list = '<ul list-text>'
+    for (i=0; i<experiment_names.length; i++) {
+        task_list += '<li>' + experiment_names[i] + '</li>'
+    }
+
+    var task_list_block = {
+        type: 'text',
+	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
+	cont_key: 13,
+    };
+
+    var experiments = []
+    experiments.push(task_list_block)
+    cat_experiments(experiments)
+
+    jsPsych.init({
+        experiment_structure: experiments,
+	    on_finish: function() {
+                console.log("Finished!");
+            },
+            on_data_update: function(data) {
+                console.log(data);
+                expfactory.recordTrialData(data);
+            }
+     });	
+   </script>
+
+  </body>
+</html>

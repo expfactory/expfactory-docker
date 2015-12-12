@@ -1,4 +1,4 @@
-from expdj.apps.turk.views import edit_hit, delete_hit, serve_hit
+from expdj.apps.turk.views import edit_hit, delete_hit, serve_hit, sync
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
 
@@ -10,4 +10,6 @@ urlpatterns = patterns('',
 
     # Turk Deployments
     url(r'^turk/(?P<hid>\d+|[A-Z]{8})',serve_hit,name='serve_hit'),
+    url(r'^sync/$',sync,name='sync_data')
+  
 )

@@ -1,4 +1,4 @@
-from expdj.apps.experiments.views import experiments_view, edit_experiment, delete_experiment, add_experiments, add_experiment, view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, edit_battery, view_battery, delete_battery, preview_battery, export_battery, remove_experiment
+from expdj.apps.experiments.views import experiments_view, edit_experiment, delete_experiment, add_experiments, add_experiment, view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, edit_battery, view_battery, delete_battery, export_battery, remove_experiment
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -21,7 +21,6 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/delete$',delete_battery,name='delete_battery'),
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/preview$',preview_battery,name='preview_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'))
 
 

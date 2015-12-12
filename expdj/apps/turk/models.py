@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import boto
-from django.contrib.contenttypes import generic
+from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
-from django.db.models import Q, DO_NOTHING
+from expdj.apps.experiments.models import Experiment, Battery
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
-from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
-from expdj.apps.experiments.models import Experiment, Battery
+from django.db.models import Q, DO_NOTHING
 from expdj.settings import DOMAIN_NAME
+from jsonfield import JSONField
+from django.db import models
+import collections
+import boto
 
 def init_connection_callback(sender, **signal_args):
     """Mechanical Turk connection signal callback
@@ -330,6 +331,11 @@ class HIT(models.Model):
     def __unicode__(self):
         return u"HIT: %s" % self.mturk_id
 
+
+class Result(models.Model):
+    taskdata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='worker')
+    experiment = models.ForeignKey(Experiment,null=False,blank=False,related_name='experiment_result')
 
 
 class Assignment(models.Model):

@@ -5,7 +5,7 @@ from expdj.apps.experiments.forms import ExperimentForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from expfactory.views import embed_experiment
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
@@ -144,13 +144,6 @@ def preview_experiment(request,eid):
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response('experiment_preview.html', context)
-
-# Preview battery
-@login_required
-def preview_battery(request,bid):
-    battery = get_battery(bid,request)
-    # TODO: write function to generate battery and preview
-    return render_to_response('battery_preview.html', {"preview_html":""})
 
 
 #### EDIT/ADD/DELETE ###################################################
