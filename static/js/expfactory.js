@@ -14,8 +14,8 @@ var ExpFactory = function(uniqueId) {
 	
 	var TaskData = Backbone.Model.extend({
 		id: uniqueId,
-        urlRoot: "/sync",
-		
+        urlRoot: "/sync",		
+
 		defaults: {
 			condition: 0,
 			counterbalance: 0,

@@ -38,7 +38,7 @@ class DisposeException(Exception):
 
 
 class Worker(models.Model):
-    worker_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     experiments = models.ManyToManyField(Experiment,related_name="experiments_completed",related_query_name="experiments", blank=True,help_text="These are experiments that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
@@ -48,8 +48,12 @@ class Worker(models.Model):
         return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
     
     class Meta:
-        ordering = ['worker_id']
+        ordering = ['id']
 
+
+def get_worker(worker_id):
+    # (<Worker: WORKER_ID: experiments[0]>, True)    
+    return Worker.objects.update_or_create(worker_id=worker_id)[0]
 
 class HIT(models.Model):
     """An Amazon Mechanical Turk Human Intelligence Task as a Django Model"""
@@ -332,14 +336,8 @@ class HIT(models.Model):
         return u"HIT: %s" % self.mturk_id
 
 
-class Result(models.Model):
-    taskdata = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
-    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='worker')
-    experiment = models.ForeignKey(Experiment,null=False,blank=False,related_name='experiment_result')
-
-
 class Assignment(models.Model):
-    """An Amazon Mechanical Turk Assignment as a Django Model"""
+    '''An Amazon Mechanical Turk Assignment'''
 
     (_SUBMITTED, _APPROVED, _REJECTED) = ("Submitted", "Approved", "Rejected")
     (SUBMITTED, APPROVED, REJECTED) = ("S", "A", "R")
@@ -353,7 +351,7 @@ class Assignment(models.Model):
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
 
     mturk_id = models.CharField("Assignment ID",max_length=255,unique=True,null=True,help_text="A unique identifier for the assignment")
-    worker_id = models.CharField(max_length=255,null=True,blank=True,help_text="The ID of the Worker who accepted the HIT")
+    worker = models.ForeignKey(Worker,null=True,blank=True,help_text="The ID of the Worker who accepted the HIT")
     hit = models.ForeignKey(HIT,null=True,blank=True,related_name='assignments')
     status = models.CharField(max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the assignment")
     auto_approval_time = models.DateTimeField(null=True,blank=True,help_text=("If results have been submitted, this is the date and time, in UTC,  the results of the assignment are considered approved automatically if they have not already been explicitly approved or rejected by the requester"))
@@ -411,20 +409,17 @@ class Assignment(models.Model):
             assignment = mturk_assignment
 
         self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
-        self.worker_id = assignment.WorkerId
+        self.worker_id = get_worker(assignment.WorkerId)
         self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
         self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
-        self.auto_approval_time = amazon_string_to_datetime(
-                assignment.AutoApprovalTime)
+        self.auto_approval_time = amazon_string_to_datetime(assignment.AutoApprovalTime)
         self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
 
         # Different response groups for query
         if hasattr(assignment, 'RejectionTime'):
-            self.rejection_time = amazon_string_to_datetime(
-                    assignment.RejectionTime)
+            self.rejection_time = amazon_string_to_datetime(assignment.RejectionTime)
         if hasattr(assignment, 'ApprovalTime'):
-            self.approval_time = amazon_string_to_datetime(
-                    assignment.ApprovalTime)
+            self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
         self.save()
 
         # Update any Key-Value Pairs that were associated with this
@@ -445,6 +440,29 @@ class Assignment(models.Model):
         return u"Assignment: %s" % self.mturk_id
     __str__ = __unicode__
 pre_init.connect(init_connection_callback, sender=Assignment)
+
+
+class Result(models.Model):
+    taskdata = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='worker')
+    assignment = models.ForeignKey(Assignment,null=False,blank=False,related_name='assignment')
+    datetime = models.CharField(max_length=128,null=True,blank=True,help_text="DateTime string returned by browser at last submission of data")
+    current_trial = models.PositiveIntegerField(null=True,blank=True,help_text=("The last (current) trial recorded as complete represented in the results."))
+    language = models.CharField(max_length=128,null=True,blank=True,help_text="language of the browser associated with the result")
+    browser = models.CharField(max_length=128,null=True,blank=True,help_text="browser of the result")
+    platform = models.CharField(max_length=128,null=True,blank=True,help_text="platform of the result")
+
+    class Meta:
+        verbose_name = "Result"
+        verbose_name_plural = "Results"
+        unique_together = ("worker","assignment")
+
+    def __repr__(self):
+        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
+
+    def __unicode__(self):
+        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
+
 
 
 class KeyValue(models.Model):
