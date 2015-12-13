@@ -53,7 +53,7 @@ class Worker(models.Model):
 
 def get_worker(worker_id):
     # (<Worker: WORKER_ID: experiments[0]>, True)    
-    return Worker.objects.update_or_create(worker_id=worker_id)[0]
+    return Worker.objects.update_or_create(id=worker_id)[0]
 
 class HIT(models.Model):
     """An Amazon Mechanical Turk Human Intelligence Task as a Django Model"""
@@ -362,6 +362,9 @@ class Assignment(models.Model):
     deadline = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, of the deadline for the assignment"))
     requester_feedback = models.TextField(null=True,blank=True,help_text=("The optional text included with the call to either approve or reject the assignment."))
 
+    def create(self):
+        init_connection_callback(sender=self.hit)
+
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""
         self.connection.approve_assignment(self.mturk_id, feedback=feedback)
@@ -439,7 +442,6 @@ class Assignment(models.Model):
     def __repr__(self):
         return u"Assignment: %s" % self.mturk_id
     __str__ = __unicode__
-pre_init.connect(init_connection_callback, sender=Assignment)
 
 
 class Result(models.Model):

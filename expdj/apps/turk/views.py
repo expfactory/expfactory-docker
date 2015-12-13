@@ -71,15 +71,13 @@ def serve_hit(request,hid):
             # Try to get some info about browser, language, etc.
             browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
-            language = "UNKNOWN" if not request.LANGUAGE_CODE else request.LANGUAGE_CODE
 
             # Initialize Assignment object, obtained from Amazon, and Result
             assignment = Assignment.objects.update_or_create(mturk_id=assignment_id,hit=hit,worker=worker) 
             result = Result.objects.update_or_create(worker=worker, # worker, assignment, are unique
                                                      assignment=assignment, # assignment has record of HIT
                                                      browser=browser,       # HIT has battery ID
-                                                     platform=platform,
-                                                     language=language)
+                                                     platform=platform)
 
             # Get experiments the worker has not yet completed
             experiments = [x for x in battery.experiments.all() if x not in worker.experiments.all()]
