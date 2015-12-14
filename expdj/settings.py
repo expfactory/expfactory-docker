@@ -37,7 +37,6 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'postgres',
-        # The following settings are not used with sqlite3:
         'USER': 'postgres',
         'HOST': 'db',        
         'PORT': '5432',      
@@ -177,6 +176,11 @@ EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
+
+DEBUG = True
+TEMPLATE_DEBUG = True
+
+DOMAIN_NAME="http://127.0.0.1"
 
 # Bogus secret key.
 try:
