@@ -18,6 +18,7 @@ from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+# MUST BE HTTPS FOR MECHANICAL TURK
 DOMAIN_NAME = "brainmeta.org"
 
 ADMINS = (('vsochat', 'vsochat@gmail.com'))
@@ -39,8 +40,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'HOST': 'db',        
-        'PORT': '5432',      
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 

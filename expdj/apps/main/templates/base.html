@@ -32,8 +32,10 @@
                                 <li><a href="{% url 'experiments' %}">Experiments</a>
                                 <ul>
                                     <li><a href="{% url 'experiments' %}">View Experiments</a></li>
-                                    <li><a href="#">Update Experiments</a></li>
-                                    <li><a href="{% url 'add_experiment' %}">Add Experiments</a></li>
+                                    {% if request.user.is_superuser %}
+                                        <li><a href="#">Update Experiments</a></li>
+                                        <li><a href="{% url 'add_experiment' %}">Add Experiments</a></li>
+                                    {% endif %}
                                 </ul>
                                 </li>
                                 <li><a href="#">Results</a></li>
@@ -55,18 +57,27 @@
 	                            </ul>
 	                        </li>
 	                        {% else %}
-                                <li><a href="{% url 'login' %}">Log in</a></li>
-                                {% endif %}
+                          <li class="dropdown">
+                              <a href="{% url 'login' %}" class="dropdown-toggle" data-toggle="dropdown">
+                                  Log in
+                                  <b class="caret"></b>
+                              </a>
+                              <ul class="dropdown-menu">
+                                  <li><a href="{% url 'login' %}">Log in</a></li>
+                                  <li><a href="{% url 'create_user' %}">Register</a></li>
+                              </ul>
+                          </li>
+                              {% endif %}
                             </ul>
                         </nav>
                     </div>
-               </div> 
+               </div>
                {% block hero %}{% endblock %}
                <div class="wrapper">
                    <section class="container">
                        {% block content %}{% endblock %}
                    </section>
-               </div>                     
+               </div>
 
                {% block footer %}
                <div id="footer-wrapper">
@@ -76,7 +87,7 @@
                    </div>
                    <div id="copyright" class="container">
                        <ul class="menu">
-                           <li>&copy; Poldracklab. All rights reserved.</li> - <a href="http://www.github.com/expfactory"><li class="icon fa-github"></li></a>  
+                           <li>&copy; Poldracklab. All rights reserved.</li> - <a href="http://www.github.com/expfactory"><li class="icon fa-github"></li></a>
                        </ul>
                    </div>
                </div>
@@ -94,7 +105,12 @@
         <script src="{% static "js/datatables.min.js"%}"></script>
         <script src="{% static "js/jquery.dataTables.min.js"%}"></script>
         {% block scripts %}{% endblock %}
-
+        <script>
+            // Will toggle bootstrap tooltips on all pages
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            })
+        </script>
     </body>
     {% endblock %}
 </html>

@@ -8,8 +8,8 @@ import os
 
 from django.conf import settings
 
-PRODUCTION_HOST = u'mturk.com/mturk/externalSubmit'
-SANDBOX_HOST = u'workersandbox.mturk.com/mturk/externalSubmit'
+PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
+SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'
 
 # TODO: this will need to be where our app is hosted
 PRODUCTION_WORKER_URL = u'https://www.mturk.com'
@@ -51,7 +51,7 @@ def get_host():
         # Determine if we are in debug mode, set host appropriately
         if "debug" in settings.TURK:
             if settings.TURK["debug"] == 1:
-                if "sandbox_host" in settings.TURK:                
+                if "sandbox_host" in settings.TURK:
                     host = settings.TURK["sandbox_host"]
             else:
                 if 'host' in settings.TURK:
@@ -105,13 +105,6 @@ def get_connection(aws_access_key_id,aws_secret_access_key):
     The Django settings file should have either the TURK or
     TURK_CONFIG_FILE parameters defined (and not set to None). If both
     are defined (and not None), the TURK parameter takes precedent.
-    However, we encourage the use of the TURK_CONFIG_FILE parameter
-    instead -- as the settings.py file is often checked into a
-    repository.  The connection parameters used by Turk, especially
-    the 'aws_secret_access_key' parameter, should be kept private.
-    Thus, the TURK_CONFIG_FILE parameter indicates a file that should
-    not be checked into a repository. Care should be taken that this
-    file is not readable by other users/processes on the system.
 
     If the TURK parameter is used in the settings file, it will have a
     syntax similar to the following:
@@ -129,14 +122,6 @@ def get_connection(aws_access_key_id,aws_secret_access_key):
     omitted, production is used.  Debug is the level of debug
     information printed by the boto library.
 
-    If the TURK_CONFIG_FILE Django settings parameter is used, it
-    should point to a file name that is parsable by ConfigParser. An
-    example of these contents follow:
-
-    [Connection]
-    host: 'mturk.com/mturk/externalSubmit'
-    app_url: 'brainmeta.org'
-    debug: 1
     """
 
     host = get_host()
@@ -145,10 +130,6 @@ def get_connection(aws_access_key_id,aws_secret_access_key):
     if hasattr(settings, 'TURK') and settings.TURK is not None:
         if 'debug' in settings.TURK:
             debug = settings.TURK['debug']
-    elif hasattr(settings, 'TURK_CONFIG_FILE') and\
-                          settings.TURK_CONFIG_FILE is not None:
-        config = ConfigParser.ConfigParser()
-        config.read(settings.TURK_CONFIG_FILE)
 
         if config.has_option('Connection', 'debug'):
             debug = config.get('Connection', 'debug')
@@ -171,46 +152,13 @@ def get_app_url():
 def get_check_questions():
     return [{"question":"I am currently completing an Amazon Mechanical Turk HIT.",
              "answers":["Yes","No"],
-             "correct_index":0}, 
+             "correct_index":0},
             {"question":"The season that is occurring in the month of December is:",
              "answers":["Spring","Summer","Winter","Fall"],
              "correct_index":2},
             {"question":"When I subtract three from eight (8-3) the answer is:",
              "answers":[1,2,3,4,5,6,7,8,9,10,11],
-             "correct_index":4}] 
-
-
-def make_hit(title,description,keywords,amount=0.0,frame_height=800,number_hits=60):
-    """make_hit
-    make a set of hits to send to Amazon
-    """
-
-    #TODO: the params for aws will come from associated battery 
-    connection = get_connection()
-    url = get_app_url()
-
-    if isinstance(keywords,str):
-        keywords = [keywords]
-
-    questionform = ExternalQuestion(url, frame_height)
-
-    for _ in xrange(60):
-        create_hit_result = connection.create_hit(
-            title=title,
-            description=description,
-            keywords=keywords,
-            max_assignments=1,
-            question=questionform,
-            reward=Price(amount=amount),
-            response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
-        )
-
-
-def save_worker(worker_id):
-    '''save_worker
-    We need to keep track of worker's we've already seen
-    '''
-    return "WRITEME"
+             "correct_index":4}]
 
 
 # Selection Algorithms ###############################################################################
@@ -226,7 +174,7 @@ def select_experiments_time(maximum_time_allowed,experiments):
     total_time = 0
     while (total_time < maximum_time_allowed) and len(experiments)>0:
         # Randomly select an experiment
-        experiment = experiments.pop(choice(range(len(experiments)))) 
+        experiment = experiments.pop(choice(range(len(experiments))))
         if (total_time + experiment.time*60.0) <= total_time:
             task_list.append(experiment)
     return task_list

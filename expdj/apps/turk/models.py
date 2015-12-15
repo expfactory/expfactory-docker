@@ -9,6 +9,7 @@ from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
 from expdj.settings import DOMAIN_NAME
+from boto.mturk.price import Price
 from jsonfield import JSONField
 from django.db import models
 import collections
@@ -248,22 +249,33 @@ class HIT(models.Model):
         self.connection.set_reviewing(self.mturk_id, revert=revert)
         self.update()
 
-    def create(self):
+    def generate_connection(self):
         aws_secret_key_id = self.battery.aws_secret_access_key_id
         aws_access_key_id = self.battery.aws_access_key_id
         self.connection = get_connection(aws_access_key_id,aws_secret_key_id)
         self.save()
 
-    def send_hits(self,N=100):
+    def has_connection(self):
+        if "turk.HIT.connection" in [x.__str__() for x in self._meta.fields]:
+            return True
+        return False
 
+    def create(self):
+        if not self.has_connection():
+            self.generate_connection()
+        self.send_hit()
+
+    def send_hit(self):
+
+        if not self.has_connection():
+            self.generate_connection()
+
+        # Domain name must be https
         url = "%s/turk/%s" %(DOMAIN_NAME,self.id)
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
 
-        for _ in xrange(N):
-            #TODO: we may want to save these create_hit_result somewhere...
-            # When battery is ready and working, test and see what comes out
-            create_hit_result = self.connection.create_hit(
+        result = self.connection.create_hit(
                 title=self.title,
                 description=self.description,
                 keywords=self.keywords,
@@ -271,8 +283,13 @@ class HIT(models.Model):
                 question=questionform,
                 reward=Price(amount=self.reward),
                 response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
-             )
-
+        )[0]
+        # Update our hit object with the aws HIT
+        self.mturk_id = result.HITId
+        self.save()
+        
+        # When we generate the hit, we won't have any assignments to update
+        self.update(mturk_hit=result)
 
     def update(self, mturk_hit=None, do_update_assignments=False):
         """Update self with Mechanical Turk API data
@@ -301,14 +318,11 @@ class HIT(models.Model):
         self.hit_type_id = hit.HITTypeId
         self.keywords = hit.Keywords
         if hasattr(self, 'NumberOfAssignmentsCompleted'):
-            self.number_of_assignments_completed =\
-                    hit.NumberOfAssignmentsCompleted
+            self.number_of_assignments_completed = hit.NumberOfAssignmentsCompleted
         if hasattr(self, 'NumberOfAssignmentsAvailable'):
-            self.number_of_assignments_available =\
-                    hit.NumberOfAssignmentsAvailable
+            self.number_of_assignments_available = hit.NumberOfAssignmentsAvailable
         if hasattr(self, 'NumberOfAssignmentsPending'):
-            self.number_of_assignments_pending =\
-                    hit.NumberOfAssignmentsPending
+            self.number_of_assignments_pending = hit.NumberOfAssignmentsPending
         #'CurrencyCode', 'Reward', 'Expiration', 'expired']
 
         self.save()

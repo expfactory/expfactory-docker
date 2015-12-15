@@ -10,7 +10,6 @@
             {% if edit_permission %}
             <a class='button' href='{% url 'edit_experiment' experiment.tag %}'>Edit Experiment</a>
             {% endif %}
-            <a class='button' href='{% url 'export_experiment' experiment.tag %}'>Export Results</a> 
             <a class='button' target="_blank" href='{% url 'preview_experiment' experiment.tag %}'>Preview</a>
             {% if delete_permission %}
             <div class="float_right">

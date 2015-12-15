@@ -8,14 +8,20 @@
     <div class="col-lg-12">
         <div>
             {% if edit_permission %}
-            <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
+                <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
+                <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
+                {% if hits %}
+                    <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
+                <a href='{% url 'serve_hit' hits.0.id %}' target="_blank">preview</a> it.</div>
             {% endif %}
-            <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
-            {% if hits %}
-            <a class='button' href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
-            {% endif %}
+
             <div class="float_right">
+                {% if edit_permission %}
                 <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                {% endif %}
                 {% if delete_permission %}
                 <a class='button' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
                 {% endif %}
@@ -35,7 +41,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade in active" id="details">
                     <h4>Battery Details</h4>
- 
+
     <table class="table table-condensed table-striped table-hover" id="details-table">
       <thead>
         <tr>
@@ -62,9 +68,6 @@
                 <tr>
                     <th>Name</th>
                     <th>Cognitive Atlas Task</th>
-                    {% if delete_permission %}
-                    <th></th>
-                    {% endif %}
                </tr>
            </thead>
            <tbody>
@@ -93,36 +96,50 @@
         <div class="tab-pane fade" id="hits">
             <h4>Amazon Mechanical Turk HITS</h4>
                 {% if hits %}
-                <table class="table table-condensed table-striped table-hover" id="hits_table">
-                    <thead>
-                        <th>title</th>
-                        <th>keywords</th>
-                        <th>description</th>
-                        <th>reward</th>
-                        <th>approval delay</th>
-                        <th>approval delay</th>
-                        <th>assign duration</th>
-                    </thead>
-                    <tbody>
-                        {% for hit in hits %}
-                        <tr><td>{{ hit.title }}</td>
-                        <td>{{ hit.keywords }}</td>
-                        <td>{{ hit.description }}</td>
-                        <td>{{ hit.reward }}</td>
-                        <td>{{ hit.title }}</td>
-                        <td>{{ hit.auto_approval_delay_in_seconds }}</td>
-                        <td>{{ hit.assignment_duration_in_seconds }}</td></tr>
-                        {% endfor %}
-                    </tbody>
-               </table>
-               {% else %}
-                <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
-               {% endif %}
+                {% for hit in hits %}
+                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="heading{{ hit.id }}" style="height:50px">
+                            <h4 class="panel-title">
+                                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#hitdetails" aria-expanded="true" aria-controls="collection">
+                                    <div class="row">
+                                        <div class="col-md-10">
+                                            {{ hit.title }}
+                                        </div>
+                                    </div>
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="hitdetails" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading{{ hit.id }}">
+                               <div class="panel-body">
+                                 <table class="table table-condensed table-striped table-hover" id="hits_table">
+                                     <thead>
+                                         <th>title</th>
+                                         <th>keywords</th>
+                                         <th>description</th>
+                                         <th>reward</th>
+                                     </thead>
+                                     <tbody>
+                                         <tr><td>{{ hit.title }}</td>
+                                         <td>{{ hit.keywords }}</td>
+                                         <td>{{ hit.description }}</td>
+                                         <td>{{ hit.reward }}</td></tr>
+                                     </tbody>
+                                </table>
+                               </div>
+                        </div><!--end tab thing-->
+                      </div><!-- panel-->
+                   </div><!--group-->
+                   {% endfor %}
+                   {% else %}
+                    <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                   {% endif %}
+                   {% if edit_permission %}
+                   <a class='button' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
+                   {% endif %}
                 </div>
             </div>
         </div>
-
-
    </div>
 </div>
 {% endblock %}
@@ -140,6 +157,9 @@ $(document).ready(function() {
     });
     $('#delete_experiment').click(function(e) {
       return confirm("This will remove the experiment from the battery, and not delete it from the application. Are you sure you want to do this?");
+    });
+    $('#delete_hit').click(function(e) {
+      return confirm("Are you sure you want to delete this hit? This operation cannot be undone!");
     });
 } );
 </script>
