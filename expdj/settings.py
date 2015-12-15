@@ -18,6 +18,7 @@ from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DOMAIN_NAME = "brainmeta.org"
 
 ADMINS = (('vsochat', 'vsochat@gmail.com'))
 
@@ -133,10 +134,10 @@ ANONYMOUS_USER_ID = -1 # django-guardian
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
-STATIC_ROOT = '/var/www/assets/'
-STATIC_URL = '/assets/'
 MEDIA_ROOT = '/var/www/static'
-MEDIA_URL  = '/static/'
+MEDIA_URL = '/static/'
+STATIC_ROOT = '/var/www/assets'
+STATIC_URL = '/assets/'
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -176,11 +177,6 @@ EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
-
-DEBUG = True
-TEMPLATE_DEBUG = True
-
-DOMAIN_NAME="http://127.0.0.1"
 
 # Bogus secret key.
 try:

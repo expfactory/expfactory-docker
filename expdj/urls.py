@@ -15,8 +15,10 @@ urlpatterns = patterns('',
                        url(r'^', include('expdj.apps.experiments.urls')),
                        url(r'^', include('expdj.apps.turk.urls')),
                        url(r'^accounts/', include('expdj.apps.users.urls')))
+
 if settings.DEBUG:
-    urlpatterns += patterns('',
+    urlpatterns += patterns(
+        '',
         url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
-            'document_root': os.path.join(settings.STATIC_ROOT,'images')}),
+            'document_root': settings.STATIC_ROOT}),
     )

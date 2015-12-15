@@ -21,7 +21,6 @@ RUN pip install django-taggit
 RUN pip install django-form-utils
 RUN pip install hamlpy
 RUN pip install django-crispy-forms
-RUN pip install django-coffeescript
 RUN pip install South
 RUN pip install django-taggit-templatetags
 RUN pip install django-dirtyfields
@@ -54,10 +53,6 @@ RUN pip install 'django-hstore==1.3.5'
 RUN pip install cognitiveatlas
 RUN pip install django-datatables-view
 RUN pip install 'django-oauth-toolkit==0.9.0'
-
-RUN apt-get install -y npm
-RUN ln -s /usr/bin/nodejs /usr/bin/node
-RUN npm install -g coffee-script
 
 RUN mkdir /code
 WORKDIR /code
