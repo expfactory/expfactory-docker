@@ -216,11 +216,11 @@ def delete_experiment(request, eid):
     experiment = get_experiment(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
-        static_files_dir = os.path.join(media_dir,experiment[0]["tag"])
+        static_files_dir = os.path.join(media_dir,"experiments",experiment.tag)
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task
-        task = exp.cognitive_atlas_task
-        if exp.cognitive_atlas_task.experiment_set.count() == 1:
+        task = experiment.cognitive_atlas_task
+        if experiment.cognitive_atlas_task.experiment_set.count() == 1:
             # We might want to delete concepts too? Ok for now.
             task.delete() 
         experiment.delete()

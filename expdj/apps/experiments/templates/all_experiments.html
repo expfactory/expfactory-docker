@@ -41,7 +41,7 @@
                       {% if delete_permission %}
                       <a class="btn btn-danger" title="delete" href="{% url 'delete_experiment' experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
                    {% endif %}
-                      <a class="btn btn-default" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
+                      <a class="btn btn-default" target="_blank" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
                    </td>
                </tr>
           {% endfor %}

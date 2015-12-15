@@ -4,6 +4,7 @@
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from django.contrib.contenttypes.models import ContentType
 from expdj.apps.experiments.models import Experiment, Battery
+from boto.mturk.question import ExternalQuestion
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
@@ -43,16 +44,16 @@ class Worker(models.Model):
 
     def __str__(self):
         return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
-    
+
     def __unicode__(self):
         return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
-    
+
     class Meta:
         ordering = ['id']
 
 
 def get_worker(worker_id):
-    # (<Worker: WORKER_ID: experiments[0]>, True)    
+    # (<Worker: WORKER_ID: experiments[0]>, True)
     return Worker.objects.update_or_create(id=worker_id)[0]
 
 class HIT(models.Model):
@@ -60,7 +61,7 @@ class HIT(models.Model):
 
     def __str__(self):
         return "%s: %s" %(self.title,self.battery)
-    
+
     def __unicode__(self):
         return "%s: %s" %(self.title,self.battery)
 
