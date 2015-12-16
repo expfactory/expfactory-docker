@@ -130,12 +130,12 @@
                         </div><!--end tab thing-->
                       </div><!-- panel-->
                    </div><!--group-->
+                   {% if edit_permission %}
+                   <a class='button' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
+                   {% endif %}
                    {% endfor %}
                    {% else %}
                     <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
-                   {% endif %}
-                   {% if edit_permission %}
-                   <a class='button' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
                    {% endif %}
                 </div>
             </div>
