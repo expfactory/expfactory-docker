@@ -31,10 +31,10 @@
                             <ul>
                                 <li><a href="{% url 'experiments' %}">Experiments</a>
                                 <ul>
-                                    <li><a href="{% url 'experiments' %}">View Experiments</a></li>
+                                    <li><a href="{% url 'experiments' %}">Available Experiments</a></li>
                                     {% if request.user.is_superuser %}
-                                        <li><a href="#">Update Experiments</a></li>
-                                        <li><a href="{% url 'add_experiment' %}">Add Experiments</a></li>
+                                        <li><a href="#">Update Experiment Templates</a></li>
+                                        <li><a href="{% url 'add_experiments_template' %}">Add Experiment Templates</a></li>
                                     {% endif %}
                                 </ul>
                                 </li>
@@ -51,6 +51,9 @@
                                 <li class="break"><a href="{% url 'batteries' %}">Batteries</a>
                                     <ul>
                                         <li><a href="{% url 'batteries' %}">View Batteries</a></li>
+                                        {% if request.user.is_authenticated %}
+                                        <li><a href="{% url 'my_batteries' %}">My Batteries</a></li>
+                                        {% endif %}
                                         <li><a href="{% url 'new_battery' %}">New Battery</a></li>
                                     </ul>
                                 </li>

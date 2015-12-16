@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.experiments.models import Experiment, Battery
+from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery
 from expdj.apps.turk.models import HIT
-from expdj.apps.experiments.forms import ExperimentForm, BatteryForm
+from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from expfactory.views import embed_experiment
@@ -46,18 +46,28 @@ def check_battery_edit_permission(request,battery):
     return False
 
 def is_question_editor(request):
-    if not request.user.is_anonymous():   
+    if not request.user.is_anonymous():
         if request.user.is_superuser:
             return True
-    return False           
+    return False
 
 def is_behavior_editor(request):
     if request.user.is_superuser:
         return True
-    return False           
+    return False
 
 
 #### GETS #############################################################
+
+# get experiment template
+def get_experiment_template(eid,request,mode=None):
+    keyargs = {'pk':eid}
+    try:
+        experiment = ExperimentTemplate.objects.get(**keyargs)
+    except ExperimentTemplate.DoesNotExist:
+        raise Http404
+    else:
+        return experiment
 
 # get experiment
 def get_experiment(eid,request,mode=None):
@@ -69,8 +79,7 @@ def get_experiment(eid,request,mode=None):
     else:
         return experiment
 
-
-# get experiment
+# get battery with experiments
 def get_battery(bid,request,mode=None):
     keyargs = {'pk':bid}
     try:
@@ -85,24 +94,36 @@ def get_battery(bid,request,mode=None):
 
 # View a single experiment
 @login_required
-def view_experiment(request, eid):
-    experiment = get_experiment(eid,request)
-    
+def view_experiment(request, eid, bid=None):
+
     # Determine permissions for edit and deletion
     edit_permission = check_experiment_edit_permission(request)
-    delete_permission = check_experiment_edit_permission(request)
+    delete_permission = edit_permission
+
+    # View an experiment template details
+    if not bid:
+        experiment = get_experiment_template(eid,request)
+        template = 'experiment_template_details.html'
+
+    # View an experiment associated with a battery
+    else:
+        experiment = get_experiment(eid,request)
+        battery = get_battery(bid,request)
+        edit_permission = check_battery_edit_permission(request,battery)
+        delete_permission = edit_permission
+        template = 'experiment_details.html'
 
     context = {'experiment': experiment,
                'edit_permission':edit_permission,
                'delete_permission':delete_permission}
 
-    return render_to_response('experiment_details.html', context)
+    return render_to_response(template, context)
 
 # View a battery
 @login_required
 def view_battery(request, bid):
     battery = get_battery(bid,request)
-    
+
     # Get associated HITS
     hits = HIT.objects.filter(battery=battery)
 
@@ -117,10 +138,11 @@ def view_battery(request, bid):
 
     return render(request,'battery_details.html', context)
 
+
 # All experiments
 @login_required
 def experiments_view(request):
-    experiments = Experiment.objects.all()
+    experiments = ExperimentTemplate.objects.all()
     delete_permission = check_experiment_edit_permission(request)
     context = {'experiments': experiments,
                'delete_permission':delete_permission}
@@ -129,8 +151,11 @@ def experiments_view(request):
 
 # All batteries
 @login_required
-def batteries_view(request):
-    batteries = Battery.objects.all()
+def batteries_view(request,uid=None):
+    if not uid:
+        batteries = Battery.objects.all()
+    else:
+        batteries = Battery.objects.filter(user_id=uid)
     context = {'batteries': batteries}
     return render(request, 'all_batteries.html', context)
 
@@ -140,7 +165,7 @@ def batteries_view(request):
 @login_required
 def preview_experiment(request,eid):
     experiment = get_experiment(eid,request)
-    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)    
+    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response('experiment_preview.html', context)
@@ -148,23 +173,23 @@ def preview_experiment(request,eid):
 
 #### EDIT/ADD/DELETE ###################################################
 
-# Experiments ----------------------------------------------------------
+# ExperimentTemplates ----------------------------------------------------------
 
 @login_required
-def add_experiment(request):
+def add_experiments_template(request):
     '''add_experiment
     View for presenting available experiments to user (from expfactory-experiements repo)
     '''
     experiment_selection = get_experiment_selection()
-    current_experiments = [x.tag for x in Experiment.objects.all()]
+    current_experiments = [x.tag for x in ExperimentTemplate.objects.all()]
     experiments = [e for e in experiment_selection if e["tag"] not in current_experiments]
     context = {"newexperiments": experiments,
                "experiments": current_experiments}
     return render(request, "add_experiment.html", context)
 
 @login_required
-def add_experiments(request):
-    '''add_experiments
+def save_experiments_template(request):
+    '''save_experiments template
     view for actually adding new experiments (files, etc) to application and database
     '''
     newexperiments = request.POST.keys()
@@ -175,17 +200,16 @@ def add_experiments(request):
         message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
     else:
         message = "Experiments installed successfully."
-    experiments = Experiment.objects.all()
+    experiments = ExperimentTemplate.objects.all()
     context = {"experiments":experiments,
                "message":message}
     return render(request, "all_experiments.html", context)
 
 @login_required
-def edit_experiment(request,eid=None):
+def edit_experiment_template(request,eid=None):
     '''edit_experiment
     view for editing a single experiment. Likely only will be useful to change publication status
     '''
-
     # Editing an existing experiment
     if eid:
         experiment = get_experiment(eid,request)
@@ -193,7 +217,7 @@ def edit_experiment(request,eid=None):
         return HttpResponseRedirect("add_experiment")
 
     if request.method == "POST":
-        form = ExperimentForm(request.POST, instance=experiment)
+        form = ExperimentTemplateForm(request.POST, instance=experiment)
 
         if form.is_valid():
             experiment = form.save(commit=False)
@@ -204,7 +228,7 @@ def edit_experiment(request,eid=None):
             }
             return HttpResponseRedirect(experiment.get_absolute_url())
     else:
-        form = ExperimentForm(instance=experiment)
+        form = ExperimentTemplateForm(instance=experiment)
 
     context = {"form": form,
                "experiment":experiment}
@@ -212,7 +236,7 @@ def edit_experiment(request,eid=None):
 
 # Delete an experiment
 @login_required
-def delete_experiment(request, eid):
+def delete_experiment_template(request, eid):
     experiment = get_experiment(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
@@ -222,10 +246,52 @@ def delete_experiment(request, eid):
         task = experiment.cognitive_atlas_task
         if experiment.cognitive_atlas_task.experiment_set.count() == 1:
             # We might want to delete concepts too? Ok for now.
-            task.delete() 
+            task.delete()
         experiment.delete()
     return redirect('experiments')
 
+
+# Experiments ----------------------------------------------------------
+
+@login_required
+def add_experiment(request,bid,eid=None):
+    '''add_experiment
+    view to select experiment to add to battery
+    '''
+    # Editing an existing experiment already added
+    if eid:
+        experiment = get_experiment(eid,request)
+    else:
+        return HttpResponseRedirect("add_experiment")
+
+    if request.method == "POST":
+        form = ExperimentTemplateForm(request.POST, instance=experiment)
+
+        if form.is_valid():
+            experiment = form.save(commit=False)
+            experiment.save()
+
+            context = {
+                'experiment': experiment.name,
+            }
+            return HttpResponseRedirect(experiment.get_absolute_url())
+    else:
+        form = ExperimentTemplateForm(instance=experiment)
+
+    context = {"form": form,
+               "experiment":experiment}
+    return render(request, "edit_experiment.html", context)
+
+    return render(request, "add_experiment_to_battery.html", context)
+
+@login_required
+def save_experiment(request,bid):
+    '''save_experiment
+    save experiment and custom details for battery
+    '''
+    battery = get_battery(bid,request)
+    context = {"battery":battery}
+    return render(request, "add_experiment.html", context)
 
 @login_required
 def remove_experiment(request,bid,eid):
@@ -234,7 +300,7 @@ def remove_experiment(request,bid,eid):
    '''
    battery = get_battery(bid,request)
    if check_battery_edit_permission(request,battery):
-       battery.experiments = [x for x in battery.experiments.all() if x.tag != eid]    
+       battery.experiments = [x for x in battery.experiments.all() if x.tag != eid]
    return HttpResponseRedirect(battery.get_absolute_url())
 
 
@@ -253,7 +319,7 @@ def edit_battery(request, bid=None):
     if bid:
         battery = get_battery(bid,request)
         is_owner = battery.owner == request.user
-        header_text = battery.name 
+        header_text = battery.name
         if not request.user.has_perm('battery.edit_battery', battery):
             return HttpResponseForbidden()
     else:
@@ -281,7 +347,7 @@ def edit_battery(request, bid=None):
         else:
             form = BatteryForm(instance=battery)
 
-    context = {"form": form, 
+    context = {"form": form,
                "is_owner": is_owner,
                "header_text":header_text}
 
@@ -314,7 +380,7 @@ def export_experiment(request,eid):
     experiment = get_experiment(eid,request)
     output_name = "%s.tsv" %(experiment.tag)
     return export_experiments([experiment],output_name)
-   
+
 # General function to export some number of experiments
 @login_required
 def export_experiments(experiments,output_name):
@@ -324,7 +390,7 @@ def export_experiments(experiments,output_name):
     writer = csv.writer(response,delimiter='\t')
 
     #TODO: update this for exports
-    # Write header 
+    # Write header
     writer.writerow(['experiment_name',
                      'experiment_tag',
                      'experiment_cognitive_atlas_task',

@@ -8,12 +8,12 @@
     <div class="col-lg-12">
         <div>
             {% if edit_permission %}
-            <a class='button' href='{% url 'edit_experiment' experiment.tag %}'>Edit Experiment</a>
+            <a class='button' href='{% url 'edit_experiment_template' experiment.tag %}'>Edit Experiment</a>
             {% endif %}
             <a class='button' target="_blank" href='{% url 'preview_experiment' experiment.tag %}'>Preview</a>
             {% if delete_permission %}
             <div class="float_right">
-                <a class='button' href='{% url 'delete_experiment' experiment.tag %}' id="delete_experiment"> Delete Experiment</a>
+                <a class='button' href='{% url 'delete_experiment_template' experiment.tag %}' id="delete_experiment"> Delete Experiment</a>
             </div>
             {% endif %}
       </div>

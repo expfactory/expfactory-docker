@@ -9,13 +9,13 @@ class CognitiveAtlasConcept(models.Model):
     name = models.CharField(max_length=1000, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     definition = models.CharField(max_length=5000, null=False, blank=False,default=None)
-    
+
     def __str__(self):
         return self.name
-    
+
     def __unicode__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['name']
         app_label = 'experiments'
@@ -24,19 +24,19 @@ class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     concepts = models.ManyToManyField(CognitiveAtlasConcept,related_name="concepts",related_query_name="concepts", blank=True,help_text="These are concepts associated with the task.",verbose_name="cognitive atlas associated concepts")
-    
+
     def __str__(self):
         return self.name
-    
+
     def __unicode__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['name']
 
 
-class Experiment(models.Model):
-    '''expfactory-experiments
+class ExperimentTemplate(models.Model):
+    '''expfactory-experiments, to be chosen and customized by researchers into Experiments, and deployed in batteries
     fields correspond with a subset in the config.json
     '''
     tag = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
@@ -49,16 +49,27 @@ class Experiment(models.Model):
     reference = models.CharField(max_length=500,help_text="reference or paper associated with the experiment",unique=False)
 
     def __str__(self):
-        return self.tag    
+        return self.tag
 
     # Get the url for an experiment
     def get_absolute_url(self):
         return_cid = self.tag
         return reverse('experiment_details', args=[str(return_cid)])
 
+class Experiment(models.Model):
+    template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
+    #catch_variable = models.CharField(max_length=250, unique = False, null=True, verbose_name="catch variable",help_text="the variable")
+    #catch_function = models.CharField(max_length=250, unique = False, null=True, verbose_name="catch function",help_text="")
+    #catch_threshold = models.FloatField(null=True, blank=True)
+    include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
+                                                (True, 'includes bonus')),
+                                                default=False,verbose_name="does not include bonus")
+    include_catch = models.BooleanField(choices=((False, 'does not include catch'),
+                                            (True, 'includes catch')),
+                                            default=False,verbose_name="does not include catch")
 
 class Battery(models.Model):
-    '''A battery is a collection of experiments'''
+    '''A battery is a collection of experiment templates'''
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
@@ -84,7 +95,7 @@ class Battery(models.Model):
         super(Battery, self).save(*args, **kwargs)
         assign_perm('del_battery', self.owner, self)
         assign_perm('edit_battery', self.owner, self)
-        
+
     class Meta:
         app_label = 'experiments'
         permissions = (
@@ -96,11 +107,11 @@ def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
         current_contributors = set([user.pk for user in get_users_with_perms(instance)])
         new_contributors = set([user.pk for user in [instance.owner, ] + list(instance.contributors.all())])
-         
+
         for contributor in list(new_contributors - current_contributors):
             contributor = User.objects.get(pk=contributor)
             assign_perm('edit_battery', contributor, instance)
-                
+
         for contributor in (current_contributors - new_contributors):
             contributor = User.objects.get(pk=contributor)
             remove_perm('edit_battery', contributor, instance)
