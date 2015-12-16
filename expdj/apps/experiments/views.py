@@ -176,8 +176,8 @@ def preview_experiment(request,eid):
 # ExperimentTemplates ----------------------------------------------------------
 
 @login_required
-def add_experiments_template(request):
-    '''add_experiment
+def add_experiment_template(request):
+    '''add_experiment_template
     View for presenting available experiments to user (from expfactory-experiements repo)
     '''
     experiment_selection = get_experiment_selection()
@@ -185,10 +185,10 @@ def add_experiments_template(request):
     experiments = [e for e in experiment_selection if e["tag"] not in current_experiments]
     context = {"newexperiments": experiments,
                "experiments": current_experiments}
-    return render(request, "add_experiment.html", context)
+    return render(request, "add_experiment_template.html", context)
 
 @login_required
-def save_experiments_template(request):
+def save_experiment_template(request):
     '''save_experiments template
     view for actually adding new experiments (files, etc) to application and database
     '''
@@ -206,7 +206,7 @@ def save_experiments_template(request):
     return render(request, "all_experiments.html", context)
 
 @login_required
-def edit_experiment(request,eid=None):
+def edit_experiment_template(request,eid=None):
     '''edit_experiment
     view for editing a single experiment. Likely only will be useful to change publication status
     '''
@@ -214,7 +214,7 @@ def edit_experiment(request,eid=None):
     if eid:
         experiment = get_experiment_template(eid,request)
     else:
-        return HttpResponseRedirect("add_experiment")
+        return HttpResponseRedirect("add_experiment_template")
 
     if request.method == "POST":
         form = ExperimentTemplateForm(request.POST, instance=experiment)
@@ -232,7 +232,7 @@ def edit_experiment(request,eid=None):
 
     context = {"form": form,
                "experiment":experiment}
-    return render(request, "edit_experiment.html", context)
+    return render(request, "edit_experiment_template.html", context)
 
 # Delete an experiment
 @login_required
@@ -250,40 +250,12 @@ def delete_experiment_template(request, eid):
         experiment.delete()
     return redirect('experiments')
 
-@login_required
-def add_experiments_template(request,eid=None):
-    '''add_experiment
-    view to select experiments to add to application
-    '''
-    # Editing an existing experiment already added
-    if eid:
-        experiment = get_experiment(eid,request)
-    else:
-        return HttpResponseRedirect("add_experiment")
-
-    if request.method == "POST":
-        form = ExperimentTemplateForm(request.POST, instance=experiment)
-
-        if form.is_valid():
-            experiment = form.save(commit=False)
-            experiment.save()
-
-            context = {
-                'experiment': experiment.name,
-            }
-            return HttpResponseRedirect(experiment.get_absolute_url())
-    else:
-        form = ExperimentTemplateForm(instance=experiment)
-
-    context = {"form": form,
-               "experiment":experiment}
-    return render(request, "edit_experiment.html", context)
 
 # Experiments ----------------------------------------------------------
 
 @login_required
-def add_experiment(request,bid,eid=None):
-    '''add_experiment
+def edit_experiment(request,bid,eid=None):
+    '''edit_experiment
     view to select experiments to add to battery
     '''
     battery = get_battery(bid,request)
@@ -308,7 +280,7 @@ def add_experiment(request,bid,eid=None):
 
     context = {"form": form,
                "experiment":experiment}
-    return render(request, "edit_experiment_battery.html", context)
+    return render(request, "edit_experiment.html", context)
 
 @login_required
 def save_experiment(request,bid):
@@ -318,6 +290,16 @@ def save_experiment(request,bid):
     battery = get_battery(bid,request)
     context = {"battery":battery}
     return render(request, "add_experiment.html", context)
+
+@login_required
+def add_experiment(request):
+    '''add_experiment_template
+    View for presenting available experiments to user to install to battery
+    '''
+    experiments = ExperimentTemplate.objects.all()
+    context = {"experiments": experiments}
+    return render(request, "add_experiment.html", context)
+
 
 @login_required
 def remove_experiment(request,bid,eid):

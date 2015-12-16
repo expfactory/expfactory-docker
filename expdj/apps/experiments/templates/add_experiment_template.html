@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block head %}
+{% endblock %}
+{% block content %}
+<div class="row 150%">
+
+    {% include "sidebar.html" %}
+
+    <div class="8u 12u(narrower) important(narrower)">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+                <h2>Add Experiments</h2>
+                {% if newexperiments %}
+                <p>The following experiments can be added to the application:</p>
+                {% else %}
+                <p>There are no new experiments to install.</p>
+                {% endif %}
+            </header>
+            {% if newexperiments %}
+            <form method="POST" action="{% url 'add_experiments' %}">
+                {% for newexperiment in newexperiments %}
+                <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
+                {% endfor %}
+                {% csrf_token %}
+                <input class="submit" type="submit" value="Add">
+            </form>
+         {% endif %}
+        </article>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#assessments-table').dataTable({
+      responsive: true
+    });
+} );
+</script>
+{% endblock %}
