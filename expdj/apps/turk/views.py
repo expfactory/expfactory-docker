@@ -39,17 +39,17 @@ def serve_hit(request,hid):
         return render_to_response("robot_sorry.html")
 
     if request.user_agent.is_pc:
- 
+
         hit =  get_hit(hid,request)
         battery = hit.battery
-     
+
         # This is the submit URL, either external or sandbox
         host = get_host()
 
         # An assignmentID means that the worker has accepted the task
         assignment_id = request.GET.get("assignmentId","")
 
-        # worker has not accepted the task   
+        # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
             template = "mturk_battery_preview.html"
             task_list = battery.experiments.all()
@@ -73,7 +73,7 @@ def serve_hit(request,hid):
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
 
             # Initialize Assignment object, obtained from Amazon, and Result
-            assignment = Assignment.objects.update_or_create(mturk_id=assignment_id,hit=hit,worker=worker) 
+            assignment = Assignment.objects.update_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
             result = Result.objects.update_or_create(worker=worker, # worker, assignment, are unique
                                                      assignment=assignment, # assignment has record of HIT
                                                      browser=browser,       # HIT has battery ID
@@ -97,7 +97,7 @@ def serve_hit(request,hid):
                 "experiments":task_list,
                 "uniqueId":result.id
             }
- 
+
         # Get experiment folders
         experiment_folders = [os.path.join(media_dir,"experiments",x.tag) for x in task_list]
         loadjs = get_load_static(experiment_folders,url_prefix="/")
@@ -112,7 +112,7 @@ def serve_hit(request,hid):
 
     else:
         return render_to_response("pc_sorry.html")
- 
+
 
 @login_required
 def edit_hit(request, bid, hid=None):
@@ -120,11 +120,11 @@ def edit_hit(request, bid, hid=None):
     header_text = "%s HIT" %(battery.name)
     if not request.user.has_perm('battery.edit_battery', battery):
         return HttpResponseForbidden()
-    
+
     if hid:
         hit = get_hit(hid,request)
         is_owner = battery.owner == request.user
-        header_text = hit.title 
+        header_text = hit.title
     else:
         is_owner = True
         hit = HIT(owner=request.user,battery=battery)
@@ -141,18 +141,26 @@ def edit_hit(request, bid, hid=None):
         else:
             form = HITForm(instance=hit)
 
-    context = {"form": form, 
+    context = {"form": form,
                "is_owner": is_owner,
                "header_text":header_text}
 
     return render(request, "new_hit.html", context)
 
+# Expire a hit
+@login_required
+def expire_hit(request, hid):
+    hit = get_hit(hid,request)
+    if check_battery_edit_permission(request,hit.battery):
+        hit.expire()
+    return redirect(hit.battery.get_absolute_url())
 
 # Delete a hit
 @login_required
 def delete_hit(request, hid):
     hit = get_hit(hid,request)
     if check_battery_edit_permission(request,hit.battery):
+        hit.expire()
         hit.delete()
     return redirect(hit.battery.get_absolute_url())
 
@@ -197,7 +205,7 @@ def sync(request):
         # Update the assignmentID object, obtained from Amazon
         # NOTE: This could not be reasonable to update at each data update - may want to include
         # variable to signify end of task, and update then. Will leave like this for now.
-        assignment = Assignment.objects.update(mturk_id=result.assignment_id) 
+        assignment = Assignment.objects.update(mturk_id=result.assignment_id)
         return_data["assignmentId"] = assignment.id
         return_data["hitId"] = assignment.hit_id
         return_data["workerId"] = assignment.worker_id

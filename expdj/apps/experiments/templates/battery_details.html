@@ -101,7 +101,7 @@
                     <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="heading{{ hit.id }}" style="height:50px">
                             <h4 class="panel-title">
-                                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#hitdetails" aria-expanded="true" aria-controls="collection">
+                                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#hitdetails{{ hit.id }}" aria-expanded="true" aria-controls="collection">
                                     <div class="row">
                                         <div class="col-md-10">
                                             {{ hit.title }}
@@ -110,7 +110,7 @@
                                 </a>
                             </h4>
                         </div>
-                        <div id="hitdetails" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading{{ hit.id }}">
+                        <div id="hitdetails{{ hit.id }}" class="panel-collapse collapse" role="tabpanel" aria-labelledby="heading{{ hit.id }}">
                                <div class="panel-body">
                                  <table class="table table-condensed table-striped table-hover" id="hits_table">
                                      <thead>
@@ -127,12 +127,14 @@
                                      </tbody>
                                 </table>
                                </div>
+                               {% if edit_permission %}
+                               <a class='button' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
+                               <a class='button btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
+                               <i data-toggle="tooltip" title="EXPIRING a HIT means it will no longer appear on the Mechanical Turk web site, and no new Workers will be allowed to accept the HIT. The record will remain here. DELETING a hit means expiring it and removing the link to it from the Experiment Factory." style="padding-left:10px;padding-top:5px" class="fa fa-2x fa-question-circle"></i>
+                               {% endif %}
                         </div><!--end tab thing-->
                       </div><!-- panel-->
                    </div><!--group-->
-                   {% if edit_permission %}
-                   <a class='button' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
-                   {% endif %}
                    {% endfor %}
                    {% else %}
                     <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>

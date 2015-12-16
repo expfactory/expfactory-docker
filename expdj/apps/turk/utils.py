@@ -130,9 +130,6 @@ def get_connection(aws_access_key_id,aws_secret_access_key):
     if hasattr(settings, 'TURK') and settings.TURK is not None:
         if 'debug' in settings.TURK:
             debug = settings.TURK['debug']
-
-        if config.has_option('Connection', 'debug'):
-            debug = config.get('Connection', 'debug')
     else:
         raise InvalidTurkSettings("Turk settings not found")
 

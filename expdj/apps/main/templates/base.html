@@ -38,7 +38,16 @@
                                     {% endif %}
                                 </ul>
                                 </li>
-                                <li><a href="#">Results</a></li>
+                                <li class="dropdown">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                        Get Help
+                                        <b class="caret"></b>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#">Documentation</a></li>
+                                        <li><a href="#">Contact Us</a></li>
+                                    </ul>
+                                </li>
                                 <li class="break"><a href="{% url 'batteries' %}">Batteries</a>
                                     <ul>
                                         <li><a href="{% url 'batteries' %}">View Batteries</a></li>
@@ -46,7 +55,7 @@
                                     </ul>
                                 </li>
                                 {% if request.user.is_authenticated %}
-	                        <li class="dropdown">
+     	                        <li class="dropdown">
 	                            <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
 	                                {{ request.user.username }}
 	                                <b class="caret"></b>

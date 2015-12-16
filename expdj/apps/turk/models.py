@@ -161,6 +161,7 @@ class HIT(models.Model):
         This is a wrapper around the Boto API. Also see:
         http://boto.cloudhackers.com/en/latest/ref/mturk.html
         """
+
         # Don't waste time or resources if already marked as DISPOSED
         if self.status == self.DISPOSED:
             return
@@ -204,6 +205,8 @@ class HIT(models.Model):
         documentation:
         http://boto.cloudhackers.com/en/latest/ref/mturk.html
         """
+        if not self.has_connection():
+            self.generate_connection()
         self.connection.expire_hit(self.mturk_id)
         self.update()
 
@@ -260,15 +263,7 @@ class HIT(models.Model):
             return True
         return False
 
-    def create(self):
-        if not self.has_connection():
-            self.generate_connection()
-        self.send_hit()
-
     def send_hit(self):
-
-        if not self.has_connection():
-            self.generate_connection()
 
         # Domain name must be https
         url = "%s/turk/%s" %(DOMAIN_NAME,self.id)
@@ -286,10 +281,25 @@ class HIT(models.Model):
         )[0]
         # Update our hit object with the aws HIT
         self.mturk_id = result.HITId
-        self.save()
-        
+
         # When we generate the hit, we won't have any assignments to update
         self.update(mturk_hit=result)
+
+    def save(self, *args, **kwargs):
+        '''save will generate a connection and get
+        the mturk_id for hits that have not been saved yet
+        '''
+        is_new_hit = False
+        send_to_mturk = False
+        if not self.pk:
+            is_new_hit = True
+        if not self.mturk_id:
+            send_to_mturk = True
+        super(HIT, self).save(*args, **kwargs)
+        if is_new_hit:
+            self.generate_connection()
+        if send_to_mturk:
+            self.send_hit()
 
     def update(self, mturk_hit=None, do_update_assignments=False):
         """Update self with Mechanical Turk API data
