@@ -284,7 +284,7 @@ def edit_experiment(request,bid,eid=None):
     return render(request, "edit_experiment.html", context)
 
 @login_required
-def save_experiment(request,bid):
+def save_experiment(request,bid,eid):
     '''save_experiment
     save experiment and custom details for battery
     '''
@@ -293,12 +293,29 @@ def save_experiment(request,bid):
     return render(request, "add_experiment.html", context)
 
 @login_required
-def add_experiment(request,bid):
+def add_experiment(request,bid,eid=None):
     '''add_experiment_template
     View for presenting available experiments to user to install to battery
     '''
-    experiments = ExperimentTemplate.objects.all()
-    context = {"experiments": experiments}
+    battery = get_battery(bid,request)
+
+    # Editing an existing experiment already added
+    if request.method == "POST":
+        experiment = get_experiment(eid,request)
+        form = ExperimentForm(request.POST, instance=experiment)
+
+        if form.is_valid():
+            experiment = form.save(commit=False)
+            experiment.save()
+
+            context = {
+                'experiment': experiment,
+            }
+            return HttpResponseRedirect(experiment.get_absolute_url())
+    else:
+        form = ExperimentForm()
+
+    context = {"form": form}
     return render(request, "add_experiment.html", context)
 
 

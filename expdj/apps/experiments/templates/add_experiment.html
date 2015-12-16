@@ -1,32 +1,27 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
 {% block head %}
+    <script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 {% endblock %}
 {% block content %}
-<div class="row 150%">
+<div class="row">
 
-    {% include "sidebar.html" %}
-
-    <div class="8u 12u(narrower) important(narrower)">
+    <div class="col-md-12">
 
         <!-- Content -->
         <article id="content">
             <header>
                 <h2>Add Experiments</h2>
-                {% if newexperiments %}
-                <p>The following experiments can be added to the application:</p>
-                {% else %}
-                <p>There are no new experiments to install.</p>
-                {% endif %}
+                <p>The following experiments can be added to the battery:</p>
             </header>
-            {% if newexperiments %}
-            <form method="POST" action="{% url 'add_experiments' %}">
-                {% for newexperiment in newexperiments %}
-                <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
-                {% endfor %}
-                {% csrf_token %}
-                <input class="submit" type="submit" value="Add">
-            </form>
-         {% endif %}
+
+            {% crispy form %}
+
+            <div class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
+
         </article>
     </div>
 </div>

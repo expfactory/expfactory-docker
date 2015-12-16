@@ -2,7 +2,7 @@ from expdj.apps.experiments.views import experiments_view, edit_experiment_templ
  delete_experiment_template, add_experiment_template, save_experiment_template, \
  view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, \
  edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
- add_experiment, edit_experiment
+ add_experiment, edit_experiment, save_experiment
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -21,9 +21,10 @@ urlpatterns = patterns('',
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/remove$',remove_experiment,name='remove_experiment'),
     url(r'^experiments/(?P<eid>.+?)/preview$',preview_experiment,name='preview_experiment'),
     url(r'^experiments/(?P<eid>.+?)/export$',export_experiment,name='export_experiment'),
-    
+
     # Experiments in Batteries
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/add$',add_experiment,name='add_experiment'),
+    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/save$',save_experiment,name='save_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/edit$',edit_experiment,name='edit_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/$',view_experiment, name='experiment_details'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/remove$',remove_experiment,name='remove_experiment'),
