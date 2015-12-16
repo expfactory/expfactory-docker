@@ -155,7 +155,7 @@ def batteries_view(request,uid=None):
     if not uid:
         batteries = Battery.objects.all()
     else:
-        batteries = Battery.objects.filter(user_id=uid)
+        batteries = Battery.objects.filter(owner_id=uid)
     context = {'batteries': batteries}
     return render(request, 'all_batteries.html', context)
 
@@ -237,16 +237,17 @@ def edit_experiment_template(request,eid=None):
 # Delete an experiment
 @login_required
 def delete_experiment_template(request, eid):
-    experiment = get_experiment(eid,request)
+    experiment = get_experiment_template(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
         static_files_dir = os.path.join(media_dir,"experiments",experiment.tag)
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task
         task = experiment.cognitive_atlas_task
-        if experiment.cognitive_atlas_task.experiment_set.count() == 1:
-            # We might want to delete concepts too? Ok for now.
-            task.delete()
+        if task != None:
+            if experiment.cognitive_atlas_task.experiment_set.count() == 1:
+                # We might want to delete concepts too? Ok for now.
+                task.delete()
         experiment.delete()
     return redirect('experiments')
 
@@ -292,7 +293,7 @@ def save_experiment(request,bid):
     return render(request, "add_experiment.html", context)
 
 @login_required
-def add_experiment(request):
+def add_experiment(request,bid):
     '''add_experiment_template
     View for presenting available experiments to user to install to battery
     '''

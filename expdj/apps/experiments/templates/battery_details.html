@@ -87,7 +87,7 @@
           </table>
          {% else %}
              {% if edit_permission %}
-             <a class='button' href='{% url 'edit_battery' battery.id %}'>Add Experiments to Battery</a>
+             <a class='button' href='{% url 'add_experiment' battery.id %}'>Add Experiments to Battery</a>
              {% endif %}
          {% endif %}
         </div>

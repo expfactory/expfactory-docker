@@ -1,4 +1,4 @@
-from expdj.apps.experiments.models import Experiment, CognitiveAtlasTask, CognitiveAtlasConcept
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, CognitiveAtlasTask, CognitiveAtlasConcept
 from expfactory.vm import custom_battery_download, prepare_vm, specify_experiments
 from expfactory.experiment import validate, load_experiment, get_experiments, make_lookup
 from expfactory.utils import copy_directory, get_installdir, sub_template
@@ -51,14 +51,14 @@ def install_experiments(experiment_tags=None):
 
         try:
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = Experiment(tag=experiment[0]["tag"],
-                                    name=experiment[0]["name"],
-                                    cognitive_atlas_task=cognitive_atlas_task,
-                                    publish=bool(experiment[0]["publish"]),
-                                    time=experiment[0]["time"],
-                                    reference=experiment[0]["reference"])
+            new_experiment = ExperimentTemplate(tag=experiment[0]["tag"],
+                                                name=experiment[0]["name"],
+                                                cognitive_atlas_task=cognitive_atlas_task,
+                                                publish=bool(experiment[0]["publish"]),
+                                                time=experiment[0]["time"],
+                                                reference=experiment[0]["reference"])
             new_experiment.save()
-            experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])        
+            experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])
             copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["tag"]))
         except:
             errored_experiments.append(experiment[0]["tag"])
@@ -73,14 +73,14 @@ def get_cognitiveatlas_task(task_id):
     '''get_cognitiveatlas_task
     return the database entry for CognitiveAtlasTask if it exists, and update concepts for that task. If not, create it.
     :param task_id: the unique id for the cognitive atlas task
-    '''    
+    '''
     try:
         task = get_task(id=task_id).json[0]
         cogatlas_task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"], defaults={"name":task["name"]})
         concept_list = []
         for concept in task["concepts"]:
             cogatlas_concept = get_concept(id=concept["concept_id"]).json[0]
-            cogatlas_concept, _ = CognitiveAtlasConcept.objects.update_or_create(cog_atlas_id=cogatlas_concept["id"], 
+            cogatlas_concept, _ = CognitiveAtlasConcept.objects.update_or_create(cog_atlas_id=cogatlas_concept["id"],
                                                         defaults={"name":cogatlas_concept["name"]},
                                                         definition=cogatlas_concept["definition_text"])
             cogatlas_concept.save()

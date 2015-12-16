@@ -19,7 +19,7 @@
                 {% endif %}
             </header>
             {% if newexperiments %}
-            <form method="POST" action="{% url 'add_experiments' %}">
+            <form method="POST" action="{% url 'save_experiment_template' %}">
                 {% for newexperiment in newexperiments %}
                 <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
                 {% endfor %}

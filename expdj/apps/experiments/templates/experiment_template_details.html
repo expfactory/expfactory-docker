@@ -13,7 +13,7 @@
             <a class='button' target="_blank" href='{% url 'preview_experiment' experiment.tag %}'>Preview</a>
             {% if delete_permission %}
             <div class="float_right">
-                <a class='button' href='{% url 'delete_experiment_template' experiment.tag %}' id="delete_experiment"> Delete Experiment</a>
+                <a class='button' href='{% url 'delete_experiment' experiment.tag %}' id="delete_experiment"> Delete Experiment</a>
             </div>
             {% endif %}
       </div>

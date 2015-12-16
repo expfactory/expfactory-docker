@@ -13,14 +13,15 @@ urlpatterns = patterns('',
 
     # Experiment Templates
     url(r'^experiments$', experiments_view, name="experiments"),
-    url(r'^experiments/save$',save_experiment_template,name='save_experiments_template'),
-    url(r'^experiments/add$',add_experiment_template,name='add_experiments_template'),
-    url(r'^experiments/(?P<eid>.+?)/edit$',edit_experiment_template,name='edit_experiment'),
-    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/$',view_experiment, name='experiment_details'),
+    url(r'^experiments/save$',save_experiment_template,name='save_experiment_template'),
+    url(r'^experiments/add$',add_experiment_template,name='add_experiment_template'),
+    url(r'^experiments/(?P<eid>.+?)/edit$',edit_experiment_template,name='edit_experiment_template'),
+    url(r'^experiments/(?P<eid>.+?)/$',view_experiment, name='experiment_details'),
     url(r'^experiments/(?P<eid>.+?)/delete$',delete_experiment_template,name='delete_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/remove$',remove_experiment,name='remove_experiment'),
     url(r'^experiments/(?P<eid>.+?)/preview$',preview_experiment,name='preview_experiment'),
     url(r'^experiments/(?P<eid>.+?)/export$',export_experiment,name='export_experiment'),
+    
     # Experiments in Batteries
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/add$',add_experiment,name='add_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/edit$',edit_experiment,name='edit_experiment'),
@@ -29,7 +30,7 @@ urlpatterns = patterns('',
 
     # Batteries
     url(r'^batteries/$', batteries_view, name="batteries"),
-    url(r'^batteries/(?P<uid>\d+|[A-Z]{8})/$', batteries_view, name="batteries"),
+    url(r'^my-batteries/(?P<uid>\d+|[A-Z]{8})/$', batteries_view, name="batteries"),
     url(r'^batteries/new$',edit_battery,name='new_battery'),
     url(r'^batteries/add$',add_battery,name='add_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),

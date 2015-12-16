@@ -31,7 +31,7 @@
              {% endfor %}
              <a href="{% url 'new_battery' %}" class="button btn-primary sidebar_button">New Battery</a>
              {% if request.user.is_superuser %}
-             <a href="{% url 'add_experiment' %}" class="button btn-primary sidebar_button">Add Experiments</a>
+             <a href="{% url 'add_experiment_template' %}" class="button btn-primary sidebar_button">Add Experiment Templates</a>
              {% endif %}
 
             </ul>
