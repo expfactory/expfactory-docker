@@ -206,13 +206,13 @@ def save_experiments_template(request):
     return render(request, "all_experiments.html", context)
 
 @login_required
-def edit_experiment_template(request,eid=None):
+def edit_experiment(request,eid=None):
     '''edit_experiment
     view for editing a single experiment. Likely only will be useful to change publication status
     '''
     # Editing an existing experiment
     if eid:
-        experiment = get_experiment(eid,request)
+        experiment = get_experiment_template(eid,request)
     else:
         return HttpResponseRedirect("add_experiment")
 
@@ -250,13 +250,10 @@ def delete_experiment_template(request, eid):
         experiment.delete()
     return redirect('experiments')
 
-
-# Experiments ----------------------------------------------------------
-
 @login_required
-def add_experiment(request,bid,eid=None):
+def add_experiments_template(request,eid=None):
     '''add_experiment
-    view to select experiment to add to battery
+    view to select experiments to add to application
     '''
     # Editing an existing experiment already added
     if eid:
@@ -282,7 +279,36 @@ def add_experiment(request,bid,eid=None):
                "experiment":experiment}
     return render(request, "edit_experiment.html", context)
 
-    return render(request, "add_experiment_to_battery.html", context)
+# Experiments ----------------------------------------------------------
+
+@login_required
+def add_experiment(request,bid,eid=None):
+    '''add_experiment
+    view to select experiments to add to battery
+    '''
+    battery = get_battery(bid,request)
+
+    # Editing an existing experiment already added
+    if eid:
+        experiment = get_experiment(eid,request)
+
+    if request.method == "POST":
+        form = ExperimentForm(request.POST, instance=experiment)
+
+        if form.is_valid():
+            experiment = form.save(commit=False)
+            experiment.save()
+
+            context = {
+                'experiment': experiment,
+            }
+            return HttpResponseRedirect(experiment.get_absolute_url())
+    else:
+        form = ExperimentForm(instance=experiment)
+
+    context = {"form": form,
+               "experiment":experiment}
+    return render(request, "edit_experiment_battery.html", context)
 
 @login_required
 def save_experiment(request,bid):

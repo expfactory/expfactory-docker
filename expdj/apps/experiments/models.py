@@ -54,7 +54,7 @@ class ExperimentTemplate(models.Model):
     # Get the url for an experiment
     def get_absolute_url(self):
         return_cid = self.tag
-        return reverse('experiment_details', args=[str(return_cid)])
+        return reverse('experiment_template_details', args=[str(return_cid)])
 
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
@@ -67,6 +67,14 @@ class Experiment(models.Model):
     include_catch = models.BooleanField(choices=((False, 'does not include catch'),
                                             (True, 'includes catch')),
                                             default=False,verbose_name="does not include catch")
+    def __str__(self):
+        return self.template.name
+
+    # Get the url for an experiment
+    def get_absolute_url(self):
+        return_cid = self.pk
+        return reverse('experiment_details', args=[str(return_cid)])
+
 
 class Battery(models.Model):
     '''A battery is a collection of experiment templates'''
