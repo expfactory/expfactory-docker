@@ -52,7 +52,7 @@ class ExperimentVariable(PolymorphicModel):
 
 class ExperimentNumericVariable(ExperimentVariable):
     variable_min = models.FloatField(null=True, verbose_name="minimum of the variable, if exists", blank=True)
-    variable_max = models.FloatField(null=True, verbose_name="minimum of the variable, if exists", blank=True)
+    variable_max = models.FloatField(null=True, verbose_name="maximum of the variable, if exists", blank=True)
 
 class ExperimentStringVariable(ExperimentVariable):
     variable_options = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
