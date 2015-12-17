@@ -62,6 +62,7 @@ INSTALLED_APPS = (
     'expdj.apps.users',
     'social.apps.django_app.default',
     'crispy_forms',
+    'polymorphic',
     'guardian',
     'dbbackup',
     'djrill'

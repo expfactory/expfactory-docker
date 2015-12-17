@@ -1,9 +1,12 @@
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from polymorphic.polymorphic_model import PolymorphicModel
+from jsonfield import JSONField
 from django.db.models.signals import m2m_changed
 from django.db.models import Q, DO_NOTHING
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.db import models
+import collections
 
 class CognitiveAtlasConcept(models.Model):
     name = models.CharField(max_length=1000, null=False, blank=False)
@@ -34,6 +37,30 @@ class CognitiveAtlasTask(models.Model):
     class Meta:
         ordering = ['name']
 
+class ExperimentVariable(PolymorphicModel):
+    '''an experiment variable is either a performance_variable or a rejection_variable that is specified in the config.json as a dictionary,
+    and determines the bonus (performance) or criteria for rejecting the HIT (rejection)
+    '''
+    name = models.CharField(max_length=500,help_text="name of the variable",unique=True)
+    description = models.CharField(max_length=500,help_text="description of the variable",unique=False)
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
+
+class ExperimentNumericVariable(ExperimentVariable):
+    variable_min = models.FloatField(null=True, verbose_name="minimum of the variable, if exists", blank=True)
+    variable_max = models.FloatField(null=True, verbose_name="minimum of the variable, if exists", blank=True)
+
+class ExperimentStringVariable(ExperimentVariable):
+    variable_options = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
+
+class ExperimentBooleanVariable(ExperimentVariable):
+    variable_options = models.BooleanField(choices=((False, 'False'),
+                                                    (True, 'True')), default=None,
+                                                     verbose_name="boolean options")
 
 class ExperimentTemplate(models.Model):
     '''expfactory-experiments, to be chosen and customized by researchers into Experiments, and deployed in batteries
@@ -42,6 +69,8 @@ class ExperimentTemplate(models.Model):
     tag = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     name = models.CharField(max_length=500,help_text="name of the experiment",unique=True)
     cognitive_atlas_task = models.ForeignKey(CognitiveAtlasTask, help_text="Behavioral Paradigm representation in the Cognitive Atlas", verbose_name="Cognitive Atlas Task", null=True, blank=False,on_delete=DO_NOTHING)
+    performance_variable = models.ForeignKey(ExperimentVariable, related_name="performance_variable", verbose_name="performance variable",help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.")
+    rejection_variable = models.ForeignKey(ExperimentVariable,  related_name="rejection_variable", verbose_name="rejection variable",help_text="the javascript variable, if specified for the experiment, in the browser that is designated to assess the degree of credit a user deserves for the task.")
     publish = models.BooleanField(choices=((False, 'Do not publish'),
                                            (True, 'Publish')),
                                            default=True,verbose_name="Publish")
@@ -58,9 +87,6 @@ class ExperimentTemplate(models.Model):
 
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
-    #catch_variable = models.CharField(max_length=250, unique = False, null=True, verbose_name="catch variable",help_text="the variable")
-    #catch_function = models.CharField(max_length=250, unique = False, null=True, verbose_name="catch function",help_text="")
-    #catch_threshold = models.FloatField(null=True, blank=True)
     include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
                                                 (True, 'includes bonus')),
                                                 default=False,verbose_name="does not include bonus")
