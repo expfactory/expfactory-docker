@@ -69,8 +69,8 @@ class ExperimentTemplate(models.Model):
     tag = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     name = models.CharField(max_length=500,help_text="name of the experiment",unique=True)
     cognitive_atlas_task = models.ForeignKey(CognitiveAtlasTask, help_text="Behavioral Paradigm representation in the Cognitive Atlas", verbose_name="Cognitive Atlas Task", null=True, blank=False,on_delete=DO_NOTHING)
-    performance_variable = models.ForeignKey(ExperimentVariable, related_name="performance_variable", verbose_name="performance variable",help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.")
-    rejection_variable = models.ForeignKey(ExperimentVariable,  related_name="rejection_variable", verbose_name="rejection variable",help_text="the javascript variable, if specified for the experiment, in the browser that is designated to assess the degree of credit a user deserves for the task.")
+    performance_variable = models.ForeignKey(ExperimentVariable, related_name="performance_variable",null=True,blank=True,verbose_name="performance variable",help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.")
+    rejection_variable = models.ForeignKey(ExperimentVariable,  related_name="rejection_variable", null=True,blank=True,verbose_name="rejection variable",help_text="the javascript variable, if specified for the experiment, in the browser that is designated to assess the degree of credit a user deserves for the task.")
     publish = models.BooleanField(choices=((False, 'Do not publish'),
                                            (True, 'Publish')),
                                            default=True,verbose_name="Publish")

@@ -1,4 +1,6 @@
-from expdj.apps.experiments.models import Experiment, ExperimentTemplate, CognitiveAtlasTask, CognitiveAtlasConcept
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, \
+  CognitiveAtlasTask, CognitiveAtlasConcept, ExperimentVariable, ExperimentNumericVariable, \
+  ExperimentBooleanVariable, ExperimentStringVariable
 from expfactory.vm import custom_battery_download, prepare_vm, specify_experiments
 from expfactory.experiment import validate, load_experiment, get_experiments, make_lookup
 from expfactory.utils import copy_directory, get_installdir, sub_template
@@ -36,6 +38,33 @@ def get_experiment_selection():
     shutil.rmtree(tmpdir)
     return experiments
 
+def parse_experiment_variable(variable):
+    experiment_variable = None
+    if isinstance(variable,dict):
+        try:
+            description = variable["description"] if "description" in variable.keys() else None
+            if "name" in variable.keys():
+                name = var["name"]
+                if "type" in variable.keys():
+                    if variable["type"].lower() == "numeric":
+                        variable_min = var["range"][0] if "range" in variable.keys() else None
+                        variable_max = var["range"][1] if "range" in variable.keys() else None
+                        experiment_variable = ExperimentNumericVariable(name=name,
+                                                                        description=description,
+                                                                        variable_min=variable_min,
+                                                                        variable_max=variable_max)
+                    elif variable["type"].lower() == "string":
+                        experiment_variable = ExperimentStringVariable(name=name,
+                                                                           description=description,
+                                                                           variable_options=variable["options"])
+                    elif variable["type"].lower() == "boolean":
+                        experiment_variable = ExperimentBooleanVariable(name=name,
+                                                                            description=description)
+                    experiment_variable.save()
+        except:
+            pass
+    return experiment_variable
+
 
 def install_experiments(experiment_tags=None):
 
@@ -50,13 +79,17 @@ def install_experiments(experiment_tags=None):
     for experiment in experiments:
 
         try:
+            performance_variable = parse_experiment_variable(experiment[0]["performance_variable"])
+            rejection_variable = parse_experiment_variable(experiment[0]["rejection_variable"])
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
             new_experiment = ExperimentTemplate(tag=experiment[0]["tag"],
                                                 name=experiment[0]["name"],
                                                 cognitive_atlas_task=cognitive_atlas_task,
                                                 publish=bool(experiment[0]["publish"]),
                                                 time=experiment[0]["time"],
-                                                reference=experiment[0]["reference"])
+                                                reference=experiment[0]["reference"],
+                                                performance_variable=performance_variable,
+                                                rejection_variable=rejection_variable)
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])
             copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["tag"]))
