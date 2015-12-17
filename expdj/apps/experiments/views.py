@@ -297,25 +297,7 @@ def add_experiment(request,bid,eid=None):
     '''add_experiment_template
     View for presenting available experiments to user to install to battery
     '''
-    battery = get_battery(bid,request)
-
-    # Editing an existing experiment already added
-    if request.method == "POST":
-        experiment = get_experiment(eid,request)
-        form = ExperimentForm(request.POST, instance=experiment)
-
-        if form.is_valid():
-            experiment = form.save(commit=False)
-            experiment.save()
-
-            context = {
-                'experiment': experiment,
-            }
-            return HttpResponseRedirect(experiment.get_absolute_url())
-    else:
-        form = ExperimentForm()
-
-    context = {"form": form}
+    context = {"WRITEME":"WRITEME"}
     return render(request, "add_experiment.html", context)
 
 
