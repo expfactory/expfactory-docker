@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block head %}
+{% endblock %}
+{% block content %}
+
+<div class="row 150%">
+
+    <div class="12u 12u(narrower) important(narrower)">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+                <h2>{{ header_text }} Multiple HIT Generator</h2>
+            </header>
+
+            <form class="form-horizontal" method="post" action="{% url 'multiple_new_hit' battery.id %}">
+               {{ csrftoken }}
+               <div id="div_id_title" class="form-group">
+                       <label for="id_title" class="control-label col-lg-2 requiredField">Title<span class="asteriskField">*</span> </label>
+                       <div class="controls col-lg-8"> <input class="textinput textInput form-control" id="id_title" maxlength="255" name="title" type="text" />
+                          <p id="hint_id_title" class="help-block">The title of the HIT</p>
+                       </div>
+              </div>
+              <div id="div_id_max_assignments" class="form-group"> <label for="id_max_assignments" class="control-label col-lg-2">
+                Max assignments</label>
+              <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_max_assignments" min="0" name="max_assignments" type="number" value="1" /> <p id="hint_id_max_assignments" class="help-block">The number of times the HIT can be accepted and  completed before the HIT becomes unavailable.</p> </div> </div>
+
+              <div id="div_id_number_batches" class="form-group"> <label for="id_number_batches" class="control-label col-lg-2">
+                Number of batches</label>
+              <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_number_in_batch" min="0" name="number_in_batch" type="number" /> <p id="hint_id_number_in_batch" class="help-block">The number of batches to submit for this HIT set.</p> </div> </div>
+              <div id="div_id_description" class="form-group"> <label for="id_description" class="control-label col-lg-2 requiredField">Description<span class="asteriskField">*</span> </label>
+                  <div class="controls col-lg-8"> <textarea class="textarea form-control" cols="40" id="id_description" name="description" rows="10"></textarea>
+                      <p id="hint_id_description" class="help-block">A general description of the HIT</p>
+                  </div>
+              </div>
+                  <div id="div_id_keywords" class="form-group"> <label for="id_keywords" class="control-label col-lg-2">Keywords</label>
+                  <div class="controls col-lg-8"> <textarea class="textarea form-control" cols="40" id="id_keywords" name="keywords" rows="10">
+</textarea>
+                      <p id="hint_id_keywords" class="help-block">One or more words or phrases that describe the HIT, separated by commas.</p>
+                  </div>
+             </div>
+            <div id="div_id_reward" class="form-group"> <label for="id_reward" class="control-label col-lg-2 requiredField">Reward<span class="asteriskField">*</span> </label>
+            <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_reward" name="reward" step="0.001" type="number" /> <p id="hint_id_reward" class="help-block">The amount of money the requester will pay a worker for successfully completing the HIT</p> </div> </div> <div id="div_id_lifetime_in_seconds" class="form-group"> <label for="id_lifetime_in_seconds" class="control-label col-lg-2">
+              Lifetime in seconds</label>
+            <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_lifetime_in_seconds" min="0" name="lifetime_in_seconds" type="number" /> <p id="hint_id_lifetime_in_seconds" class="help-block">The amount of time, in seconds, after which the HIT is no longer available for users to accept.</p> </div> </div> <div id="div_id_assignment_duration_in_seconds" class="form-group"> <label for="id_assignment_duration_in_seconds" class="control-label col-lg-2">
+              Assignment duration in seconds</label>
+            <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_assignment_duration_in_seconds" min="0" name="assignment_duration_in_seconds" type="number" /> <p id="hint_id_assignment_duration_in_seconds" class="help-block">The length of time, in seconds, that a worker has to complete the HIT after accepting it.</p> </div> </div>  <div id="div_id_auto_approval_delay_in_seconds" class="form-group"> <label for="id_auto_approval_delay_in_seconds" class="control-label col-lg-2">
+              Auto approval delay in seconds
+          </label>
+          <div class="controls col-lg-8"> <input class="numberinput form-control" id="id_auto_approval_delay_in_seconds" min="0" name="auto_approval_delay_in_seconds" type="number" /> <p id="hint_id_auto_approval_delay_in_seconds" class="help-block">The amount of time, in seconds after the worker submits an assignment for the HIT that the results are automatically approved by the requester.</p> </div> </div> <div class="form-group"> <div class="aab controls col-lg-2"></div> <div class="controls col-lg-8">
+          <input type="submit"
+                  name="submit"
+                  value="Save"
+                  class="btn btn-primary"
+                id="submit-id-submit"/> </div> </div>
+
+            </form>
+
+        </article>
+    </div>
+</div>
+{% endblock %}

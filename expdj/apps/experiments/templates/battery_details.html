@@ -20,7 +20,10 @@
 
             <div class="float_right">
                 {% if edit_permission %}
-                <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                    {% if battery.experiments.all %}
+                        <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
+                        <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                    {% endif %}
                 {% endif %}
                 {% if delete_permission %}
                 <a class='button' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
@@ -137,7 +140,10 @@
                    </div><!--group-->
                    {% endfor %}
                    {% else %}
-                    <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                       {% if battery.experiments.all %}
+                       <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
+                       <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                       {% endif %}
                    {% endif %}
                 </div>
             </div>

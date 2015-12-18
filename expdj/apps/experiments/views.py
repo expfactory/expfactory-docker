@@ -245,10 +245,12 @@ def delete_experiment_template(request, eid):
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task
         task = experiment.cognitive_atlas_task
-        if task != None:
+        try:
             if experiment.cognitive_atlas_task.experiment_set.count() == 1:
                 # We might want to delete concepts too? Ok for now.
                 task.delete()
+        except:
+            pass
         experiment.delete()
     return redirect('experiments')
 
@@ -301,8 +303,14 @@ def add_experiment(request,bid,eid=None):
     battery = get_battery(bid,request)
     newexperiments = [x for x in ExperimentTemplate.objects.all() if x not in battery.experiments.all()]
     newexperimentsjson = [model_to_dict(x) for x in newexperiments]
+
+    # We should be able to look up by tag
+    experimentsbytag = dict()
+    for newexperiment in newexperimentsjson:
+        experimentsbytag[newexperiment["tag"]] = newexperiment
+
     context = {"newexperiments": newexperiments,
-               "newexperimentsjson":json.dumps(newexperimentsjson)}
+               "newexperimentsjson":json.dumps(experimentsbytag)}
     return render(request, "add_experiment.html", context)
 
 @login_required

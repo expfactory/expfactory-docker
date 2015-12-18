@@ -115,6 +115,32 @@ def serve_hit(request,hid):
 
 
 @login_required
+def multiple_new_hit(request, bid):
+    battery = Battery.objects.get(pk=bid)
+    if not request.user.has_perm('battery.edit_battery', battery):
+        return HttpResponseForbidden()
+
+    is_owner = battery.owner == request.user
+
+    if request.method == "POST":
+        # A hit is generated for each batch
+        for x in range(int(request.POST["id_number_batches"])):
+            hit = HIT(owner=request.user,battery=battery)
+            form = HITForm(request.POST,instance=hit)
+            if form.is_valid():
+                hit = form.save(commit=False)
+                hit.save()
+            return HttpResponseRedirect(battery.get_absolute_url())
+    else:
+
+        context = {"is_owner": is_owner,
+                  "header_text":battery.name,
+                  "battery":battery}
+
+    return render(request, "multiple_new_hit.html", context)
+
+
+@login_required
 def edit_hit(request, bid, hid=None):
     battery = Battery.objects.get(pk=bid)
     header_text = "%s HIT" %(battery.name)

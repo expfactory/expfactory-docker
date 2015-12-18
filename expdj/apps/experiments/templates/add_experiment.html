@@ -26,6 +26,7 @@
                 </select>
               </div>
 
+            <span id = "credit_table_div">
             <table class="table table-bordered table-hover" id="credit_table">
       			    <thead>
       					    <tr><th class="text-center">#</th>
@@ -45,6 +46,7 @@
                 <tr id='crit1'></tr>
       				</tbody>
       			</table>
+          </span>
                 <a id="add_row" class="btn btn-default pull-left">Add Row</a><a id='delete_row' class="pull-right btn btn-default">Delete Row</a><br><br>
             <input type="submit" value="OK">
             </form>
@@ -63,6 +65,16 @@
 newexperimentsjson = {{ newexperimentsjson | safe }}
 
 $(document).ready(function() {
+
+    // Selection of a new experiment clears the table, fills in options
+    $("#experiment").change(function(){
+      for (j=0;j<=i;j++){
+        $("#crit"+(j-1)).html('');
+      }
+      $('#crit0').html("<td>"+ (1) +"</td><td><input name='var0' type='text' placeholder='Variable' class='form-control input-md'  /> </td><td><input  name='type0' type='text' placeholder='Type'  class='form-control input-md'></td><td><input  name='oper0' type='text' placeholder='Operator'  class='form-control input-md'></td><td><input  name='val0' type='text' placeholder='Value'  class='form-control input-md'></td>");
+      $('#credit_table').append('<tr id="crit0"></tr>');
+      i = 1
+    })
 
     var i=1;
     $("#add_row").click(function(){
