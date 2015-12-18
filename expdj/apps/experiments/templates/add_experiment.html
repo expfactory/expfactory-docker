@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block head %}
-    <script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
     <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
-    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 {% endblock %}
 {% block content %}
 <div class="row">
@@ -17,18 +15,70 @@
                 <p>The following experiments can be added to the battery:</p>
             </header>
 
+            <form action="#" method="POST">
+
+              <div class="form-group">
+                <label for="experiment">Select Experiment:</label>
+                <select class="form-control" id="experiment">
+                  {% for experiment in newexperiments %}
+                  <option value="{{ experiment.id }}">{{ experiment.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+            <table class="table table-bordered table-hover" id="credit_table">
+      			    <thead>
+      					    <tr><th class="text-center">#</th>
+      						  <th class="text-center">Variable</th>
+      						  <th class="text-center">Type</th>
+      						  <th class="text-center">Operator</th>
+                    <th class="text-center">Value</th></tr>
+      				</thead>
+      				<tbody>
+      					<tr id='crit0'>
+      						<td>1</td>
+      						<td><input type="text" name='var0'  placeholder='Variable' class="form-control"/></td>
+      						<td><input type="text" name='type0' placeholder='Type' class="form-control"/></td>
+      						<td><input type="text" name='oper0' placeholder='Operator' class="form-control"/></td>
+                  <td><input type="text" name='val0'  placeholder='Value' class="form-control"/></td>
+      					</tr>
+                <tr id='crit1'></tr>
+      				</tbody>
+      			</table>
+                <a id="add_row" class="btn btn-default pull-left">Add Row</a><a id='delete_row' class="pull-right btn btn-default">Delete Row</a><br><br>
+            <input type="submit" value="OK">
+            </form>
             <div class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
 
         </article>
     </div>
 </div>
+
 {% endblock %}
 {% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script>
+
+newexperimentsjson = {{ newexperimentsjson | safe }}
+
 $(document).ready(function() {
-    $('#assessments-table').dataTable({
-      responsive: true
-    });
-} );
+
+    var i=1;
+    $("#add_row").click(function(){
+        $('#crit'+i).html("<td>"+ (i+1) +"</td><td><input name='var"+i+"' type='text' placeholder='Variable' class='form-control input-md'  /> </td><td><input  name='type"+i+"' type='text' placeholder='Type'  class='form-control input-md'></td><td><input  name='oper"+i+"' type='text' placeholder='Operator'  class='form-control input-md'></td><td><input  name='val"+i+"' type='text' placeholder='Value'  class='form-control input-md'></td>");
+        $('#credit_table').append('<tr id="crit'+(i+1)+'"></tr>');
+        i++;
+     });
+    $("#delete_row").click(function(){
+        if(i>1){
+   		    $("#crit"+(i-1)).html('');
+   		    i--;
+   		 }
+   	 });
+
+});
+
+
 </script>
 {% endblock %}

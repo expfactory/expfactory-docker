@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from django.db import models
 import collections
+import operator
 
 class CognitiveAtlasConcept(models.Model):
     name = models.CharField(max_length=1000, null=False, blank=False)
@@ -85,8 +86,27 @@ class ExperimentTemplate(models.Model):
         return_cid = self.tag
         return reverse('experiment_template_details', args=[str(return_cid)])
 
+class CreditCondition(models.Model):
+    '''CreditCondition
+    A model to represent a particular ExperimentVariable tied to an Experiment, and conditions selected by the user
+    for determining to allocate reward or give credit for the experiment.
+    '''
+    OPERATOR_CHOICES = (
+        ("EQUALS", operator.eq),
+        ("LESSTHAN", operator.lt),
+        ("GREATERTHAN", operator.gt),
+        ("GREATERTHANEQUALTO", operator.ge),
+        ("LESSTHANEQUALTO", operator.le),
+        ("NOTEQUALTO", operator.ne),
+    )
+    variable = models.ForeignKey(ExperimentVariable,null=False,blank=False)
+    value = models.CharField("user selected value",max_length=200,null=False,blank=False,help_text="user selected value to compare the variable with the operator")
+    operator = models.CharField("operator to compare variable to value",max_length=1,choices=OPERATOR_CHOICES,null=True,blank=True,help_text="Whether the credit condition is for reward (bonus) or rejection variables.")
+
+
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
+    credit_conditions = models.ManyToManyField(CreditCondition,related_name="conditions",help_text="functions over performance and rejection variables to allocate payments and credit.",null=True,blank=True)
     include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
                                                 (True, 'includes bonus')),
                                                 default=False,verbose_name="does not include bonus")

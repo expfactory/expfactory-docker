@@ -4,6 +4,7 @@ from expdj.apps.turk.models import HIT
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
+from django.forms.models import model_to_dict
 from expfactory.views import embed_experiment
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -294,12 +295,15 @@ def save_experiment(request,bid,eid):
 
 @login_required
 def add_experiment(request,bid,eid=None):
-    '''add_experiment_template
+    '''add_experiment
     View for presenting available experiments to user to install to battery
     '''
-    context = {"WRITEME":"WRITEME"}
+    battery = get_battery(bid,request)
+    newexperiments = [x for x in ExperimentTemplate.objects.all() if x not in battery.experiments.all()]
+    newexperimentsjson = [model_to_dict(x) for x in newexperiments]
+    context = {"newexperiments": newexperiments,
+               "newexperimentsjson":json.dumps(newexperimentsjson)}
     return render(request, "add_experiment.html", context)
-
 
 @login_required
 def remove_experiment(request,bid,eid):
