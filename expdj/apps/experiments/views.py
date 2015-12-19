@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery
+from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
+ ExperimentVariable, CreditCondition
 from expdj.apps.turk.models import HIT
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
@@ -12,9 +13,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 import shutil
+import numpy
 import uuid
 import json
 import csv
+import re
 import os
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
@@ -100,7 +103,7 @@ def update_experiment_templates(request,eid=None):
         if eid==None:
             experiments = ExperimentTemplate.objects.all()
         else:
-            experiments = [get_experiment(request,eid)]
+            experiments = [get_experiment_template(request,eid)]
         current_experiments = [e.tag for e in experiments]
         [delete_experiment_template(request, e, redirect=False) for e in current_experiments]
         errored_experiments = install_experiments(experiment_tags=current_experiments)
@@ -184,10 +187,10 @@ def batteries_view(request,uid=None):
 
 
 # Previews -------------------------------------------------------------
-# Preview experiments
+# Preview experiments - right now just for templates
 @login_required
 def preview_experiment(request,eid):
-    experiment = get_experiment(eid,request)
+    experiment = get_experiment_template(eid,request)
     experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
@@ -312,13 +315,50 @@ def edit_experiment(request,bid,eid=None):
     return render(request, "edit_experiment.html", context)
 
 @login_required
-def save_experiment(request,bid,eid):
+def save_experiment(request,bid):
     '''save_experiment
     save experiment and custom details for battery
     '''
-    battery = get_battery(bid,request)
-    context = {"battery":battery}
-    return render(request, "add_experiment.html", context)
+    if request.method == "POST":
+        vars = request.POST.keys()
+        battery = get_battery(bid,request)
+        template = get_experiment_template(request.POST["experiment"],request)
+        expression = re.compile("[0-9]+")
+        experiment_vids = numpy.unique([expression.findall(x)[0] for x in vars if expression.search(x)]).tolist()
+
+        # Create a credit condition for each experiment variable
+        credit_conditions = []
+        include_bonus = False
+        include_catch = False
+
+        for vid in experiment_vids:
+            if int(vid) == template.performance_variable.id:
+                include_bonus = True
+            if int(vid) == template.rejection_variable.id:
+                include_catch = True
+            experiment_variable = ExperimentVariable.objects.filter(id=vid)[0]
+            variable_value = request.POST["val%s" %(vid)] if "val%s" %(vid) in vars else None
+            variable_operator = request.POST["opt%s" %(vid)] if "opt%s" %(vid) in vars else None
+            credit_condition,_ = CreditCondition.objects.update_or_create(variable=experiment_variable,
+                                                                          value=variable_value,
+                                                                          operator=variable_operator)
+            credit_condition.save()
+            credit_conditions.append(credit_condition)
+
+        # Create the experiment to add to the battery
+        experiment = Experiment.objects.create(template=template,
+                                               credit_conditions=credit_conditions,
+                                               include_bonus=include_bonus,
+                                               include_catch=include_catch)
+        experiment.save()
+
+        # Add to battery
+        current_experiments = [e for e in battery.experiments.objects.all() if e.tag not in template.tag]
+        current_experiments.append(experiment)
+        battery.experiments = current_experiments
+        battery.save()
+
+    return HttpResponseRedirect(battery.get_absolute_url())
 
 @login_required
 def add_experiment(request,bid,eid=None):
@@ -340,7 +380,8 @@ def add_experiment(request,bid,eid=None):
         experimentsbytag[newexperimentjson["tag"]] = newexperimentjson
 
     context = {"newexperiments": newexperiments,
-               "newexperimentsjson":json.dumps(experimentsbytag)}
+               "newexperimentsjson":json.dumps(experimentsbytag),
+               "bid":battery.id}
     return render(request, "add_experiment.html", context)
 
 @login_required

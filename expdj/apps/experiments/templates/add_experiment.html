@@ -11,14 +11,15 @@
         <!-- Content -->
         <article id="content">
             <header>
-                <h2>Add Experiments</h2>
+                <h2>Add Experiment</h2>
             </header>
 
-            <form action="#" method="POST">
+            <form action="{% url 'save_experiment' bid %}" method="post">
 
+             {% csrf_token %}
               <div class="form-group">
                 <label for="experiment">Select Experiment:</label>
-                <select class="form-control" id="experiment">
+                <select class="form-control" id="experiment" name="experiment">
                   <option>--</option>
                   {% for experiment in newexperiments %}
                   <option value="{{ experiment.tag }}">{{ experiment.name }}</option>
@@ -33,28 +34,28 @@
                       </select>
                   </div>
                   <div class="col-md-8">
-                      <a id="add_row" class="btn btn-success pull-left" style="margin-top:32px">Add</a>
+                      <a id="add_row" class="btn btn-success pull-left" style="margin-top:42px">Add</a>
                   </div>
             </div>
 
             <span id = "credit_table_div">
             <table class="table table-bordered table-hover" id="credit_table">
-      			    <thead>
-      					    <tr><th class="text-center">#</th>
-      						  <th class="text-center">Variable</th>
-      						  <th class="text-center">Description</th>
-      						  <th class="text-center">Operator</th>
-                    <th class="text-center">Value</th><th></th></tr>
-      				</thead>
-      				<tbody>
-      					<tr id='crit0'></tr>
-                <tr id='crit1'></tr>
-      				</tbody>
-      			</table>
+      	        <thead>
+                    <tr><th class="text-center">#</th>
+                        <th class="text-center">Variable</th>
+                        <th class="text-center">Description</th>
+                        <th class="text-center">Operator</th>
+                        <th class="text-center">Value</th><th></th></tr>
+      		</thead>
+      		<tbody>
+      		    <tr id='crit0'></tr>
+                    <tr id='crit1'></tr>
+      		</tbody>
+      	  </table>
           </span>
-            <input type="submit" value="OK">
-            </form>
-            <div class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
+            <input type="submit" value="Submit">
+          </form>
+          <div style="padding-top:20px" class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
 
         </article>
     </div>
@@ -99,10 +100,10 @@ $(document).ready(function() {
         // Update variable selection options
         col_variable =  ""
         if (experiment.performance_variable!= null){
-          col_variable = col_variable + "<option style='color:green' value='"+ experiment.performance_variable.id + "'>" + experiment.performance_variable.name + " : " + experiment.performance_variable.description + "</option>"
+          col_variable = col_variable + "<option style='color:green' name='eid"+ experiment.performance_variable.id + "' value='"+ experiment.performance_variable.id + "'>" + experiment.performance_variable.name + " : " + experiment.performance_variable.description + "</option>"
         }
         if (experiment.rejection_variable!= null){
-          col_variable = col_variable + "<option style='color:red' value='"+ experiment.rejection_variable.id + "'>" + experiment.rejection_variable.name + " : " + experiment.rejection_variable.description + "</option>"
+          col_variable = col_variable + "<option style='color:red' name='eid"+ experiment.rejection_variable.id + "' value='"+ experiment.rejection_variable.id + "'>" + experiment.rejection_variable.name + " : " + experiment.rejection_variable.description + "</option>"
         }
         $('#variable_selection').html(col_variable);
         $("#variable_selection_div").show();
@@ -130,25 +131,25 @@ $(document).ready(function() {
 
         // Operations and values available depend on the variable type
         if (selection.variable_options!=null){ // boolean or string with choices
-          var variable_operators = "<select class='form-control' id='oper" + uid + "'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid + "'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
           if ((selection.variable_options == true) || (selection.variable_options == false)){ // boolean
-            var variable_options = "<select class='form-control' id='val"+ uid +"'><option value='True'>True</option><option value='False'>False</option></select>"
+            var variable_options = "<select class='form-control' name='val" + uid + "' id='val"+ uid +"'><option value='True'>True</option><option value='False'>False</option></select>"
           } else {
-            var variable_options = "<select class='form-control' id='val"+ uid +"'>"
+            var variable_options = "<select class='form-control' name='val" + uid + "' id='val"+ uid +"'>"
             for (o=0;o<selection.variable_options.length;o++){
               variable_options = variable_options + "<option value='"+ selection.variable_options[o]+"'>" + selection.variable_options[o] + "</option>"
             }
           }
         } else { // numeric (will be parsed as float)
-          var variable_operators = "<select class='form-control' id='oper" + uid +"'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid +"'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
           if ((selection.variable_min!=-Infinity) && (selection.variable_max!=Infinity)) {
-            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' min='"+ selection.variable_min +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' min='"+ selection.variable_min +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
           } else if ((selection.variable_min==-Infinity) && (selection.variable_max==Infinity)) {
-            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' name='val"+ uid +"' type='number' value='0' />"
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' name='val"+ uid +"' type='number' value='0' />"
           } else if (selection.variable_min==-Infinity) {
-            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
           } else { // no limit on max
-            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' min='"+ selection.variable_min + "' name='val"+ uid +"' type='number' value='0' />"
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' min='"+ selection.variable_min + "' name='val"+ uid +"' type='number' value='0' />"
           }
         }
 
@@ -170,7 +171,6 @@ $(document).ready(function() {
        $("#crit"+(j-1)).html('');
      }
      $('#credit_table').append('<tr id="crit0"></tr>');
-     $('#credit_table').append('<tr id="crit1"></tr>');
    }
 
 });

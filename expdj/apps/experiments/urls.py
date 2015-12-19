@@ -25,7 +25,7 @@ urlpatterns = patterns('',
 
     # Experiments in Batteries
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/add$',add_experiment,name='add_experiment'),
-    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/save$',save_experiment,name='save_experiment'),
+    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/save$',save_experiment,name='save_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/edit$',edit_experiment,name='edit_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/$',view_experiment, name='experiment_details'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>.+?)/remove$',remove_experiment,name='remove_experiment'),
