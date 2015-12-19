@@ -42,11 +42,14 @@ class ExperimentVariable(PolymorphicModel):
     '''an experiment variable is either a performance_variable or a rejection_variable that is specified in the config.json as a dictionary,
     and determines the bonus (performance) or criteria for rejecting the HIT (rejection)
     '''
-    name = models.CharField(max_length=500,help_text="name of the variable",unique=True)
+    name = models.CharField(max_length=500,help_text="name of the variable")
     description = models.CharField(max_length=500,help_text="description of the variable",unique=False)
 
     def __str__(self):
         return self.name
+
+    def __meta__(self):
+        unique_together = (("name","description"))
 
     def __unicode__(self):
         return self.name
@@ -60,7 +63,7 @@ class ExperimentStringVariable(ExperimentVariable):
 
 class ExperimentBooleanVariable(ExperimentVariable):
     variable_options = models.BooleanField(choices=((False, 'False'),
-                                                    (True, 'True')), default=None,
+                                                    (True, 'True')), default=False,
                                                      verbose_name="boolean options")
 
 class ExperimentTemplate(models.Model):

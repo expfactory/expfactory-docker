@@ -95,6 +95,28 @@ def get_battery(bid,request,mode=None):
 
 # View a single experiment
 @login_required
+def update_experiment_templates(request,eid=None):
+    if request.user.is_superuser:
+        if eid==None:
+            experiments = ExperimentTemplate.objects.all()
+        else:
+            experiments = [get_experiment(request,eid)]
+        current_experiments = [e.tag for e in experiments]
+        [delete_experiment_template(request, e, redirect=False) for e in current_experiments]
+        errored_experiments = install_experiments(experiment_tags=current_experiments)
+        if len(errored_experiments) > 0:
+            message = "The experiments %s did not update successfully." %(",".join(errored_experiments))
+        else:
+            message = "Experiments updated successfully."
+            experiments = ExperimentTemplate.objects.all()
+            context = {"experiments":experiments,
+                       "message":message}
+    return render(request, "all_experiments.html", context)
+
+
+
+# View a single experiment
+@login_required
 def view_experiment(request, eid, bid=None):
 
     # Determine permissions for edit and deletion
@@ -182,9 +204,10 @@ def add_experiment_template(request):
     View for presenting available experiments to user (from expfactory-experiements repo)
     '''
     experiment_selection = get_experiment_selection()
-    current_experiments = [x.tag for x in ExperimentTemplate.objects.all()]
-    experiments = [e for e in experiment_selection if e["tag"] not in current_experiments]
-    context = {"newexperiments": experiments,
+    current_experiments = ExperimentTemplate.objects.all()
+    tags = [e.tag for e in current_experiments]
+    newexperiments = [e for e in experiment_selection if e["tag"] not in tags]
+    context = {"newexperiments": newexperiments,
                "experiments": current_experiments}
     return render(request, "add_experiment_template.html", context)
 
@@ -237,7 +260,7 @@ def edit_experiment_template(request,eid=None):
 
 # Delete an experiment
 @login_required
-def delete_experiment_template(request, eid):
+def delete_experiment_template(request, eid, redirect=True):
     experiment = get_experiment_template(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
@@ -252,7 +275,9 @@ def delete_experiment_template(request, eid):
         except:
             pass
         experiment.delete()
-    return redirect('experiments')
+
+    if redirect == True:
+        return redirect('experiments')
 
 
 # Experiments ----------------------------------------------------------

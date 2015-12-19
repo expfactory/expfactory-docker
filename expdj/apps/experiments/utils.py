@@ -20,17 +20,6 @@ media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 # EXPERIMENT FACTORY PYTHON FUNCTIONS #####################################################
 
-def update_battery_static(tmpdir=None):
-    '''update_battery_static
-    Downloads experiment battery folder, cross checks scripts (jspsych, etc)
-    '''
-    if tmpdir == None:
-        tmpdir = custom_battery_download(repos=["battery"])
-    # Get experiment "other" static files, move to our static
-    # run collect static
-    # Done.
-
-
 def get_experiment_selection():
     tmpdir = custom_battery_download(repos=["experiments"])
     experiments = get_experiments("%s/experiments" %tmpdir,load=True,warning=False)
@@ -44,22 +33,23 @@ def parse_experiment_variable(variable):
         try:
             description = variable["description"] if "description" in variable.keys() else None
             if "name" in variable.keys():
-                name = var["name"]
+                name = variable["name"]
                 if "datatype" in variable.keys():
                     if variable["datatype"].lower() == "numeric":
-                        variable_min = var["range"][0] if "range" in variable.keys() else None
-                        variable_max = var["range"][1] if "range" in variable.keys() else None
-                        experiment_variable = ExperimentNumericVariable(name=name,
-                                                                        description=description,
-                                                                        variable_min=variable_min,
-                                                                        variable_max=variable_max)
+                        variable_min = variable["range"][0] if "range" in variable.keys() else None
+                        variable_max = variable["range"][1] if "range" in variable.keys() else None
+                        experiment_variable,new_flag = ExperimentNumericVariable.objects.get_or_create(name=name)
+                        if not new_flag:
+                            experiment_variable.variable_min=variable_min
+                            experiment_variable.variable_max=variable_max
                     elif variable["datatype"].lower() == "string":
-                        experiment_variable = ExperimentStringVariable(name=name,
-                                                                       description=description,
-                                                                       variable_options=variable["options"])
+                        experiment_variable,new_flag = ExperimentStringVariable.objects.get_or_create(name=name)
+                        if not new_flag:
+                            experiment_variable.variable_options=variable["options"]
                     elif variable["datatype"].lower() == "boolean":
-                        experiment_variable = ExperimentBooleanVariable(name=name,
-                                                                        description=description)
+                        experiment_variable,new_flag = ExperimentBooleanVariable.objects.get_or_create(name=name)
+                    if not new_flag:
+                        experiment_variable.description = description
                     experiment_variable.save()
         except:
             pass
@@ -79,6 +69,8 @@ def install_experiments(experiment_tags=None):
     for experiment in experiments:
 
         try:
+            performance_variable = None
+            rejection_variable = None
             if isinstance(experiment[0]["experiment_variables"],list):
                 for var in experiment[0]["experiment_variables"]:
                     if var["type"].lower().strip() == "bonus":

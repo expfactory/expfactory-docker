@@ -12,7 +12,6 @@
         <article id="content">
             <header>
                 <h2>Add Experiments</h2>
-                <p>The following experiments can be added to the battery:</p>
             </header>
 
             <form action="#" method="POST">
@@ -76,6 +75,7 @@ $(document).ready(function() {
       i = 1
     })
 
+    // Functions to add and remove rows
     var i=1;
     $("#add_row").click(function(){
         $('#crit'+i).html("<td>"+ (i+1) +"</td><td><input name='var"+i+"' type='text' placeholder='Variable' class='form-control input-md'  /> </td><td><input  name='type"+i+"' type='text' placeholder='Type'  class='form-control input-md'></td><td><input  name='oper"+i+"' type='text' placeholder='Operator'  class='form-control input-md'></td><td><input  name='val"+i+"' type='text' placeholder='Value'  class='form-control input-md'></td>");

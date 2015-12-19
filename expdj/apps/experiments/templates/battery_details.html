@@ -143,6 +143,8 @@
                        {% if battery.experiments.all %}
                        <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
                        <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                       {% else %}
+                       <div class="alert alert-info" role="alert">You must <a href='{% url 'add_experiment' battery.id %}'>add experiments</a> to your battery before sending HITs.</div>
                        {% endif %}
                    {% endif %}
                 </div>

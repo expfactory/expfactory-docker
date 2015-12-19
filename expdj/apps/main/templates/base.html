@@ -33,7 +33,7 @@
                                 <ul>
                                     <li><a href="{% url 'experiments' %}">Available Experiments</a></li>
                                     {% if request.user.is_superuser %}
-                                        <li><a href="#">Update Experiment Templates</a></li>
+                                        <li><a href="{% url 'update_experiment_templates' %}">Update Experiment Templates</a></li>
                                         <li><a href="{% url 'add_experiment_template' %}">Add Experiment Templates</a></li>
                                     {% endif %}
                                 </ul>
