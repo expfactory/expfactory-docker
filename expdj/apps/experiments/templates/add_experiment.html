@@ -19,34 +19,39 @@
               <div class="form-group">
                 <label for="experiment">Select Experiment:</label>
                 <select class="form-control" id="experiment">
+                  <option>--</option>
                   {% for experiment in newexperiments %}
-                  <option value="{{ experiment.id }}">{{ experiment.name }}</option>
+                  <option value="{{ experiment.tag }}">{{ experiment.name }}</option>
                   {% endfor %}
                 </select>
               </div>
+
+              <div class="row" id="variable_selection_div" hidden>
+                  <div class="form-group col-md-4">
+                      <label for="experiment">Select Bonus or Rejection Variable: <i style="font-size:12" data-toggle="tooltip" title="Here you can specify specific criteria for allocating monetary bonus, or criteria for rejection of a participant. To not specify, do not click add." class="fa fa-question-circle"></i></label>
+                      <select class="form-control" id="variable_selection">
+                      </select>
+                  </div>
+                  <div class="col-md-8">
+                      <a id="add_row" class="btn btn-success pull-left" style="margin-top:32px">Add</a>
+                  </div>
+            </div>
 
             <span id = "credit_table_div">
             <table class="table table-bordered table-hover" id="credit_table">
       			    <thead>
       					    <tr><th class="text-center">#</th>
       						  <th class="text-center">Variable</th>
-      						  <th class="text-center">Type</th>
+      						  <th class="text-center">Description</th>
       						  <th class="text-center">Operator</th>
-                    <th class="text-center">Value</th></tr>
+                    <th class="text-center">Value</th><th></th></tr>
       				</thead>
       				<tbody>
-      					<tr id='crit0'>
-      						<td>1</td>
-      						<td><input type="text" name='var0'  placeholder='Variable' class="form-control"/></td>
-      						<td><input type="text" name='type0' placeholder='Type' class="form-control"/></td>
-      						<td><input type="text" name='oper0' placeholder='Operator' class="form-control"/></td>
-                  <td><input type="text" name='val0'  placeholder='Value' class="form-control"/></td>
-      					</tr>
+      					<tr id='crit0'></tr>
                 <tr id='crit1'></tr>
       				</tbody>
       			</table>
           </span>
-                <a id="add_row" class="btn btn-default pull-left">Add Row</a><a id='delete_row' class="pull-right btn btn-default">Delete Row</a><br><br>
             <input type="submit" value="OK">
             </form>
             <div class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
@@ -61,36 +66,114 @@
 <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script>
 
+function delete_row(divid){
+  console.log(divid)
+  var row_to_delete = $(divid).attr("id").replace("del","");
+
+  // Hide entire table if its the only entry
+  if (row_to_delete == "1"){
+    $("#variable_selection_div").hide();
+  }
+
+  $(divid).closest("tr").remove();
+}
+
 newexperimentsjson = {{ newexperimentsjson | safe }}
 
 $(document).ready(function() {
 
     // Selection of a new experiment clears the table, fills in options
     $("#experiment").change(function(){
-      for (j=0;j<=i;j++){
-        $("#crit"+(j-1)).html('');
-      }
-      $('#crit0').html("<td>"+ (1) +"</td><td><input name='var0' type='text' placeholder='Variable' class='form-control input-md'  /> </td><td><input  name='type0' type='text' placeholder='Type'  class='form-control input-md'></td><td><input  name='oper0' type='text' placeholder='Operator'  class='form-control input-md'></td><td><input  name='val0' type='text' placeholder='Value'  class='form-control input-md'></td>");
-      $('#credit_table').append('<tr id="crit0"></tr>');
+
+      var selected_experiment = $("#experiment").find(":selected").val();
+      var experiment = newexperimentsjson[selected_experiment]
+      clear_table();
       i = 1
+
+      if ((selected_experiment == "--") || ((experiment.performance_variable==null) && (experiment.rejection_variable==null))) {
+          $("#variable_selection_div").hide();
+          $("#credit_table_div").hide();
+      }
+      else {
+
+        // Update variable selection options
+        col_variable =  ""
+        if (experiment.performance_variable!= null){
+          col_variable = col_variable + "<option style='color:green' value='"+ experiment.performance_variable.id + "'>" + experiment.performance_variable.name + " : " + experiment.performance_variable.description + "</option>"
+        }
+        if (experiment.rejection_variable!= null){
+          col_variable = col_variable + "<option style='color:red' value='"+ experiment.rejection_variable.id + "'>" + experiment.rejection_variable.name + " : " + experiment.rejection_variable.description + "</option>"
+        }
+        $('#variable_selection').html(col_variable);
+        $("#variable_selection_div").show();
+      }
     })
 
     // Functions to add and remove rows
-    var i=1;
+    var i=0;
+    $("#credit_table_div").hide()
+
     $("#add_row").click(function(){
-        $('#crit'+i).html("<td>"+ (i+1) +"</td><td><input name='var"+i+"' type='text' placeholder='Variable' class='form-control input-md'  /> </td><td><input  name='type"+i+"' type='text' placeholder='Type'  class='form-control input-md'></td><td><input  name='oper"+i+"' type='text' placeholder='Operator'  class='form-control input-md'></td><td><input  name='val"+i+"' type='text' placeholder='Value'  class='form-control input-md'></td>");
+
+        var selected_experiment = $("#experiment").find(":selected").val();
+        var experiment = newexperimentsjson[selected_experiment]
+        var selected_variable = parseInt($("#variable_selection").find(":selected").val());
+        if (selected_variable == experiment.performance_variable.id){
+            var selection = experiment.performance_variable
+            var color = "green"
+            var uid = selection.id
+        } else {
+          var selection = experiment.rejection_variable
+          var color = "red"
+          var uid = selection.id
+        }
+
+        // Operations and values available depend on the variable type
+        if (selection.variable_options!=null){ // boolean or string with choices
+          var variable_operators = "<select class='form-control' id='oper" + uid + "'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
+          if ((selection.variable_options == true) || (selection.variable_options == false)){ // boolean
+            var variable_options = "<select class='form-control' id='val"+ uid +"'><option value='True'>True</option><option value='False'>False</option></select>"
+          } else {
+            var variable_options = "<select class='form-control' id='val"+ uid +"'>"
+            for (o=0;o<selection.variable_options.length;o++){
+              variable_options = variable_options + "<option value='"+ selection.variable_options[o]+"'>" + selection.variable_options[o] + "</option>"
+            }
+          }
+        } else { // numeric (will be parsed as float)
+          var variable_operators = "<select class='form-control' id='oper" + uid +"'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
+          if ((selection.variable_min!=-Infinity) && (selection.variable_max!=Infinity)) {
+            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' min='"+ selection.variable_min +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+          } else if ((selection.variable_min==-Infinity) && (selection.variable_max==Infinity)) {
+            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' name='val"+ uid +"' type='number' value='0' />"
+          } else if (selection.variable_min==-Infinity) {
+            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+          } else { // no limit on max
+            var variable_options = "<input class='numberinput form-control' id='val"+ uid +"' min='"+ selection.variable_min + "' name='val"+ uid +"' type='number' value='0' />"
+          }
+        }
+
+        $('#crit'+i).html("<td>"+ (i+1) +"</td><td style='color:" + color +"'>"+ selection.name + "</td><td>" + selection.description + "</td><td>"+ variable_operators +"</td><td>" + variable_options + "</td><td><a id='del"+ i +"' class='btn btn-danger pull-left' onClick='delete_row(this)'>delete</a></td>");
         $('#credit_table').append('<tr id="crit'+(i+1)+'"></tr>');
         i++;
+
+        // Update description
+        $("#credit_table_div").show();
      });
-    $("#delete_row").click(function(){
-        if(i>1){
-   		    $("#crit"+(i-1)).html('');
-   		    i--;
-   		 }
-   	 });
+
+    $("a[id^=del]").click(function(){
+      console.log($(this))
+
+    });
+
+   function clear_table(){
+     for (j=0;j<=i;j++){
+       $("#crit"+(j-1)).html('');
+     }
+     $('#credit_table').append('<tr id="crit0"></tr>');
+     $('#credit_table').append('<tr id="crit1"></tr>');
+   }
 
 });
-
 
 </script>
 {% endblock %}

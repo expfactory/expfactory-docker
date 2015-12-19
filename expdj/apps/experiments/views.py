@@ -327,12 +327,17 @@ def add_experiment(request,bid,eid=None):
     '''
     battery = get_battery(bid,request)
     newexperiments = [x for x in ExperimentTemplate.objects.all() if x not in battery.experiments.all()]
-    newexperimentsjson = [model_to_dict(x) for x in newexperiments]
 
+    # Capture the performance and rejection variables appropriately
     # We should be able to look up by tag
     experimentsbytag = dict()
-    for newexperiment in newexperimentsjson:
-        experimentsbytag[newexperiment["tag"]] = newexperiment
+    for newexperiment in newexperiments:
+        newexperimentjson = model_to_dict(newexperiment)
+        if newexperiment.performance_variable:
+            newexperimentjson["performance_variable"] = model_to_dict(newexperiment.performance_variable)
+        if newexperiment.rejection_variable:
+            newexperimentjson["rejection_variable"] = model_to_dict(newexperiment.rejection_variable)
+        experimentsbytag[newexperimentjson["tag"]] = newexperimentjson
 
     context = {"newexperiments": newexperiments,
                "newexperimentsjson":json.dumps(experimentsbytag)}
