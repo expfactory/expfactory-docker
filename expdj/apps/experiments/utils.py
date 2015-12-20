@@ -38,18 +38,16 @@ def parse_experiment_variable(variable):
                     if variable["datatype"].lower() == "numeric":
                         variable_min = variable["range"][0] if "range" in variable.keys() else None
                         variable_max = variable["range"][1] if "range" in variable.keys() else None
-                        experiment_variable,new_flag = ExperimentNumericVariable.objects.get_or_create(name=name)
-                        if not new_flag:
-                            experiment_variable.variable_min=variable_min
-                            experiment_variable.variable_max=variable_max
+                        experiment_variable,_ = ExperimentNumericVariable.objects.update_or_create(name=name,
+                                                                                                   description=description,
+                                                                                                   variable_min=variable_min,
+                                                                                                   variable_max=variable_max)
                     elif variable["datatype"].lower() == "string":
-                        experiment_variable,new_flag = ExperimentStringVariable.objects.get_or_create(name=name)
-                        if not new_flag:
-                            experiment_variable.variable_options=variable["options"]
+                        experiment_variable,_ = ExperimentStringVariable.objects.update_or_create(name=name,
+                                                                                                  description=description,
+                                                                                                  variable_options=variable_options)
                     elif variable["datatype"].lower() == "boolean":
-                        experiment_variable,new_flag = ExperimentBooleanVariable.objects.get_or_create(name=name)
-                    if not new_flag:
-                        experiment_variable.description = description
+                        experiment_variable,new_flag = ExperimentBooleanVariable.objects.get_or_create(name=name,description=description)
                     experiment_variable.save()
         except:
             pass

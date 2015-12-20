@@ -105,7 +105,7 @@ def update_experiment_templates(request,eid=None):
         else:
             experiments = [get_experiment_template(request,eid)]
         current_experiments = [e.tag for e in experiments]
-        [delete_experiment_template(request, e, redirect=False) for e in current_experiments]
+        [delete_experiment_template(request, e, do_redirect=False) for e in current_experiments]
         errored_experiments = install_experiments(experiment_tags=current_experiments)
         if len(errored_experiments) > 0:
             message = "The experiments %s did not update successfully." %(",".join(errored_experiments))
@@ -263,7 +263,7 @@ def edit_experiment_template(request,eid=None):
 
 # Delete an experiment
 @login_required
-def delete_experiment_template(request, eid, redirect=True):
+def delete_experiment_template(request, eid, do_redirect=True):
     experiment = get_experiment_template(eid,request)
     if check_experiment_edit_permission(request):
         # Static Files
@@ -279,7 +279,7 @@ def delete_experiment_template(request, eid, redirect=True):
             pass
         experiment.delete()
 
-    if redirect == True:
+    if do_redirect == True:
         return redirect('experiments')
 
 
@@ -346,14 +346,15 @@ def save_experiment(request,bid):
             credit_conditions.append(credit_condition)
 
         # Create the experiment to add to the battery
-        experiment = Experiment.objects.create(template=template,
-                                               credit_conditions=credit_conditions,
+        experiment,_ = Experiment.objects.get_or_create(template=template,
                                                include_bonus=include_bonus,
                                                include_catch=include_catch)
         experiment.save()
+        experiment.credit_conditions=credit_conditions
+        experiment.save()
 
-        # Add to battery
-        current_experiments = [e for e in battery.experiments.objects.all() if e.tag not in template.tag]
+        # Add to battery, will replace old version if it exists
+        current_experiments = [e for e in battery.experiments.all() if e.template.tag not in template.tag]
         current_experiments.append(experiment)
         battery.experiments = current_experiments
         battery.save()

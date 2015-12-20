@@ -106,6 +106,9 @@ class CreditCondition(models.Model):
     value = models.CharField("user selected value",max_length=200,null=False,blank=False,help_text="user selected value to compare the variable with the operator")
     operator = models.CharField("operator to compare variable to value",max_length=1,choices=OPERATOR_CHOICES,null=True,blank=True,help_text="Whether the credit condition is for reward (bonus) or rejection variables.")
 
+    def __meta__(self):
+        unique_together = (("variable","value","operator"))
+
 
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)

@@ -76,21 +76,24 @@
            <tbody>
            {% for experiment in battery.experiments.all %}
                <tr>
-                   <td><a href="{% url 'experiment_details' experiment.tag %}">{{ experiment.name }}</a></td>
-                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.cognitive_atlas_task }}</a></td>
+                   <td><a href="{% url 'experiment_details' experiment.template.tag %}">{{ experiment.template.name }}</a></td>
+                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
                    <td>
                       {% if delete_permission %}
-                      <a class="btn btn-danger" title="remove experiment from battery" href="{% url 'remove_experiment' battery.id experiment.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
+                      <a class="btn btn-danger" title="remove experiment from battery" href="{% url 'remove_experiment' battery.id experiment.template.tag %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
                       {% endif %}
-                      <a class="btn btn-default" target="_blank" title="preview" href="{% url 'preview_experiment' experiment.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
+                      <a class="btn btn-default" target="_blank" title="preview" href="{% url 'preview_experiment' experiment.template.tag %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
                    </td>
                </tr>
           {% endfor %}
           </tbody>
           </table>
+          {% if edit_permission %}
+          <a style="padding-top:20px" class='button btn-primary' href='{% url 'add_experiment' battery.id %}'>Add or Edit Experiments</a>
+          {% endif %}
          {% else %}
              {% if edit_permission %}
-             <a class='button' href='{% url 'add_experiment' battery.id %}'>Add Experiments to Battery</a>
+             <a class='button btn-primary' href='{% url 'add_experiment' battery.id %}'>Add Experiments to Battery</a>
              {% endif %}
          {% endif %}
         </div>
