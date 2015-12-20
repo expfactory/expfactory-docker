@@ -129,8 +129,9 @@ def multiple_new_hit(request, bid):
             form = HITForm(request.POST,instance=hit)
             if form.is_valid():
                 hit = form.save(commit=False)
+                hit.title = "%s #%s" %(hit.title,x)
                 hit.save()
-            return HttpResponseRedirect(battery.get_absolute_url())
+        return HttpResponseRedirect(battery.get_absolute_url())
     else:
 
         context = {"is_owner": is_owner,

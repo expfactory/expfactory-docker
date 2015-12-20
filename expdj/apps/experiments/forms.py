@@ -1,6 +1,7 @@
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
-from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery, \
+  CreditCondition
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.helper import FormHelper
 from django.forms import ModelForm
@@ -33,7 +34,7 @@ class ExperimentForm(ModelForm):
 
     class Meta:
         model = Experiment
-        fields = ("template","include_bonus","include_catch")
+        fields = ("include_bonus","include_catch")
 
     def clean(self):
         cleaned_data = super(ExperimentForm, self).clean()
@@ -64,6 +65,27 @@ class BatteryForm(ModelForm):
     def __init__(self, *args, **kwargs):
 
         super(BatteryForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-8'
+        self.helper.layout = Layout()
+        tab_holder = TabHolder()
+        self.helper.add_input(Submit("submit", "Save"))
+
+class CreditConditionForm(ModelForm):
+
+    class Meta:
+        exclude = ('variable',)
+        model = CreditCondition
+
+    def clean(self):
+        cleaned_data = super(CreditConditionForm, self).clean()
+        return cleaned_data
+
+    def __init__(self, *args, **kwargs):
+
+        super(CreditConditionForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-lg-2'

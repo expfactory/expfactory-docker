@@ -75,7 +75,7 @@ def get_experiment_template(eid,request,mode=None):
 
 # get experiment
 def get_experiment(eid,request,mode=None):
-    keyargs = {'pk':eid}
+    keyargs = {'id':eid}
     try:
         experiment = Experiment.objects.get(**keyargs)
     except Experiment.DoesNotExist:
@@ -126,22 +126,24 @@ def view_experiment(request, eid, bid=None):
     edit_permission = check_experiment_edit_permission(request)
     delete_permission = edit_permission
 
-    # View an experiment template details
-    if not bid:
-        experiment = get_experiment_template(eid,request)
-        template = 'experiment_template_details.html'
-
     # View an experiment associated with a battery
-    else:
+    if bid:
         experiment = get_experiment(eid,request)
         battery = get_battery(bid,request)
         edit_permission = check_battery_edit_permission(request,battery)
         delete_permission = edit_permission
         template = 'experiment_details.html'
 
+    # An experiment template
+    else:
+        experiment = get_experiment_template(eid,request)
+        template = 'experiment_template_details.html'
+        battery = None
+
     context = {'experiment': experiment,
                'edit_permission':edit_permission,
-               'delete_permission':delete_permission}
+               'delete_permission':delete_permission,
+               'battery':battery}
 
     return render_to_response(template, context)
 
@@ -234,7 +236,7 @@ def save_experiment_template(request):
 
 @login_required
 def edit_experiment_template(request,eid=None):
-    '''edit_experiment
+    '''edit_experiment_template
     view for editing a single experiment. Likely only will be useful to change publication status
     '''
     # Editing an existing experiment
@@ -286,15 +288,12 @@ def delete_experiment_template(request, eid, do_redirect=True):
 # Experiments ----------------------------------------------------------
 
 @login_required
-def edit_experiment(request,bid,eid=None):
+def edit_experiment(request,bid,eid):
     '''edit_experiment
-    view to select experiments to add to battery
+    view to edit experiment already added to battery
     '''
     battery = get_battery(bid,request)
-
-    # Editing an existing experiment already added
-    if eid:
-        experiment = get_experiment(eid,request)
+    experiment = get_experiment(eid,request)
 
     if request.method == "POST":
         form = ExperimentForm(request.POST, instance=experiment)
@@ -302,16 +301,13 @@ def edit_experiment(request,bid,eid=None):
         if form.is_valid():
             experiment = form.save(commit=False)
             experiment.save()
-
-            context = {
-                'experiment': experiment,
-            }
             return HttpResponseRedirect(experiment.get_absolute_url())
     else:
         form = ExperimentForm(instance=experiment)
 
     context = {"form": form,
-               "experiment":experiment}
+               "experiment":experiment,
+               "battery":battery}
     return render(request, "edit_experiment.html", context)
 
 @login_required
@@ -392,8 +388,25 @@ def remove_experiment(request,bid,eid):
    '''
    battery = get_battery(bid,request)
    if check_battery_edit_permission(request,battery):
-       battery.experiments = [x for x in battery.experiments.all() if x.tag != eid]
+       battery.experiments = [x for x in battery.experiments.all() if x.id != eid]
    return HttpResponseRedirect(battery.get_absolute_url())
+
+# Conditions -----------------------------------------------------------
+
+@login_required
+def remove_condition(request,bid,eid,cid):
+    '''remove_condition: removes a condition from being associated with a battery
+    '''
+    battery = get_battery(bid,request)
+    experiment = get_experiment(eid,request)
+    experiment.credit_conditions = [c for c in experiment.credit_conditions.all() if c.id != cid]
+    form = ExperimentForm(instance=experiment)
+
+    context = {"form": form,
+               "experiment":experiment,
+               "battery":battery}
+    return render(request, "edit_experiment.html", context)
+
 
 
 # Battery --------------------------------------------------------------

@@ -76,7 +76,7 @@
            <tbody>
            {% for experiment in battery.experiments.all %}
                <tr>
-                   <td><a href="{% url 'experiment_details' experiment.template.tag %}">{{ experiment.template.name }}</a></td>
+                   <td><a href="{% url 'experiment_details' battery.id experiment.id %}">{{ experiment.template.name }}</a></td>
                    <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
                    <td>
                       {% if delete_permission %}

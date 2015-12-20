@@ -115,10 +115,10 @@ class Experiment(models.Model):
     credit_conditions = models.ManyToManyField(CreditCondition,related_name="conditions",help_text="functions over performance and rejection variables to allocate payments and credit.",null=True,blank=True)
     include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
                                                 (True, 'includes bonus')),
-                                                default=False,verbose_name="does not include bonus")
+                                                default=False,verbose_name="Bonus")
     include_catch = models.BooleanField(choices=((False, 'does not include catch'),
                                             (True, 'includes catch')),
-                                            default=False,verbose_name="does not include catch")
+                                            default=False,verbose_name="Catch")
     def __str__(self):
         return self.template.name
 
