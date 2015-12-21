@@ -99,7 +99,7 @@ def serve_hit(request,hid):
             }
 
         # Get experiment folders
-        experiment_folders = [os.path.join(media_dir,"experiments",x.tag) for x in task_list]
+        experiment_folders = [os.path.join(media_dir,"experiments",x.template.tag) for x in task_list]
         loadjs = get_load_static(experiment_folders,url_prefix="/")
         concatjs = get_concat_js(experiment_folders)
         context["experiment_load"] = loadjs

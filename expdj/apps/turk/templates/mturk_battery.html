@@ -9,7 +9,7 @@
     <script type="text/javascript" src="{% get_media_prefix %}js/d3.v3.min.js""></script>
 
     <script type="text/javascript">
-        // Unique id of the result associated with the assignment and worker 
+        // Unique id of the result associated with the assignment and worker
         var uniqueId = "{{ uniqueId }}";
     </script>
 
@@ -20,16 +20,16 @@
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-categorize.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-consent.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-survey-text.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>    
-    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>    
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>
     {{ experiment_load | safe }}
 
     <link rel="stylesheet" href="{% get_media_prefix %}css/jspsych.css" />
-    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />	
+    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />
 </head>
 <body>
 
-<script> 
+<script>
 
     experiment_list = []
     experiment_names = []
@@ -38,8 +38,8 @@
     var expfactory = new ExpFactory(uniqueId);
 
     {% for experiment in experiments %}
-        experiment_list.push({"name":"{{ experiment.tag }}","time":{{ experiment.time }}})
-        experiment_names.push("{{ experiment.tag }}")
+        experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
+        experiment_names.push("{{ experiment.template.tag }}")
     {% endfor %}
 
     /* takes an experiment array and concatenates it with the array of each experiment \
@@ -51,7 +51,7 @@
             }
         }
     }
-    
+
 
     var task_list = '<ul list-text>'
     for (i=0; i<experiment_names.length; i++) {
@@ -73,7 +73,7 @@
 	    on_finish: function() {
                 console.log("Finished!");
                 expfactory.saveData({
-                    success: function() { 
+                    success: function() {
                         $("#turkey_form").submit()
                     }
                 });
@@ -81,7 +81,7 @@
             on_data_update: function(data) {
                 expfactory.recordTrialData(data);
             }
-     });	
+     });
 </script>
 
     <form action="{{ amazon_host }}" method="POST" id="turkey_form">

@@ -387,8 +387,14 @@ def remove_experiment(request,bid,eid):
    removes an experiment from a battery
    '''
    battery = get_battery(bid,request)
+   experiment = get_experiment(eid,request)
    if check_battery_edit_permission(request,battery):
-       battery.experiments = [x for x in battery.experiments.all() if x.id != eid]
+       battery.experiments = [x for x in battery.experiments.all() if x.id != experiment.id]
+   battery.save()
+
+   # If experiment is not linked to other batteries, delete it
+   if len(Battery.objects.filter(experiments__id=experiment.id)) == 0:
+       experiment.delete()
    return HttpResponseRedirect(battery.get_absolute_url())
 
 # Conditions -----------------------------------------------------------
