@@ -13,6 +13,6 @@ urlpatterns = patterns('',
 
     # Turk Deployments
     url(r'^turk/(?P<hid>\d+|[A-Z]{8})',serve_hit,name='serve_hit'),
+    url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
     url(r'^sync/$',sync,name='sync_data')
-
 )

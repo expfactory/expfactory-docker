@@ -169,9 +169,10 @@ def select_experiments_time(maximum_time_allowed,experiments):
     # Add tasks with random selection until we reach the time limit
     task_list = []
     total_time = 0
-    while (total_time < maximum_time_allowed) and len(experiments)>0:
+    exps = experiments[:]
+    while (total_time < maximum_time_allowed) and len(exps)>0:
         # Randomly select an experiment
-        experiment = experiments.pop(choice(range(len(experiments))))
-        if (total_time + experiment.time*60.0) <= total_time:
+        experiment = exps.pop(choice(range(len(exps))))
+        if (total_time + experiment.template.time*60.0) <= maximum_time_allowed:
             task_list.append(experiment)
     return task_list

@@ -1,6 +1,7 @@
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, select_experiments_time
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
+from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
@@ -8,7 +9,6 @@ from expfactory.battery import get_load_static, get_concat_js
 from django.core.management.base import BaseCommand
 from expdj.apps.experiments.models import Battery
 from expdj.apps.turk.forms import HITForm
-from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from optparse import make_option
 from numpy.random import choice
 import json
@@ -64,6 +64,9 @@ def serve_hit(request,hid):
             hit_id = request.GET.get("hitId","")
             turk_submit_to = request.GET.get("turkSubmitTo","")
 
+            if "" in [worker_id,hit_id]:
+                return render_to_response("error_sorry.html")
+
             # Get Experiment Factory objects for each
             worker = get_worker(worker_id)
             hit = get_hit(hid,request)
@@ -73,12 +76,12 @@ def serve_hit(request,hid):
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
 
             # Initialize Assignment object, obtained from Amazon, and Result
-            assignment = Assignment.objects.update_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
-            result = Result.objects.update_or_create(worker=worker, # worker, assignment, are unique
-                                                     assignment=assignment, # assignment has record of HIT
-                                                     browser=browser,       # HIT has battery ID
-                                                     platform=platform)
+            assignment,_ = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
+            result,_ = Result.objects.update_or_create(worker=worker,         # worker, assignment, are unique
+                                                       assignment=assignment, # assignment has record of HIT
+                                                       defaults={"browser":browser,"platform":platform})
 
+            result.save()
             # Get experiments the worker has not yet completed
             experiments = [x for x in battery.experiments.all() if x not in worker.experiments.all()]
 
@@ -208,38 +211,33 @@ def get_flagged_questions(number=None):
 #### DATA #############################################################
 
 # These views are to work with backbone.js
-def sync(request):
+def sync(request,rid=None):
     '''sync
-    view/method for running experiments to get/send data from the server
+    view/method for running experiments to get data from the server
+    :param rid: the result object ID, obtained before user sees page
     '''
-
-    return_data = {
-        "assignmentId": 0,
-        "hitId": 0,
-        "workerId": 0
-    }
 
     if request.method == "POST":
 
-        data = request.POST["taskdata"]
+        data = json.loads(request.body)
 
+        if rid != None:
         # Update the result, already has worker and assignment ID stored
-        result = Result.objects.update_or_create(id=data["uniqueId"],
-                                                 datetime=data["dateTime"],
-                                                 taskdata=data["trialdata"],
-                                                 current_trial=data["current_trial"])
+            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            result.taskdata = data["taskdata"]["data"]
+            result.current_trial = data["taskdata"]["currenttrial"]
+            result.completed = True
+            result.save()
 
-        # Update the assignmentID object, obtained from Amazon
-        # NOTE: This could not be reasonable to update at each data update - may want to include
-        # variable to signify end of task, and update then. Will leave like this for now.
-        assignment = Assignment.objects.update(mturk_id=result.assignment_id)
-        return_data["assignmentId"] = assignment.id
-        return_data["hitId"] = assignment.hit_id
-        return_data["workerId"] = assignment.worker_id
-
-        # Need to return something? Redirect somewhere?
-
-
-    # If we have a GET, return updated assignmentId, hitId, workerId
-    data = json.dumps(return_data)
+            if data["djstatus"] == "FINISHED":
+                # Update the assignmentID object, obtained from Amazon
+                assignment = Assignment.objects.update(id=result.assignment_id)
+                assignment.save()
+                # Add the experiments to the worker's log - tasks associated with batteries change
+                worker = assignment.worker
+                new_experiments = [e for e in assignment.hit.battery.experiments.all() if e not in worker.experiments.all()]
+                [worker.experiments.add(x) for x in new_experiments]
+                worker.save()
+    else:
+        data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')

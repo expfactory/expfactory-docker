@@ -44,10 +44,10 @@ class Worker(models.Model):
     experiments = models.ManyToManyField(Experiment,related_name="experiments_completed",related_query_name="experiments", blank=True,help_text="These are experiments that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
-        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.id,self.experiments.count())
 
     def __unicode__(self):
-        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.id,self.experiments.count())
 
     class Meta:
         ordering = ['id']
@@ -55,7 +55,8 @@ class Worker(models.Model):
 
 def get_worker(worker_id):
     # (<Worker: WORKER_ID: experiments[0]>, True)
-    return Worker.objects.update_or_create(id=worker_id)[0]
+    worker,_ = Worker.objects.update_or_create(id=worker_id)
+    return worker
 
 class HIT(models.Model):
     """An Amazon Mechanical Turk Human Intelligence Task as a Django Model"""
@@ -478,6 +479,9 @@ class Result(models.Model):
     language = models.CharField(max_length=128,null=True,blank=True,help_text="language of the browser associated with the result")
     browser = models.CharField(max_length=128,null=True,blank=True,help_text="browser of the result")
     platform = models.CharField(max_length=128,null=True,blank=True,help_text="platform of the result")
+    completed = models.BooleanField(choices=((False, 'Not completed'),
+                                             (True, 'Completed')),
+                                              default=False,verbose_name="participant completed the battery")
 
     class Meta:
         verbose_name = "Result"
@@ -485,10 +489,10 @@ class Result(models.Model):
         unique_together = ("worker","assignment")
 
     def __repr__(self):
-        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
+        return u"Result: id[%s],worker[%s]" %(self.id,self.worker)
 
     def __unicode__(self):
-        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
+        return u"Result: id[%s],worker[%s]" %(self.id,self.worker)
 
 
 

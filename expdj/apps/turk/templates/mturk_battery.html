@@ -31,6 +31,37 @@
 
 <script>
 
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+        return cookieValue;
+      }
+
+    var csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
     experiment_list = []
     experiment_names = []
 
@@ -70,19 +101,37 @@
 
     jsPsych.init({
         experiment_structure: experiments,
-	    on_finish: function() {
-                console.log("Finished!");
-                expfactory.saveData({
-                    success: function() {
-                        $("#turkey_form").submit()
-                    }
-                });
+	     on_finish: function() {
+                expfactory.djstatus = "FINISHED";
+                // Submit to AWS first to obtain the complete assignment object
+                //$("#turkey_form").submit()
+                $.ajax({ type: "POST",
+                         contentType: "application/json",
+                         url : "{% url 'sync_data' uniqueId %}",
+                         data : JSON.stringify(expfactory),
+                         dataType: "json",
+                         success: function(data){
+                           console.log(data);
+                           console.log("Finished!");
+                         }
+                       });
             },
             on_data_update: function(data) {
+                console.log(data);
                 expfactory.recordTrialData(data);
-            }
-     });
-</script>
+                expfactory.djstatus = "UPDATE";
+                $.ajax({ type: "POST",
+                         contentType: "application/json",
+                         url : "{% url 'sync_data' uniqueId %}",
+                         data : JSON.stringify(expfactory),
+                         dataType: "json",
+                         success: function(data){
+                           console.log(data);
+                         }
+                       });
+                }
+           });
+    </script>
 
     <form action="{{ amazon_host }}" method="POST" id="turkey_form">
             <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
