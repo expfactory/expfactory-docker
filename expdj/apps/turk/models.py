@@ -41,7 +41,7 @@ class DisposeException(Exception):
 
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    experiments = models.ManyToManyField(ExperimentTemplate,related_name="experiment_templates_completed",related_query_name="experiment templates completed", blank=True,help_text="These are experiments that have been granted to a worker, on the level of the template so a worker cannot produce the same data twice for different batteries.",verbose_name="Worker experiments")
+    experiments = models.ManyToManyField(Task,related_name="experiment_templates_completed",related_query_name="experiment templates and batteries completed", blank=True,help_text="These are pairs of experiments and batteries that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
         return "%s: experiments[%s]" %(self.id,self.experiments.count())
@@ -51,6 +51,27 @@ class Worker(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+class Task(models.Model):
+    '''A worker task holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
+    experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
+    battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
+
+    def __str__(self):
+        return "%s:%s" %(self.battery,self.experiment)
+
+    def __unicode__(self):
+        return "%s:%s" %(self.battery,self.experiment)
+
+    class Meta:
+        ordering = ['id']
+
+
+
+
+
+
 
 
 def get_worker(worker_id):

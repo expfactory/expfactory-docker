@@ -82,8 +82,10 @@ def serve_hit(request,hid):
                                                        defaults={"browser":browser,"platform":platform})
 
             result.save()
+
             # Get experiments the worker has not yet completed
-            experiments = [x for x in battery.experiments.all() if x not in worker.experiments.all()]
+            completed_experiments = [x.experiment for x in worker.experiments.all() if x.battery == battery]
+            experiments = [x for x in battery.experiments.all() if x not in completed_experiments]
 
             # If the worker has completed all that we have available
             if len(experiments) == 0:

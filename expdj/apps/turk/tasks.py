@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from expdj.apps.turk.models import Result
+from expdj.apps.turk.models import Result, Task
 from celery import shared_task, Celery
 import numpy
 
@@ -17,8 +17,14 @@ def assign_experiment_credit(rid):
 
     # Add that user completed experiment immediately
     worker = result.worker
-    new_experiments = [e for e in experiments if e not in worker.experiments.all()]
-    [worker.experiments.add(e) for e in new_experiments]        
+    current_experiments = [e.experiment for e in worker.experiments.all()]
+    new_experiments = [e for e in experiments if e not in current_experiments]
+    for new_experiment in new_experiments:
+        task = Task(battery=result.assignment.hit.battery,
+                    experiment=new_experiment)
+        task.save()
+        worker.experiments.add(task)
+            
     worker.save()
 
     # Get rejection criteria
