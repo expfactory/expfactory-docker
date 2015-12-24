@@ -120,3 +120,20 @@ def get_cognitiveatlas_task(task_id):
     except:
         # Any error with API, etc, return None
         return None
+
+# BONUS AND REJECTION CREDIT ##############################################################
+
+def update_credits(experiment,cid):
+
+    # Turn off credit conditions if no variables exist
+    is_bonus = True if experiment.template.performance_variable.id == cid else False
+    is_rejection = True if experiment.template.rejection_variable.id == cid else False
+
+    # This only works given each experiment has one bonus or rejection criteria
+    if is_bonus and len(experiment.credit_conditions)==0:
+        experiment.include_bonus = False
+
+    if is_rejection and len(experiment.credit_conditions)==0:
+        experiment.include_catch = False
+
+    experiment.save()

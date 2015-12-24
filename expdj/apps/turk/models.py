@@ -3,7 +3,7 @@
 
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from django.contrib.contenttypes.models import ContentType
-from expdj.apps.experiments.models import Experiment, Battery
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.question import ExternalQuestion
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
@@ -41,7 +41,7 @@ class DisposeException(Exception):
 
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    experiments = models.ManyToManyField(Experiment,related_name="experiments_completed",related_query_name="experiments", blank=True,help_text="These are experiments that have been granted to a worker.",verbose_name="Worker experiments")
+    experiments = models.ManyToManyField(ExperimentTemplate,related_name="experiment_templates_completed",related_query_name="experiment templates completed", blank=True,help_text="These are experiments that have been granted to a worker, on the level of the template so a worker cannot produce the same data twice for different batteries.",verbose_name="Worker experiments")
 
     def __str__(self):
         return "%s: experiments[%s]" %(self.id,self.experiments.count())

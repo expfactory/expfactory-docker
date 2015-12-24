@@ -14,6 +14,7 @@ import sys
 from datetime import timedelta
 import matplotlib
 import tempfile
+from celery import Celery
 from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
@@ -65,7 +66,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'guardian',
     'dbbackup',
-    'djrill'
+    'djrill',
+    'djcelery'
 )
 
 
@@ -176,6 +178,18 @@ CACHES = {
 # Mandrill config
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace with a different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+
+# Celery config
+BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
+CELERY_IMPORTS = ('expfactory.apps.turk.tasks', )
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False

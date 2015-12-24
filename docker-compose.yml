@@ -37,3 +37,15 @@ nginx:
 redis:
   restart: always
   image: redis
+
+worker:
+  image: vanessa/expfactory
+  command: celery worker -A expfactory.celery -Q default -n default@%h
+  volumes:
+    - .:/code
+  volumes_from:
+    - uwsgi
+    - data
+  links:
+    - db
+    - redis

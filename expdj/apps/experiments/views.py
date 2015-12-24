@@ -3,7 +3,8 @@ from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Batter
  ExperimentVariable, CreditCondition
 from expdj.apps.turk.models import HIT
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
-from expdj.apps.experiments.utils import get_experiment_selection, install_experiments
+from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
+  update_credits
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.forms.models import model_to_dict
 from expfactory.views import embed_experiment
@@ -301,7 +302,9 @@ def edit_experiment(request,bid,eid):
         if form.is_valid():
             experiment = form.save(commit=False)
             experiment.save()
-            return HttpResponseRedirect(experiment.get_absolute_url())
+            for cc in experiment.credit_conditions:
+                update_credits(experiment,cc.id)
+            return HttpResponseRedirect(battery.get_absolute_url())
     else:
         form = ExperimentForm(instance=experiment)
 
@@ -405,14 +408,22 @@ def remove_condition(request,bid,eid,cid):
     '''
     battery = get_battery(bid,request)
     experiment = get_experiment(eid,request)
-    experiment.credit_conditions = [c for c in experiment.credit_conditions.all() if c.id != cid]
+    credit_condition = CreditCondition.objects.filter(id=cid)[0]
+    experiment.credit_conditions = [c for c in experiment.credit_conditions.all() if c != credit_condition]
+
+    # Deletes condition from experiments, if not used from database, turns bonus/rejection on/off
+    update_credits(experiment,cid)
+
+    # Delete credit condition if not attached to experiments
+    if len(Experiment.objects.filter(credit_conditions__id=cid)) == 0:
+        credit_condition.delete()
+
     form = ExperimentForm(instance=experiment)
 
     context = {"form": form,
                "experiment":experiment,
                "battery":battery}
     return render(request, "edit_experiment.html", context)
-
 
 
 # Battery --------------------------------------------------------------

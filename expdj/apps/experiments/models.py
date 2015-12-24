@@ -122,11 +122,6 @@ class Experiment(models.Model):
     def __str__(self):
         return self.template.name
 
-    # Get the url for an experiment
-    def get_absolute_url(self):
-        return_cid = self.pk
-        return reverse('experiment_details', args=[str(return_cid)])
-
 
 class Battery(models.Model):
     '''A battery is a collection of experiment templates'''
