@@ -104,7 +104,7 @@ class CreditCondition(models.Model):
     )
     variable = models.ForeignKey(ExperimentVariable,null=False,blank=False)
     value = models.CharField("user selected value",max_length=200,null=False,blank=False,help_text="user selected value to compare the variable with the operator")
-    operator = models.CharField("operator to compare variable to value",max_length=1,choices=OPERATOR_CHOICES,null=True,blank=True,help_text="Whether the credit condition is for reward (bonus) or rejection variables.")
+    operator = models.CharField("operator to compare variable to value",max_length=200,choices=OPERATOR_CHOICES,null=True,blank=True,help_text="Whether the credit condition is for reward (bonus) or rejection variables.")
     amount = models.FloatField(null=True, verbose_name="amount, in dollars, to allocate/subtract", blank=True)
 
     def __meta__(self):

@@ -9,7 +9,9 @@
         <div>
             {% if edit_permission %}
                 <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
+                {% if has_results %}
                 <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
+                {% endif %}
                 {% if hits %}
                     <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
                 {% endif %}
@@ -79,6 +81,9 @@
                    <td><a href="{% url 'experiment_details' battery.id experiment.id %}">{{ experiment.template.name }}</a></td>
                    <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
                    <td>
+                      {% if edit_permission %}
+                      <a class="btn btn-default" title="export experiment results" href="{% url 'export_experiment' experiment.id %}"><i class="fa fa-download"></i></a>
+                      {% endif %}
                       {% if delete_permission %}
                       <a class="btn btn-danger" title="remove experiment from battery" href="{% url 'remove_experiment' battery.id experiment.id %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
                       {% endif %}

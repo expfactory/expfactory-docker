@@ -42,10 +42,11 @@
             <table class="table table-bordered table-hover" id="credit_table">
       	        <thead>
                     <tr><th class="text-center">#</th>
-                        <th class="text-center">Variable</th>
+                        <th class="text-center">Variable <i style="font-size:10" data-toggle="tooltip" title="Variables are first searched for across all task data, and if not found, they are assessed for summary terms. If found, the appropriate summary statistic is calculated." class="fa fa-question-circle"></i></th>
                         <th class="text-center">Description</th>
                         <th class="text-center">Operator</th>
-                        <th class="text-center">Value</th><th></th></tr>
+                        <th class="text-center">Value</th>
+                        <th class="text-center">Amount <i style="font-size:10" data-toggle="tooltip" title="Amount ($$.cents) to allocate for bonus. Ignored for rejection variables." class="fa fa-question-circle"></i></th><th></th></tr>
       		</thead>
       		<tbody>
       		    <tr id='crit0'></tr>
@@ -141,7 +142,7 @@ $(document).ready(function() {
             }
           }
         } else { // numeric (will be parsed as float)
-          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid +"'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid +"'><option value='EQUALS'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
           if ((selection.variable_min!=-Infinity) && (selection.variable_max!=Infinity)) {
             var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' min='"+ selection.variable_min +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
           } else if ((selection.variable_min==-Infinity) && (selection.variable_max==Infinity)) {
@@ -153,7 +154,8 @@ $(document).ready(function() {
           }
         }
 
-        $('#crit'+i).html("<td>"+ (i+1) +"</td><td style='color:" + color +"'>"+ selection.name + "</td><td>" + selection.description + "</td><td>"+ variable_operators +"</td><td>" + variable_options + "</td><td><a id='del"+ i +"' class='btn btn-danger pull-left' onClick='delete_row(this)'>delete</a></td>");
+        var amount_input = "<input class='numberinput form-control' name='amt" + uid + "' id='amt"+ uid +"' min='0.0' name='amt"+ uid +"' type='number' step='0.01' value='0' />"
+        $('#crit'+i).html("<td>"+ (i+1) +"</td><td style='color:" + color +"'>"+ selection.name + "</td><td>" + selection.description + "</td><td>"+ variable_operators +"</td><td>" + variable_options + "</td><td>" + amount_input +"</td><td><a id='del"+ i +"' class='btn btn-danger pull-left' onClick='delete_row(this)'>delete</a></td>");
         $('#credit_table').append('<tr id="crit'+(i+1)+'"></tr>');
         i++;
 

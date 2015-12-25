@@ -1,13 +1,12 @@
+from expdj.apps.turk.tasks import get_unique_variables, get_unique_experiments
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, \
   CognitiveAtlasTask, CognitiveAtlasConcept, ExperimentVariable, ExperimentNumericVariable, \
   ExperimentBooleanVariable, ExperimentStringVariable
-from expfactory.vm import custom_battery_download, prepare_vm, specify_experiments
-from expfactory.experiment import validate, load_experiment, get_experiments, make_lookup
-from expfactory.utils import copy_directory, get_installdir, sub_template
-from expfactory.battery import generate, generate_config
+from expfactory.vm import custom_battery_download
+from expfactory.experiment import get_experiments
+from expfactory.utils import copy_directory
 from cognitiveatlas.api import get_task, get_concept
 from expdj.settings import STATIC_ROOT,BASE_DIR,MEDIA_ROOT
-from expfactory.interface import get_field
 from datetime import datetime
 import tempfile
 import shutil
@@ -26,6 +25,7 @@ def get_experiment_selection():
     experiments = [x[0] for x in experiments]
     shutil.rmtree(tmpdir)
     return experiments
+
 
 def parse_experiment_variable(variable):
     experiment_variable = None
@@ -94,6 +94,78 @@ def install_experiments(experiment_tags=None):
 
     shutil.rmtree(tmpdir)
     return errored_experiments
+
+# EXPERIMENTS AND BATTERIES ###############################################################
+
+def make_experiment_lookup(tags,battery=None):
+    '''Generate lookup based on tag'''
+    experiment_lookup = dict()
+    for tag in tags:
+        experiment = None
+        if battery != None:
+            # First try retrieving from battery
+            experiment = battery.experiments.filter(template__tag=tag)[0]
+            if isinstance(experiment,Experiment):
+                tmp = {"include_bonus":experiment.include_bonus,
+                       "include_catch":experiment.include_catch,
+                       "experiment":experiment.template}
+            else:
+               experiment = None
+        if experiment == None:
+            experiment = ExperimentTemplate.objects.filter(tag=tag)[0]
+            tmp = {"include_bonus":"Unknown",
+                   "include_catch":"Unknown",
+                   "experiment":experiment}
+        experiment_lookup[tag] = tmp
+    return experiment_lookup
+
+
+def make_results_df(battery,results):
+
+    variables = get_unique_variables(results)
+    tags = get_unique_experiments(results)
+    lookup = make_experiment_lookup(tags,battery)
+    header = ['worker_id',
+              'worker_platform',
+              'worker_browser',
+              'battery_name',
+              'battery_owner',
+              'battery_owner_email',
+              'battery_completed',
+              'experiment_include_bonus',
+              'experiment_include_catch',
+              'experiment_tag',
+              'experiment_name',
+              'experiment_reference',
+              'experiment_cognitive_atlas_task_id']
+    column_names = header + variables
+    df = pandas.DataFrame(columns=column_names)
+    for result in results:
+        worker_id = result.worker_id
+        for t in range(len(result.taskdata)):
+            row_id = "%s_%s" %(worker_id,t)
+            trial = result.taskdata[t]
+            df.loc[row_id,["worker_id","worker_platform","worker_browser","battery_name","battery_owner","battery_owner_email","battery_completed"]] = [worker_id,result.platform,result.browser,battery.name,battery.owner.username,battery.owner.email,result.completed]
+            for key in trial.keys():
+                if key != "trialdata":
+                    df.loc[row_id,key] = trial[key]
+            for key in trial["trialdata"].keys():
+                df.loc[row_id,key] = trial["trialdata"][key]
+                if key == "exp_id":
+                    exp=lookup[trial["trialdata"][key]]
+                    df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_tag","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].tag,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
+
+    # Change all names that don't start with experiment or worker or experiment to be result
+    result_variables = [x for x in column_names if x not in header]
+    for result_variable in result_variables:
+        df=df.rename(columns = {result_variable:"result_%s" %result_variable})
+        final_names = ["result_%s" %x for x in variables]
+
+    # rename uniqueid to result id
+    if "result_uniqueid" in df.columns:
+        df=df.rename(columns = {'result_uniqueid':'result_id'})
+
+    return df
 
 
 # COGNITIVE ATLAS FUNCTIONS ###############################################################

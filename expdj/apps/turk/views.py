@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, render_to_response, render, redi
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
+from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
 from expfactory.battery import get_load_static, get_concat_js
@@ -84,8 +85,8 @@ def serve_hit(request,hid):
             result.save()
 
             # Get experiments the worker has not yet completed
-            completed_experiments = [x.experiment for x in worker.experiments.all() if x.battery == battery]
-            experiments = [x for x in battery.experiments.all() if x not in completed_experiments]
+            completed_experiments = [x.experiment.tag for x in worker.experiments.all() if x.battery == battery]
+            experiments = [x for x in battery.experiments.all() if x.template.tag not in completed_experiments]
 
             # If the worker has completed all that we have available
             if len(experiments) == 0:
@@ -232,14 +233,9 @@ def sync(request,rid=None):
             result.save()
 
             if data["djstatus"] == "FINISHED":
-                # Update the assignmentID object, obtained from Amazon
                 assignment = Assignment.objects.update(id=result.assignment_id)
                 assignment.save()
-                # Add the experiments to the worker's log - tasks associated with batteries change
-                worker = assignment.worker
-                new_experiments = [e for e in assignment.hit.battery.experiments.all() if e not in worker.experiments.all()]
-                [worker.experiments.add(x) for x in new_experiments]
-                worker.save()
+                assign_experiment_credit(result.id)
     else:
         data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')

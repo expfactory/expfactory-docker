@@ -39,20 +39,6 @@ class DisposeException(Exception):
     __str__ = __unicode__
 
 
-class Worker(models.Model):
-    id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    experiments = models.ManyToManyField(Task,related_name="experiment_templates_completed",related_query_name="experiment templates and batteries completed", blank=True,help_text="These are pairs of experiments and batteries that have been granted to a worker.",verbose_name="Worker experiments")
-
-    def __str__(self):
-        return "%s: experiments[%s]" %(self.id,self.experiments.count())
-
-    def __unicode__(self):
-        return "%s: experiments[%s]" %(self.id,self.experiments.count())
-
-    class Meta:
-        ordering = ['id']
-
-
 class Task(models.Model):
     '''A worker task holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
     experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
@@ -68,7 +54,18 @@ class Task(models.Model):
         ordering = ['id']
 
 
+class Worker(models.Model):
+    id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    experiments = models.ManyToManyField(Task,related_name="experiment_templates_completed",related_query_name="experiment templates and batteries completed", blank=True,help_text="These are pairs of experiments and batteries that have been granted to a worker.",verbose_name="Worker experiments")
 
+    def __str__(self):
+        return "%s: experiments[%s]" %(self.id,self.experiments.count())
+
+    def __unicode__(self):
+        return "%s: experiments[%s]" %(self.id,self.experiments.count())
+
+    class Meta:
+        ordering = ['id']
 
 
 
@@ -333,6 +330,8 @@ class HIT(models.Model):
 
         This instance's attributes are updated.
         """
+        if not self.has_connection():
+            self.generate_connection()
         if mturk_hit is None or not hasattr(mturk_hit, "HITStatus"):
             hit = self.connection.get_hit(self.mturk_id)[0]
         else:
@@ -414,18 +413,24 @@ class Assignment(models.Model):
 
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""
-        self.connection.approve_assignment(self.mturk_id, feedback=feedback)
+        if not self.hit.has_connection():
+            self.hit.generate_connection()
+        self.hit.connection.approve_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def reject(self, feedback=None):
         """Thin wrapper around Boto reject function."""
-        self.connection.reject_assignment(self.mturk_id, feedback=feedback)
+        if not self.hit.has_connection():
+            self.hit.generate_connection()
+        self.hit.connection.reject_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def bonus(self, value=0.0, feedback=None):
         """Thin wrapper around Boto bonus function."""
+        if not self.hit.has_connection():
+            self.hit.generate_connection()
 
-        self.connection.grant_bonus(
+        self.hit.connection.grant_bonus(
                 self.worker_id,
                 self.mturk_id,
                 bonus_price=boto.mturk.price.Price(amount=value),
@@ -442,9 +447,12 @@ class Assignment(models.Model):
 
         This instance's attributes are updated.
         """
+        if not self.hit.has_connection():
+            self.hit.generate_connection()
+
         if mturk_assignment is None:
-            hit = self.connection.get_hit(self.hit.mturk_id)[0]
-            for a in self.connection.get_assignments(hit.HITId):
+            hit = self.hit.connection.get_hit(self.hit.mturk_id)[0]
+            for a in self.hit.connection.get_assignments(hit.HITId):
                 # While we have the query, we may as well update
                 if a.AssignmentId == self.mturk_id:
                     # That's this record. Hold onto so we can update below
