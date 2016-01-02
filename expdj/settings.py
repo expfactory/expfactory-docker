@@ -194,6 +194,9 @@ CELERY_IMPORTS = ('expfactory.apps.turk.tasks', )
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
 
+# SSL ENABLED
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
+
 # Bogus secret key.
 try:
     from secrets import *
