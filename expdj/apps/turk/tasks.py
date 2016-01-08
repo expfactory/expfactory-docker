@@ -3,6 +3,13 @@ from expdj.apps.experiments.models import ExperimentTemplate
 from expdj.apps.turk.models import Result, Task, Assignment
 from celery import shared_task, Celery
 import numpy
+import os
+from django.conf import settings
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expdj.settings')
+app = Celery('expdj')
+app.config_from_object('django.conf:settings')
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @shared_task
 def assign_experiment_credit(rid):

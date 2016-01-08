@@ -20,9 +20,9 @@ matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # MUST BE HTTPS FOR MECHANICAL TURK
-DOMAIN_NAME = "brainmeta.org"
+DOMAIN_NAME = "expfactory.org"
 
-ADMINS = (('vsochat', 'vsochat@gmail.com'))
+ADMINS = (('vsochat', 'vsochat@gmail.com'),('ieisenberg','ieisenbe@stanford.edu'))
 
 MANAGERS = ADMINS
 
@@ -189,7 +189,18 @@ CELERY_DEFAULT_QUEUE = 'default'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
-CELERY_IMPORTS = ('expfactory.apps.turk.tasks', )
+CELERY_IMPORTS = ('expdj.apps.turk.tasks', )
+
+# here is how to run a task regularly
+#CELERYBEAT_SCHEDULE = {
+#    'task name': {
+#        'task': 'task_name',
+#        'schedule': timedelta(days=1)
+#    },
+#}
+
+CELERY_TIMEZONE = 'Europe/Berlin'
+
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
