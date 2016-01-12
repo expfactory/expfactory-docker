@@ -1,5 +1,5 @@
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from polymorphic.polymorphic_model import PolymorphicModel
+from polymorphic.models import PolymorphicModel
 from jsonfield import JSONField
 from django.db.models.signals import m2m_changed
 from django.db.models import Q, DO_NOTHING
