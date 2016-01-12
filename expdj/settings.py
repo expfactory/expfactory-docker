@@ -28,8 +28,8 @@ MANAGERS = ADMINS
 
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
-DEBUG = False
-TEMPLATE_DEBUG = False
+DEBUG = True
+TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 

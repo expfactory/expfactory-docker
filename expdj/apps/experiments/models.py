@@ -129,8 +129,6 @@ class Battery(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
-    aws_access_key_id = models.CharField(max_length=250, unique = False, null=False, verbose_name="AWS Access Key ID",help_text="Will only be accessible to the battery owner.")
-    aws_secret_access_key_id = models.CharField(max_length=250, unique = False, null=False, verbose_name="AWS Secret Access Key",help_text="Will only be accessible to the battery owner.")
     contributors = models.ManyToManyField(User,related_name="battery_contributors",related_query_name="contributor", blank=True,help_text="Select other Experiment Factory users to add as contributes to the battery.  Contributors can view results, deploy HITS, and edit the battery itself.",verbose_name="Contributors")
     experiments = models.ManyToManyField(Experiment,related_name="battery_experiments",related_query_name="battery_experiments", blank=True,help_text="Select the Experiments to include in the battery. Experiments will be selected randomly from this set to fit within the maximum allowed time per HIT, and only include those experiments that a MTurk user has not completed.",verbose_name="Experimental paradigms")
     add_date = models.DateTimeField('date published', auto_now_add=True)

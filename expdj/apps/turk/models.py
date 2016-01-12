@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from expdj.settings import DOMAIN_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from django.contrib.contenttypes.models import ContentType
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
@@ -8,7 +8,6 @@ from boto.mturk.question import ExternalQuestion
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
-from expdj.settings import DOMAIN_NAME
 from boto.mturk.price import Price
 from jsonfield import JSONField
 from django.db import models
@@ -23,10 +22,8 @@ def init_connection_callback(sender, **signal_args):
     signal.
     """
     sender.args = sender
-    aws_secret_key_id = sender.battery.aws_secret_access_key_id
-    aws_access_key_id = sender.battery.aws_access_key_id
     object_args = signal_args['kwargs']
-    sender.connection = get_connection(aws_access_key_id,aws_secret_key_id)
+    sender.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
 
 
 class DisposeException(Exception):
@@ -272,9 +269,7 @@ class HIT(models.Model):
         self.update()
 
     def generate_connection(self):
-        aws_secret_key_id = self.battery.aws_secret_access_key_id
-        aws_access_key_id = self.battery.aws_access_key_id
-        self.connection = get_connection(aws_access_key_id,aws_secret_key_id)
+        self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
         self.save()
 
     def has_connection(self):
