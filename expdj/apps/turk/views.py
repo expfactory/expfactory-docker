@@ -1,4 +1,5 @@
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, select_experiments_time
+from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
+select_random_n
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
@@ -53,7 +54,7 @@ def serve_hit(request,hid):
         # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
             template = "mturk_battery_preview.html"
-            task_list = battery.experiments.all()
+            task_list = battery.experiments.all()[0]
             context = {
                 "experiments":task_list
             }
@@ -68,9 +69,11 @@ def serve_hit(request,hid):
             if "" in [worker_id,hit_id]:
                 return render_to_response("error_sorry.html")
 
+            if hit_id != hid:
+                return render_to_response("error_sorry.html")
+
             # Get Experiment Factory objects for each
             worker = get_worker(worker_id)
-            hit = get_hit(hid,request)
 
             # Try to get some info about browser, language, etc.
             browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
@@ -78,37 +81,49 @@ def serve_hit(request,hid):
 
             # Initialize Assignment object, obtained from Amazon, and Result
             assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
-            result,_ = Result.objects.update_or_create(worker=worker,         # worker, assignment, are unique
-                                                       assignment=assignment, # assignment has record of HIT
-                                                       defaults={"browser":browser,"platform":platform})
 
-            result.save()
+            # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
+            if already_created == False:
+                assign_experiment_credit.apply_async(countdown=hit.assignment_duration_in_seconds)
             assignment.save()
 
-            # If the assignment is already created, we want to start worker where left off
-            #if already_created == True:
-            #    experiment_ids = get_unique_experiments([result])
-
-            #else:
-            # Get experiments the worker has not yet completed
-            completed_experiments = [x.experiment.tag for x in worker.experiments.all() if x.battery == battery]
-            experiments = [x for x in battery.experiments.all() if x.template.tag not in completed_experiments]
-
-            # If the worker has completed all that we have available
-            if len(experiments) == 0:
+            # Does the worker have experiments remaining for the hit?
+            uncompleted_experiments = get_worker_experiments(worker,hit.battery)
+            if len(completed_experiments) == 0:
+                # Thank you for your participation - no more experiments!
                 return render_to_response("worker_sorry.html")
 
-            # Random selection of subset of tasks that do not exceed maximum time allowed
-            task_list = select_experiments_time(hit.assignment_duration_in_seconds,experiments)
+            task_list = select_random_n(uncompleted_experiments,1)
+            experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])
+
+            # Generate a new results object for the worker, assignment, experiment
+            result,_ = Result.objects.update_or_create(worker=worker,
+                                                       experiment=experimentTemplate,
+                                                       assignment=assignment, # assignment has record of HIT
+                                                       battery=hit.battery,
+                                                       defaults={"browser":browser,"platform":platform})
+            result.save()
+
+            # If this is the last experiment, the finish button will link to a thank you page.
+            if len(uncompleted_experiments) == 1:
+                context["next_page"] = "/finished"
+            else:
+                # Or reload the page to get the next experiment
+                context["next_page"] = "javascript:window.location.reload();"
 
             context = {
                 "worker_id": worker_id,
+                "battery_id": battery_id,
                 "assignment_id": assignment_id,
                 "amazon_host": host,
                 "hit_id": hit_id,
                 "experiments":task_list,
                 "uniqueId":result.id
             }
+
+        # if the consent has been defined, add it to the context
+        if battery.consent != None:
+            context["consent"] = battery.consent
 
         # Get experiment folders
         experiment_folders = [os.path.join(media_dir,"experiments",x.template.tag) for x in task_list]
@@ -125,6 +140,12 @@ def serve_hit(request,hid):
     else:
         return render_to_response("pc_sorry.html")
 
+def finished_view(request):
+    '''finished_view thanks worker for participation, and gives submit button
+    '''
+    return render_to_response("worker_sorry.html")
+
+
 def end_assignment(request,rid):
     '''end_assignment will change completed variable to True, preventing
     the worker from doing new experiments (if there are any remaining)
@@ -135,7 +156,7 @@ def end_assignment(request,rid):
         assignment = result.assignment
         assignment.completed = True
         assignment.save()
-        assign_experiment_credit(assignment.worker.id)
+        assign_experiment_credit(result.worker.id)
         return render_to_response("worker_sorry.html")
     else:
         return render_to_response("robot_sorry.html")
@@ -247,33 +268,27 @@ def sync(request,rid=None):
         if rid != None:
         # Update the result, already has worker and assignment ID stored
             result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
-            battery = result.assignment.hit.battery
+            battery = result.battery
             result.taskdata = data["taskdata"]["data"]
             result.current_trial = data["taskdata"]["currenttrial"]
-            result.completed = True
             result.save()
 
             # if the worker finished the current experiment
             if data["djstatus"] == "FINISHED":
-
-                # Add experiment to list of completed
-                battery_experiments = battery.experiments.all()
-                experiment_ids = get_unique_experiments([result])
-                experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
-                for new_experiment in experiments:
-                    task = Task(battery=result.assignment.hit.battery,
-                                experiment=new_experiment)
-                    task.save()
-                    worker.experiments.add(task)
-                worker.save()
+                # Mark experiment as completed
+                result.completed = True
+                result.save()
 
                 # if the worker has completed all tasks, give final credit
-                battery_tags = [e.tag for e in battery_experiments]
-                competed_experiments = [e for e in result.worker.experiments.all() if x.experiment.tag in battery_tags]
+                completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
                 if len(completed_experiments) == result.assignment.battery.experiments.count():
                     assignment = Assignment.objects.filter(id=result.assignment_id)[0]
                     assignment.update()
                     assign_experiment_credit(result.worker.id)
+
+            # The worker can choose to be presented with the task again
+            elif data["djstatus"] == "REDO":
+                result.delete()
 
     else:
         data = json.dumps({"message":"received!"})

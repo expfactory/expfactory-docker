@@ -176,3 +176,29 @@ def select_experiments_time(maximum_time_allowed,experiments):
         if (total_time + experiment.template.time*60.0) <= maximum_time_allowed:
             task_list.append(experiment)
     return task_list
+
+def select_random_n(experiments,N):
+    '''select_experiments_N
+    a selection algorithm that selects a random N experiments from list
+    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
+    :param N: the number of experiments to select
+    '''
+    if N<len(experiments):
+        N=len(experiments)
+    return choice(experiments,N).tolist()
+
+
+def get_worker_experiments(worker,battery,completed=False):
+    '''get_worker_experiments returns a list of experiment tags that
+    a worker has/has not completed for a particular battery
+    '''
+    battery_tags = [x.template.tag for x in battery_experiments.all()]
+    worker_experiments = Result.objects.filter(worker=worker,battery=battery)
+    worker_tags = [x.experiment.tag for x in worker_experiments]
+
+    if completed==False:
+        uncompleted_experiments = [e for e in battery_tags if e not in worker_tags]
+        return uncompleted_experiments
+    else:
+        completed_experiments = [e for e in worker_tags if e in battery_tags]
+        return completed_experiments

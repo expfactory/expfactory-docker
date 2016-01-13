@@ -35,31 +35,14 @@ class DisposeException(Exception):
         return repr(self.parameter)
     __str__ = __unicode__
 
-
-class Task(models.Model):
-    '''A worker task holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
-    experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
-    battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
-
-    def __str__(self):
-        return "%s:%s" %(self.battery,self.experiment)
-
-    def __unicode__(self):
-        return "%s:%s" %(self.battery,self.experiment)
-
-    class Meta:
-        ordering = ['id']
-
-
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    experiments = models.ManyToManyField(Task,related_name="experiment_templates_completed",related_query_name="experiment templates and batteries completed", blank=True,help_text="These are pairs of experiments and batteries that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
-        return "%s: experiments[%s]" %(self.id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.id)
 
     def __unicode__(self):
-        return "%s: experiments[%s]" %(self.id,self.experiments.count())
+        return "%s: experiments[%s]" %(self.id)
 
     class Meta:
         ordering = ['id']
@@ -496,8 +479,11 @@ class Assignment(models.Model):
 
 
 class Result(models.Model):
+    '''A result holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
     taskdata = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
-    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='worker')
+    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='result_worker')
+    experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
+    battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
     assignment = models.ForeignKey(Assignment,null=False,blank=False,related_name='assignment')
     datetime = models.CharField(max_length=128,null=True,blank=True,help_text="DateTime string returned by browser at last submission of data")
     current_trial = models.PositiveIntegerField(null=True,blank=True,help_text=("The last (current) trial recorded as complete represented in the results."))
@@ -507,18 +493,20 @@ class Result(models.Model):
     completed = models.BooleanField(choices=((False, 'Not completed'),
                                              (True, 'Completed')),
                                               default=False,verbose_name="participant completed the experiment")
+    credit_granted = models.BooleanField(choices=((False, 'Not granted'),
+                                                  (True, 'Granted')),
+                                                  default=False,verbose_name="the function assign_experiment_credit has been run to allocate credit for this result")
 
     class Meta:
         verbose_name = "Result"
         verbose_name_plural = "Results"
-        unique_together = ("worker","assignment")
+        unique_together = ("worker","assignment","battery","experiment")
 
     def __repr__(self):
-        return u"Result: id[%s],worker[%s]" %(self.id,self.worker)
+        return u"Result: id[%s],worker[%s],battery[%s],experiment[%s]" %(self.id,self.worker,self.battery,self.experiment)
 
     def __unicode__(self):
-        return u"Result: id[%s],worker[%s]" %(self.id,self.worker)
-
+        return u"Result: id[%s],worker[%s],battery[%s],experiment[%s]" %(self.id,self.worker,self.battery,self.experiment)
 
 
 class KeyValue(models.Model):

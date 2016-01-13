@@ -103,19 +103,8 @@
     jsPsych.init({
        timeline: experiments,
 	     on_finish: function() {
-                expfactory.djstatus = "FINISHED";
-                // Submit to AWS first to obtain the complete assignment object
-                //$("#turkey_form").submit()
-                $.ajax({ type: "POST",
-                         contentType: "application/json",
-                         url : "{% url 'sync_data' uniqueId %}",
-                         data : JSON.stringify(expfactory),
-                         dataType: "json",
-                         success: function(data){
-                           console.log(data);
-                           console.log("Finished!");
-                         }
-                       });
+                // Show the modal to to back or submit
+                $("#finished_modal").show();
             },
             on_data_update: function(data) {
                 console.log(data);
@@ -132,6 +121,48 @@
                        });
                 }
            });
+
+     $(function() {
+      $("#redo_experiment_button").click( function(){
+            expfactory.djstatus = "REDO";
+            $.ajax({ type: "POST",
+                  contentType: "application/json",
+                  url : "{% url 'sync_data' uniqueId %}",
+                  data : JSON.stringify(expfactory),
+                  dataType: "json",
+                  success: function(data){
+                      console.log(data);
+                      console.log("Finished!");
+                      javascript:window.location.reload();
+                  }
+            });
+           }
+        );
+     });
+
+     // Submit data and complete experiment
+     $(function() {
+      $("#next_experiment_button").click( function(){
+             expfactory.djstatus = "FINISHED";
+
+             // Submit to AWS first to obtain the complete assignment object
+             {% if next_page == "/finished" %}
+                 //$("#turkey_form").submit()
+             {% endif %}
+             $.ajax({ type: "POST",
+                      contentType: "application/json",
+                      url : "{% url 'sync_data' uniqueId %}",
+                      data : JSON.stringify(expfactory),
+                      dataType: "json",
+                      success: function(data){
+                        console.log(data);
+                        console.log("Finished!");
+                        document.location = "{{ next_page }}"
+                      }
+             });
+           }
+      );
+    });
     </script>
 
     <form action="{{ amazon_host }}" method="POST" id="turkey_form">
@@ -161,6 +192,22 @@
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
     {% endif %}
+
+    <!-- Finished Modal-->
+    <div class="modal fade" id="consent_modal">
+      <div class="modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Experiment complete</h4>
+          </div>
+          <div class="modal-body" id="consent" style="text-align: center;">
+            <p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p>
+            <button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button>
+            <button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 
   </body>
 </html>

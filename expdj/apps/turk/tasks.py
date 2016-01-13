@@ -31,34 +31,39 @@ def assign_experiment_credit(worker_id):
 
     for result in results:
 
-        # Get all experiments
-        battery_experiments = result.assignment.hit.battery.experiments.all()
-        experiment_ids = get_unique_experiments([result])
-        experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
+        if result.completed == True and result.credit_granted == False:
+            # Get all experiments
+            battery_experiments = result.assignment.hit.battery.experiments.all()
+            experiment_ids = get_unique_experiments([result])
+            experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
 
-        for template in experiments:
-            experiment = [b for b in battery_experiments if b.template == template]
-            # If an experiment is deleted from battery, we have no way to know to reject/bonus
-            if len(experiment)>0:
-                experiment = experiment[0]
-                do_catch = True if template.rejection_variable != None and experiment.include_catch == True else False
-                do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
-                for credit_condition in experiment.credit_conditions.all():
-                    variable_name = credit_condition.variable.name
-                    variables = get_variables(result.taskdata,template.tag,variable_name)
-                    func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-                    # Needs to be tested for non numeric types
-                    for variable in variables:
-                        comparator = credit_condition.value
-                        if isinstance(variable,float) or isinstance(variable,int):
-                            variable = float(variable)
-                            comparator = float(comparator)
-                        if func(comparator,variable):
-                            # For credit conditions, add to bonus!
-                            if credit_condition.variable == template.performance_variable and do_bonus:
-                                additional_dollars = additional_dollars + credit_condition.amount
-                            if credit_condition.variable == template.rejection_variable and do_catch:
-                                rejection = True
+            for template in experiments:
+                experiment = [b for b in battery_experiments if b.template == template]
+                # If an experiment is deleted from battery, we have no way to know to reject/bonus
+                if len(experiment)>0:
+                    experiment = experiment[0]
+                    do_catch = True if template.rejection_variable != None and experiment.include_catch == True else False
+                    do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
+                    for credit_condition in experiment.credit_conditions.all():
+                        variable_name = credit_condition.variable.name
+                        variables = get_variables(result.taskdata,template.tag,variable_name)
+                        func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+                        # Needs to be tested for non numeric types
+                        for variable in variables:
+                            comparator = credit_condition.value
+                            if isinstance(variable,float) or isinstance(variable,int):
+                                variable = float(variable)
+                                comparator = float(comparator)
+                            if func(comparator,variable):
+                                # For credit conditions, add to bonus!
+                                if credit_condition.variable == template.performance_variable and do_bonus:
+                                    additional_dollars = additional_dollars + credit_condition.amount
+                                if credit_condition.variable == template.rejection_variable and do_catch:
+                                    rejection = True
+
+            # We remember granting credit on the level of results
+            result.credit_granted = True
+            result.save()
 
     if len(results) > 0:
         # Update HIT assignments - all results point to the same hit, so use the last one
@@ -69,12 +74,13 @@ def assign_experiment_credit(worker_id):
         if not rejection:
             if additional_dollars != 0:
                 assignment.bonus(value=additional_dollars)
-            if TURK["debug"] != 1:
+            if assignment.status == "SUBMITTED" and TURK["debug"] != 1:
                 assignment.approve()
         # We currently don't reject off the bat - we show user in pending tab.
         #else:
             #assignment.reject()
         assignment.save()
+        assignment.update() # We may only want to call one of these
 
 # EXPERIMENT RESULT PARSING helper functions
 def get_unique_experiments(results):
