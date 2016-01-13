@@ -16,5 +16,5 @@ urlpatterns = patterns('',
     url(r'^turk/end/(?P<rid>\d+|[A-Z]{8})',end_assignment,name='end_assignment'),
     url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
     url(r'^sync/$',sync,name='sync_data'),
-    url(r'^finished$', finished_view, name="finished_view"))
+    url(r'^finished$', finished_view, name="finished_view")
 )

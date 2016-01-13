@@ -54,7 +54,7 @@ def serve_hit(request,hid):
         # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
             template = "mturk_battery_preview.html"
-            task_list = battery.experiments.all()[0]
+            task_list = [battery.experiments.all()[0]]
             context = {
                 "experiments":task_list
             }
@@ -93,7 +93,7 @@ def serve_hit(request,hid):
                 # Thank you for your participation - no more experiments!
                 return render_to_response("worker_sorry.html")
 
-            task_list = select_random_n(uncompleted_experiments,1)
+            task_list = [select_random_n(uncompleted_experiments,1)]
             experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])
 
             # Generate a new results object for the worker, assignment, experiment

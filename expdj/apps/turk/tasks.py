@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from expdj.apps.turk.models import Result, Task, Assignment, get_worker
+from expdj.apps.turk.models import Result, Assignment, get_worker
 from expdj.apps.experiments.models import ExperimentTemplate
 from celery import shared_task, Celery
 from django.conf import settings
