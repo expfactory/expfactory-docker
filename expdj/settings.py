@@ -19,8 +19,6 @@ from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-# MUST BE HTTPS FOR MECHANICAL TURK
-DOMAIN_NAME = "expfactory.org"
 
 ADMINS = (('vsochat', 'vsochat@gmail.com'),('ieisenberg','ieisenbe@stanford.edu'))
 

@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, render_to_response, render, redi
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
-from expdj.apps.turk.tasks import assign_experiment_credit
+from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
 from expfactory.battery import get_load_static, get_concat_js
@@ -77,13 +77,19 @@ def serve_hit(request,hid):
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
 
             # Initialize Assignment object, obtained from Amazon, and Result
-            assignment,_ = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
+            assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
             result,_ = Result.objects.update_or_create(worker=worker,         # worker, assignment, are unique
                                                        assignment=assignment, # assignment has record of HIT
                                                        defaults={"browser":browser,"platform":platform})
 
             result.save()
+            assignment.save()
 
+            # If the assignment is already created, we want to start worker where left off
+            #if already_created == True:
+            #    experiment_ids = get_unique_experiments([result])
+
+            #else:
             # Get experiments the worker has not yet completed
             completed_experiments = [x.experiment.tag for x in worker.experiments.all() if x.battery == battery]
             experiments = [x for x in battery.experiments.all() if x.template.tag not in completed_experiments]
@@ -119,6 +125,20 @@ def serve_hit(request,hid):
     else:
         return render_to_response("pc_sorry.html")
 
+def end_assignment(request,rid):
+    '''end_assignment will change completed variable to True, preventing
+    the worker from doing new experiments (if there are any remaining)
+    and triggering function to allocate credit for what is completed
+    '''
+    if request.user_agent.is_pc:
+        result = Result.objects.filter(id=rid)[0]
+        assignment = result.assignment
+        assignment.completed = True
+        assignment.save()
+        assign_experiment_credit(assignment.worker.id)
+        return render_to_response("worker_sorry.html")
+    else:
+        return render_to_response("robot_sorry.html")
 
 @login_required
 def multiple_new_hit(request, bid):
@@ -227,15 +247,34 @@ def sync(request,rid=None):
         if rid != None:
         # Update the result, already has worker and assignment ID stored
             result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            battery = result.assignment.hit.battery
             result.taskdata = data["taskdata"]["data"]
             result.current_trial = data["taskdata"]["currenttrial"]
             result.completed = True
             result.save()
 
+            # if the worker finished the current experiment
             if data["djstatus"] == "FINISHED":
-                assignment = Assignment.objects.update(id=result.assignment_id)
-                assignment.save()
-                assign_experiment_credit(result.id)
+
+                # Add experiment to list of completed
+                battery_experiments = battery.experiments.all()
+                experiment_ids = get_unique_experiments([result])
+                experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
+                for new_experiment in experiments:
+                    task = Task(battery=result.assignment.hit.battery,
+                                experiment=new_experiment)
+                    task.save()
+                    worker.experiments.add(task)
+                worker.save()
+
+                # if the worker has completed all tasks, give final credit
+                battery_tags = [e.tag for e in battery_experiments]
+                competed_experiments = [e for e in result.worker.experiments.all() if x.experiment.tag in battery_tags]
+                if len(completed_experiments) == result.assignment.battery.experiments.count():
+                    assignment = Assignment.objects.filter(id=result.assignment_id)[0]
+                    assignment.update()
+                    assign_experiment_credit(result.worker.id)
+
     else:
         data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')

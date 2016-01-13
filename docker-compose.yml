@@ -15,7 +15,7 @@ uwsgi:
     - data
   volumes:
     - .:/code
-    - /var/www/static
+    - ./static:/var/www/static
   links:
     - db
     - redis
@@ -31,7 +31,6 @@ nginx:
     - ./uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
     - /etc/ssl/certs:/etc/ssl/certs:ro 
     - /etc/ssl/private:/etc/ssl/private:ro
-    #- /var/run/docker.sock:/tmp/docker.sock:ro
   volumes_from:
     - uwsgi
     - data

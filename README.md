@@ -85,11 +85,11 @@ TURK = {
     'app_url':'https://www.expfactory.org',
     'debug': 1
 }
-
+DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
 AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY_ID_HERE"
 AWS_SECRET_ACCESS_KEY_ID="YOUR_SECRET_ACCESS_KEY_HERE"
 
-You should change the keys, along with the application URL, and set debug to 0.
+You should change the keys, the domain name and application URL, and set debug to 0. The Domain Name MUST be HTTPS.
 
 Then you can bring up the container (see steps at beginning of README), essentially:
 

@@ -325,8 +325,7 @@ class HIT(models.Model):
 
         This instance's attributes are updated.
         """
-        if not self.has_connection():
-            self.generate_connection()
+        self.generate_connection()
         if mturk_hit is None or not hasattr(mturk_hit, "HITStatus"):
             hit = self.connection.get_hit(self.mturk_id)[0]
         else:
@@ -357,6 +356,7 @@ class HIT(models.Model):
             self.update_assignments()
 
     def update_assignments(self, page_number=1, page_size=10, update_all=True):
+        self.generate_connection()
         assignments = self.connection.get_assignments(self.mturk_id,
                                                       page_size=page_size,
                                                       page_number=page_number)
@@ -402,28 +402,29 @@ class Assignment(models.Model):
     rejection_time = models.DateTimeField(null=True,blank=True,help_text=("If requester has rejected the results, this is the date and time, in UTC, the results were rejected"))
     deadline = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, of the deadline for the assignment"))
     requester_feedback = models.TextField(null=True,blank=True,help_text=("The optional text included with the call to either approve or reject the assignment."))
+    completed = models.BooleanField(choices=((False, 'Not completed'),
+                                             (True, 'Completed')),
+                                              default=False,verbose_name="participant completed the entire assignment")
+
 
     def create(self):
         init_connection_callback(sender=self.hit)
 
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""
-        if not self.hit.has_connection():
-            self.hit.generate_connection()
+        self.hit.generate_connection()
         self.hit.connection.approve_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def reject(self, feedback=None):
         """Thin wrapper around Boto reject function."""
-        if not self.hit.has_connection():
-            self.hit.generate_connection()
+        self.hit.generate_connection()
         self.hit.connection.reject_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def bonus(self, value=0.0, feedback=None):
         """Thin wrapper around Boto bonus function."""
-        if not self.hit.has_connection():
-            self.hit.generate_connection()
+        self.hit.generate_connection()
 
         self.hit.connection.grant_bonus(
                 self.worker_id,
@@ -442,8 +443,8 @@ class Assignment(models.Model):
 
         This instance's attributes are updated.
         """
-        if not self.hit.has_connection():
-            self.hit.generate_connection()
+        self.hit.generate_connection()
+        assignment = None
 
         if mturk_assignment is None:
             hit = self.hit.connection.get_hit(self.hit.mturk_id)[0]
@@ -461,30 +462,30 @@ class Assignment(models.Model):
                               boto.mturk.connection.Assignment)
             assignment = mturk_assignment
 
-        self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
-        self.worker_id = get_worker(assignment.WorkerId)
-        self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
-        self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
-        self.auto_approval_time = amazon_string_to_datetime(assignment.AutoApprovalTime)
-        self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
+        if assignment != None:
+            self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
+            self.worker_id = get_worker(assignment.WorkerId)
+            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
+            self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
+            self.auto_approval_time = amazon_string_to_datetime(assignment.AutoApprovalTime)
+            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
 
-        # Different response groups for query
-        if hasattr(assignment, 'RejectionTime'):
-            self.rejection_time = amazon_string_to_datetime(assignment.RejectionTime)
-        if hasattr(assignment, 'ApprovalTime'):
-            self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
+            # Different response groups for query
+            if hasattr(assignment, 'RejectionTime'):
+                self.rejection_time = amazon_string_to_datetime(assignment.RejectionTime)
+            if hasattr(assignment, 'ApprovalTime'):
+                self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
+
+            # Update any Key-Value Pairs that were associated with this
+            # assignment
+            for result_set in assignment.answers:
+                for question in result_set:
+                    for key, value in question.fields:
+                        kv = KeyValue.objects.get_or_create(key=key,assignment=self)[0]
+                        if kv.value != value:
+                            kv.value = value
+                            kv.save()
         self.save()
-
-        # Update any Key-Value Pairs that were associated with this
-        # assignment
-        for result_set in assignment.answers:
-            for question in result_set:
-                for key, value in question.fields:
-                    kv = KeyValue.objects.get_or_create(key=key,
-                                                        assignment=self)[0]
-                    if kv.value != value:
-                        kv.value = value
-                        kv.save()
 
     def __unicode__(self):
         return self.mturk_id
@@ -505,7 +506,7 @@ class Result(models.Model):
     platform = models.CharField(max_length=128,null=True,blank=True,help_text="platform of the result")
     completed = models.BooleanField(choices=((False, 'Not completed'),
                                              (True, 'Completed')),
-                                              default=False,verbose_name="participant completed the battery")
+                                              default=False,verbose_name="participant completed the experiment")
 
     class Meta:
         verbose_name = "Result"

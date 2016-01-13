@@ -101,7 +101,7 @@
     cat_experiments(experiments)
 
     jsPsych.init({
-        experiment_structure: experiments,
+       timeline: experiments,
 	     on_finish: function() {
                 expfactory.djstatus = "FINISHED";
                 // Submit to AWS first to obtain the complete assignment object
@@ -139,6 +139,28 @@
             <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
             <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
     </form>
+
+    <!-- Consent Modal-->
+    {% if consent %}
+    <div class="modal fade" id="consent_modal">
+      <div class="modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Consent</h4>
+          </div>
+          <div class="modal-body" id="consent" style="text-align: center;">
+          {{ consent }}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" data-dismiss="modal">Agree</button>
+            <!-- Disagree ends battery for assignement completely-->
+            <a href="{% url 'end_assignment' uniqueId %}"><button type="button" class="btn btn-danger">Disagree</button></a>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    {% endif %}
 
   </body>
 </html>

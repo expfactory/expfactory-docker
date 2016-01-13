@@ -1,10 +1,11 @@
 from __future__ import absolute_import
+from expdj.apps.turk.models import Result, Task, Assignment, get_worker
 from expdj.apps.experiments.models import ExperimentTemplate
-from expdj.apps.turk.models import Result, Task, Assignment
 from celery import shared_task, Celery
+from django.conf import settings
+from expdj.settings import TURK
 import numpy
 import os
-from django.conf import settings
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expdj.settings')
 app = Celery('expdj')
@@ -12,69 +13,68 @@ app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @shared_task
-def assign_experiment_credit(rid):
-    '''Function to parse result from a task, assign credit or bonus if needed,
-    and either flag result or mark as completed.
+def assign_experiment_credit(worker_id):
+    '''Function to parse all results for a worker, assign credit or bonus if needed,
+    and either flag result or mark as completed. Should be fired if:
+      1) worker completes full battery and expfactory.djstatus variable is finished
+      2) worker does not accept Consent ("Disagree") and ends battery
+      3) worker is deemed to have poorly completed some N experiments in a row
+      4) worker does not complete experiments, HIT time runs out
     '''
-    result = Result.objects.filter(id=rid)[0]
+    # Look up all result objects for worker
+    worker = get_worker(worker_id)
+    results = Result.objects.filter(worker=worker)
 
-    # Get all experiments
-    battery_experiments = result.assignment.hit.battery.experiments.all()
-    experiment_ids = get_unique_experiments([result])
-    experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
-
-    # Add that user completed experiment immediately
-    worker = result.worker
-    current_experiments = [e.experiment for e in worker.experiments.all()]
-    new_experiments = [e for e in experiments if e not in current_experiments]
-    for new_experiment in new_experiments:
-        task = Task(battery=result.assignment.hit.battery,
-                    experiment=new_experiment)
-        task.save()
-        worker.experiments.add(task)
-
-    worker.save()
-
-    # Get rejection criteria
+    # rejection criteria
     additional_dollars = 0.0
     rejection = False
-    for template in experiments:
-        experiment = [b for b in battery_experiments if b.template == template]
-        # If an experiment is deleted from battery, we have no way to know to reject/bonus
-        if len(experiment)>0:
-            experiment = experiment[0]
-            do_catch = True if template.rejection_variable != None and experiment.include_catch == True else False
-            do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
-            for credit_condition in experiment.credit_conditions.all():
-                variable_name = credit_condition.variable.name
-                variables = get_variables(result.taskdata,template.tag,variable_name)
-                func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-                # Needs to be tested for non numeric types
-                for variable in variables:
-                    comparator = credit_condition.value
-                    if isinstance(variable,float) or isinstance(variable,int):
-                        variable = float(variable)
-                        comparator = float(comparator)
-                    if func(comparator,variable):
-                        # For credit conditions, add to bonus!
-                        if credit_condition.variable == template.performance_variable and do_bonus:
-                            additional_dollars = additional_dollars + credit_condition.amount
-                        if credit_condition.variable == template.rejection_variable and do_catch:
-                            rejection = True
 
-    # Update HIT assignments
-    result.assignment.hit.update_assignments()
-    assignment = Assignment.objects.filter(id=result.assignment.id)[0]
+    for result in results:
 
-    # Allocate bonus, if any
-    if not rejection:
-        if additional_dollars != 0:
-            assignment.bonus(value=additional_dollars)
-        assignment.approve()
-    # We currently don't reject off the bat - we show user in pending tab.
-    #else:
-        #assignment.reject()
-    assignment.save()
+        # Get all experiments
+        battery_experiments = result.assignment.hit.battery.experiments.all()
+        experiment_ids = get_unique_experiments([result])
+        experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
+
+        for template in experiments:
+            experiment = [b for b in battery_experiments if b.template == template]
+            # If an experiment is deleted from battery, we have no way to know to reject/bonus
+            if len(experiment)>0:
+                experiment = experiment[0]
+                do_catch = True if template.rejection_variable != None and experiment.include_catch == True else False
+                do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
+                for credit_condition in experiment.credit_conditions.all():
+                    variable_name = credit_condition.variable.name
+                    variables = get_variables(result.taskdata,template.tag,variable_name)
+                    func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+                    # Needs to be tested for non numeric types
+                    for variable in variables:
+                        comparator = credit_condition.value
+                        if isinstance(variable,float) or isinstance(variable,int):
+                            variable = float(variable)
+                            comparator = float(comparator)
+                        if func(comparator,variable):
+                            # For credit conditions, add to bonus!
+                            if credit_condition.variable == template.performance_variable and do_bonus:
+                                additional_dollars = additional_dollars + credit_condition.amount
+                            if credit_condition.variable == template.rejection_variable and do_catch:
+                                rejection = True
+
+    if len(results) > 0:
+        # Update HIT assignments - all results point to the same hit, so use the last one
+        result.assignment.hit.update_assignments()
+        assignment = Assignment.objects.filter(id=result.assignment.id)[0]
+
+        # Allocate bonus, if any
+        if not rejection:
+            if additional_dollars != 0:
+                assignment.bonus(value=additional_dollars)
+            if TURK["debug"] != 1:
+                assignment.approve()
+        # We currently don't reject off the bat - we show user in pending tab.
+        #else:
+            #assignment.reject()
+        assignment.save()
 
 # EXPERIMENT RESULT PARSING helper functions
 def get_unique_experiments(results):
