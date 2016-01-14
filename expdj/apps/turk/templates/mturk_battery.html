@@ -104,7 +104,8 @@
           experiment_structure: experiments,
     	    on_finish: function() {
                    // Show the modal to to back or submit
-                   $("#finished_message").show();
+                   finished_message = '<div id="finished_message" style="margin:100px"><h1>Experiment Complete</h1><p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p><button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button><button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button></div>'
+                   $("body").append(finished_message)
                },
                on_data_update: function(data) {
                    console.log(data);
@@ -158,10 +159,6 @@
                       }
              });
            });
-
-    // Start with finished message hidden
-    $("#finished_message").hide()
-
     });
     </script>
 
@@ -186,15 +183,6 @@
    });
    </script>
    {% endif %}
-
-    <!-- Finished Div-->
-    <div id="finished_message" style="margin:100px">
-        <h1>Experiment Complete</h1>
-       {{ consent | safe }}<br>
-       <p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p>
-       <button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button>
-       <button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button>
-   </div>
 
   </body>
 </html>
