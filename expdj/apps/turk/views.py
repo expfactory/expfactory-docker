@@ -155,7 +155,7 @@ def end_assignment(request,rid):
     assignment.save()
     assign_experiment_credit(result.worker.id)
     return render_to_response("worker_sorry.html")
-    
+
 @login_required
 def multiple_new_hit(request, bid):
     battery = Battery.objects.get(pk=bid)
@@ -276,14 +276,12 @@ def sync(request,rid=None):
 
                 # if the worker has completed all tasks, give final credit
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
-                if len(completed_experiments) == result.assignment.battery.experiments.count():
+                if len(completed_experiments) == battery.experiments.count():
                     assignment = Assignment.objects.filter(id=result.assignment_id)[0]
                     assignment.update()
-                    assign_experiment_credit(result.worker.id)
+                    assign_experiment_credit.apply_async(args=[result.worker.id])
 
-            # The worker can choose to be presented with the task again
-            elif data["djstatus"] == "REDO":
-                result.delete()
+            data = json.dumps(data)
 
     else:
         data = json.dumps({"message":"received!"})

@@ -59,7 +59,7 @@
       var task_list_block = {
           type: 'text',
   	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
-  	cont_key: 13,
+  	cont_key: [13],
       };
 
       var experiments = []
@@ -74,7 +74,7 @@
       $("#start_experiment_button").click(function(){
          $("#consent_form").hide();
          jsPsych.init({
-            experiment_structure: experiments,
+            timeline: experiments,
             on_finish: function() {
                 console.log("Finished!");
             },
