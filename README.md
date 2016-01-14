@@ -3,9 +3,9 @@
 ![home](scripts/img/expfactory.png)
 
    >> Don't forget what happened to the researcher who suddenly got everything he wanted.
-   
+
    >> What happened?
-   
+
    >> He started using Docker.
 
 ## Setup for Local Development
@@ -14,7 +14,7 @@ Thanks to @NeuroVault for these steps.
 ### Installing dependencies
 1. Fork the [main repository](https://github.com/expfactory/expfactory-docker)
 2. Clone your fork to your computer: `git clone https://github.com/<your_username>/expfactory-docker`
-  
+
   >> *Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username/...` - otherwise boot2docker will not be able to mount code directories and will fail silently.*
 
 
@@ -54,6 +54,15 @@ If you want to interactively develop, it can be helpful to do so in the Django s
 
       docker-compose run --rm uwsgi python manage.py shell
 
+### Connecting to Running container
+It can be helpful to debug by connecting to a running container. First you need to find the id of the uwsgi container:
+
+      docker ps
+
+Then you can connect:
+
+      docker exec -i -t [container_id] bash
+
 
 ### Running tests
 
@@ -66,14 +75,25 @@ Any change to the python code needs to update the docker image, which could be a
      docker build -t vanessa/expfactory .
 
 
-## Local Deployment
-Coming soon
-
-## Cloud Deployment
-
-Coming soon
 
 ## Getting Started
+Before bringing up your container, you must create a file `secrets.py` in the expdj folder with the following:
+
+TURK = {
+    'host': 'mechanicalturk.amazonaws.com',
+    'sandbox_host':'mechanicalturk.sandbox.amazonaws.com',
+    'app_url':'https://www.expfactory.org',
+    'debug': 1
+}
+DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
+AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY_ID_HERE"
+AWS_SECRET_ACCESS_KEY_ID="YOUR_SECRET_ACCESS_KEY_HERE"
+
+You should change the keys, the domain name and application URL, and set debug to 0. The Domain Name MUST be HTTPS.
+
+Then you can bring up the container (see steps at beginning of README), essentially:
+
+      docker-compose up -d
 
 You should first log in with the super user account, with the following credentials:
 

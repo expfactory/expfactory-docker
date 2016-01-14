@@ -14,20 +14,20 @@ import sys
 from datetime import timedelta
 import matplotlib
 import tempfile
+from celery import Celery
 from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-DOMAIN_NAME = "brainmeta.org"
 
-ADMINS = (('vsochat', 'vsochat@gmail.com'))
+ADMINS = (('vsochat', 'vsochat@gmail.com'),('ieisenberg','ieisenbe@stanford.edu'))
 
 MANAGERS = ADMINS
 
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
-DEBUG = False
-TEMPLATE_DEBUG = False
+DEBUG = True
+TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -39,8 +39,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'HOST': 'db',        
-        'PORT': '5432',      
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
@@ -61,9 +61,11 @@ INSTALLED_APPS = (
     'expdj.apps.users',
     'social.apps.django_app.default',
     'crispy_forms',
+    'polymorphic',
     'guardian',
     'dbbackup',
-    'djrill'
+    'djrill',
+    'djcelery'
 )
 
 
@@ -175,8 +177,34 @@ CACHES = {
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace with a different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
+# Celery config
+BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
+CELERY_IMPORTS = ('expdj.apps.turk.tasks', )
+
+# here is how to run a task regularly
+#CELERYBEAT_SCHEDULE = {
+#    'task name': {
+#        'task': 'task_name',
+#        'schedule': timedelta(days=1)
+#    },
+#}
+
+CELERY_TIMEZONE = 'Europe/Berlin'
+
+
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
+
+# SSL ENABLED
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
 # Bogus secret key.
 try:

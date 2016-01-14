@@ -1,6 +1,7 @@
 Django>=1.7.1,<1.8
 psycopg2
 markdown
+matplotlib
 decorator==4.0.2
 django-guardian
 django-crispy-forms

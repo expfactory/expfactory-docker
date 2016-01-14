@@ -1,42 +1,181 @@
 {% extends "base.html" %}
 {% block head %}
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 {% endblock %}
 {% block content %}
-<div class="row 150%">
+<div class="row">
 
-    {% include "sidebar.html" %}
-
-    <div class="8u 12u(narrower) important(narrower)">
+    <div class="col-md-12">
 
         <!-- Content -->
         <article id="content">
             <header>
-                <h2>Add Experiments</h2>
-                {% if newexperiments %}
-                <p>The following experiments can be added to the application:</p>
-                {% else %}
-                <p>There are no new experiments to install.</p>
-                {% endif %}
+                <h2>Add or Edit Experiment <i style="font-size:12" data-toggle="tooltip" title="Specifying an experiment already in the battery will remove current bonus and rejection criteria and replace with specifications here." class="fa fa-question-circle"></i></h2>
             </header>
-            {% if newexperiments %}
-            <form method="POST" action="{% url 'add_experiments' %}">
-                {% for newexperiment in newexperiments %}
-                <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
-                {% endfor %}
-                {% csrf_token %}
-                <input class="submit" type="submit" value="Add">
-            </form>
-         {% endif %}
+
+            <form action="{% url 'save_experiment' bid %}" method="post">
+
+             {% csrf_token %}
+              <div class="form-group">
+                <label for="experiment">Select Experiment:</label>
+                <select class="form-control" id="experiment" name="experiment">
+                  <option>--</option>
+                  {% for experiment in newexperiments %}
+                  <option value="{{ experiment.tag }}">{{ experiment.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="row" id="variable_selection_div" hidden>
+                  <div class="form-group col-md-4">
+                      <label for="experiment">Select Bonus or Rejection Variable: <i style="font-size:12" data-toggle="tooltip" title="Here you can specify specific criteria for allocating monetary bonus, or criteria for rejection of a participant. To not specify, do not click add." class="fa fa-question-circle"></i></label>
+                      <select class="form-control" id="variable_selection">
+                      </select>
+                  </div>
+                  <div class="col-md-8">
+                      <a id="add_row" class="btn btn-success pull-left" style="margin-top:42px">Add</a>
+                  </div>
+            </div>
+
+            <span id = "credit_table_div">
+            <table class="table table-bordered table-hover" id="credit_table">
+      	        <thead>
+                    <tr><th class="text-center">#</th>
+                        <th class="text-center">Variable <i style="font-size:10" data-toggle="tooltip" title="Variables are first searched for across all task data, and if not found, they are assessed for summary terms. If found, the appropriate summary statistic is calculated." class="fa fa-question-circle"></i></th>
+                        <th class="text-center">Description</th>
+                        <th class="text-center">Operator</th>
+                        <th class="text-center">Value</th>
+                        <th class="text-center">Amount <i style="font-size:10" data-toggle="tooltip" title="Amount ($$.cents) to allocate for bonus. Ignored for rejection variables." class="fa fa-question-circle"></i></th><th></th></tr>
+      		</thead>
+      		<tbody>
+      		    <tr id='crit0'></tr>
+                    <tr id='crit1'></tr>
+      		</tbody>
+      	  </table>
+          </span>
+            <input type="submit" value="Add">
+          </form>
+          <div style="padding-top:20px" class="alert alert-info" role="alert">Customization of an experiment for a battery does not change the template in the experiment factory database.</div>
+
         </article>
     </div>
 </div>
+
 {% endblock %}
 {% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
 <script>
+
+function delete_row(divid){
+  console.log(divid)
+  var row_to_delete = $(divid).attr("id").replace("del","");
+
+  // Hide entire table if its the only entry
+  if (row_to_delete == "1"){
+    $("#variable_selection_div").hide();
+  }
+
+  $(divid).closest("tr").remove();
+}
+
+newexperimentsjson = {{ newexperimentsjson | safe }}
+
 $(document).ready(function() {
-    $('#assessments-table').dataTable({
-      responsive: true
+
+    // Selection of a new experiment clears the table, fills in options
+    $("#experiment").change(function(){
+
+      var selected_experiment = $("#experiment").find(":selected").val();
+      var experiment = newexperimentsjson[selected_experiment]
+      clear_table();
+      i = 1
+
+      if ((selected_experiment == "--") || ((experiment.performance_variable==null) && (experiment.rejection_variable==null))) {
+          $("#variable_selection_div").hide();
+          $("#credit_table_div").hide();
+      }
+      else {
+
+        // Update variable selection options
+        col_variable =  ""
+        if (experiment.performance_variable!= null){
+          col_variable = col_variable + "<option style='color:green' name='eid"+ experiment.performance_variable.id + "' value='"+ experiment.performance_variable.id + "'>" + experiment.performance_variable.name + " : " + experiment.performance_variable.description + "</option>"
+        }
+        if (experiment.rejection_variable!= null){
+          col_variable = col_variable + "<option style='color:red' name='eid"+ experiment.rejection_variable.id + "' value='"+ experiment.rejection_variable.id + "'>" + experiment.rejection_variable.name + " : " + experiment.rejection_variable.description + "</option>"
+        }
+        $('#variable_selection').html(col_variable);
+        $("#variable_selection_div").show();
+      }
+    })
+
+    // Functions to add and remove rows
+    var i=0;
+    $("#credit_table_div").hide()
+
+    $("#add_row").click(function(){
+
+        var selected_experiment = $("#experiment").find(":selected").val();
+        var experiment = newexperimentsjson[selected_experiment]
+        var selected_variable = parseInt($("#variable_selection").find(":selected").val());
+        if (selected_variable == experiment.performance_variable.id){
+            var selection = experiment.performance_variable
+            var color = "green"
+            var uid = selection.id
+        } else {
+          var selection = experiment.rejection_variable
+          var color = "red"
+          var uid = selection.id
+        }
+
+        // Operations and values available depend on the variable type
+        if (selection.variable_options!=null){ // boolean or string with choices
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid + "'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
+          if ((selection.variable_options == true) || (selection.variable_options == false)){ // boolean
+            var variable_options = "<select class='form-control' name='val" + uid + "' id='val"+ uid +"'><option value='True'>True</option><option value='False'>False</option></select>"
+          } else {
+            var variable_options = "<select class='form-control' name='val" + uid + "' id='val"+ uid +"'>"
+            for (o=0;o<selection.variable_options.length;o++){
+              variable_options = variable_options + "<option value='"+ selection.variable_options[o]+"'>" + selection.variable_options[o] + "</option>"
+            }
+          }
+        } else { // numeric (will be parsed as float)
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid +"'><option value='EQUALS'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option><option value='GREATERTHAN'>greater than</option><option value='LESSTHAN'>less than</option><option value='GREATERTHANEQUALTO'>greater than or equal to</option><option value='LESSTHANEQUALTO'>less than or equal to</option></select>"
+          if ((selection.variable_min!=-Infinity) && (selection.variable_max!=Infinity)) {
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' min='"+ selection.variable_min +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+          } else if ((selection.variable_min==-Infinity) && (selection.variable_max==Infinity)) {
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' name='val"+ uid +"' type='number' value='0' />"
+          } else if (selection.variable_min==-Infinity) {
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' max='"+ selection.variable_max + "' name='val"+ uid +"' type='number' value='0' />"
+          } else { // no limit on max
+            var variable_options = "<input class='numberinput form-control' name='val" + uid + "' id='val"+ uid +"' min='"+ selection.variable_min + "' name='val"+ uid +"' type='number' value='0' />"
+          }
+        }
+
+        var amount_input = "<input class='numberinput form-control' name='amt" + uid + "' id='amt"+ uid +"' min='0.0' name='amt"+ uid +"' type='number' step='0.01' value='0' />"
+        $('#crit'+i).html("<td>"+ (i+1) +"</td><td style='color:" + color +"'>"+ selection.name + "</td><td>" + selection.description + "</td><td>"+ variable_operators +"</td><td>" + variable_options + "</td><td>" + amount_input +"</td><td><a id='del"+ i +"' class='btn btn-danger pull-left' onClick='delete_row(this)'>delete</a></td>");
+        $('#credit_table').append('<tr id="crit'+(i+1)+'"></tr>');
+        i++;
+
+        // Update description
+        $("#credit_table_div").show();
+     });
+
+    $("a[id^=del]").click(function(){
+      console.log($(this))
+
     });
-} );
+
+   function clear_table(){
+     for (j=0;j<=i;j++){
+       $("#crit"+(j-1)).html('');
+     }
+     $('#credit_table').append('<tr id="crit0"></tr>');
+   }
+
+});
+
 </script>
 {% endblock %}

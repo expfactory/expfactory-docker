@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block head %}
+    <script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+{% endblock %}
+{% block content %}
+
+<h2 style="margin-bottom:30px">{{ experiment.name }}</h2>
+
+{% crispy form %}
+
+<div class="alert alert-info" role="alert">Local editing of an experiment does not update it in the experiment factory database.</div>
+
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+
+$('#id_cognitive_atlas_task').select2();
+
+$(function() {
+    $( ".datepicker" ).datepicker({
+      changeMonth: true,
+      changeYear: true,
+      yearRange: "1900:2012"
+    });
+});
+</script>
+{% endblock %}

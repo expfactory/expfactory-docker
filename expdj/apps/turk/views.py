@@ -1,14 +1,16 @@
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, select_experiments_time
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
+select_random_n
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
+from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
+from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
+from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
 from expfactory.battery import get_load_static, get_concat_js
 from django.core.management.base import BaseCommand
-from expdj.apps.experiments.models import Battery
 from expdj.apps.turk.forms import HITForm
-from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from optparse import make_option
 from numpy.random import choice
 import json
@@ -39,20 +41,20 @@ def serve_hit(request,hid):
         return render_to_response("robot_sorry.html")
 
     if request.user_agent.is_pc:
- 
+
         hit =  get_hit(hid,request)
         battery = hit.battery
-     
+
         # This is the submit URL, either external or sandbox
         host = get_host()
 
         # An assignmentID means that the worker has accepted the task
         assignment_id = request.GET.get("assignmentId","")
 
-        # worker has not accepted the task   
+        # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
             template = "mturk_battery_preview.html"
-            task_list = battery.experiments.all()
+            task_list = [battery.experiments.all()[0]]
             context = {
                 "experiments":task_list
             }
@@ -64,30 +66,41 @@ def serve_hit(request,hid):
             hit_id = request.GET.get("hitId","")
             turk_submit_to = request.GET.get("turkSubmitTo","")
 
+            if "" in [worker_id,hit_id]:
+                return render_to_response("error_sorry.html")
+
             # Get Experiment Factory objects for each
             worker = get_worker(worker_id)
-            hit = get_hit(hid,request)
 
             # Try to get some info about browser, language, etc.
             browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
 
             # Initialize Assignment object, obtained from Amazon, and Result
-            assignment = Assignment.objects.update_or_create(mturk_id=assignment_id,hit=hit,worker=worker) 
-            result = Result.objects.update_or_create(worker=worker, # worker, assignment, are unique
-                                                     assignment=assignment, # assignment has record of HIT
-                                                     browser=browser,       # HIT has battery ID
-                                                     platform=platform)
+            assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
 
-            # Get experiments the worker has not yet completed
-            experiments = [x for x in battery.experiments.all() if x not in worker.experiments.all()]
+            # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
+            if already_created == False:
+                assign_experiment_credit.apply_async(countdown=hit.assignment_duration_in_seconds)
+            assignment.save()
 
-            # If the worker has completed all that we have available
-            if len(experiments) == 0:
+            # Does the worker have experiments remaining for the hit?
+            uncompleted_experiments = get_worker_experiments(worker,hit.battery)
+            if len(uncompleted_experiments) == 0:
+                # Thank you for your participation - no more experiments!
                 return render_to_response("worker_sorry.html")
 
-            # Random selection of subset of tasks that do not exceed maximum time allowed
-            task_list = select_experiments_time(hit.assignment_duration_in_seconds,experiments)
+            task_list = select_random_n(uncompleted_experiments,1)
+            experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])[0]
+            task_list = battery.experiments.filter(template=experimentTemplate)
+
+            # Generate a new results object for the worker, assignment, experiment
+            result,_ = Result.objects.update_or_create(worker=worker,
+                                                       experiment=experimentTemplate,
+                                                       assignment=assignment, # assignment has record of HIT
+                                                       battery=hit.battery,
+                                                       defaults={"browser":browser,"platform":platform})
+            result.save()
 
             context = {
                 "worker_id": worker_id,
@@ -97,9 +110,21 @@ def serve_hit(request,hid):
                 "experiments":task_list,
                 "uniqueId":result.id
             }
- 
+
+            # If this is the last experiment, the finish button will link to a thank you page.
+            if len(uncompleted_experiments) == 1:
+                context["next_page"] = "/finished"
+            else:
+                # Or reload the page to get the next experiment
+                context["next_page"] = "javascript:window.location.reload();"
+
+
+        # if the consent has been defined, add it to the context
+        if battery.consent != None:
+            context["consent"] = battery.consent
+
         # Get experiment folders
-        experiment_folders = [os.path.join(media_dir,"experiments",x.tag) for x in task_list]
+        experiment_folders = [os.path.join(media_dir,"experiments",x.template.tag) for x in task_list]
         loadjs = get_load_static(experiment_folders,url_prefix="/")
         concatjs = get_concat_js(experiment_folders)
         context["experiment_load"] = loadjs
@@ -112,7 +137,51 @@ def serve_hit(request,hid):
 
     else:
         return render_to_response("pc_sorry.html")
- 
+
+def finished_view(request):
+    '''finished_view thanks worker for participation, and gives submit button
+    '''
+    return render_to_response("worker_sorry.html")
+
+
+def end_assignment(request,rid):
+    '''end_assignment will change completed variable to True, preventing
+    the worker from doing new experiments (if there are any remaining)
+    and triggering function to allocate credit for what is completed
+    '''
+    result = Result.objects.filter(id=rid)[0]
+    assignment = result.assignment
+    assignment.completed = True
+    assignment.save()
+    assign_experiment_credit(result.worker.id)
+    return render_to_response("worker_sorry.html")
+    
+@login_required
+def multiple_new_hit(request, bid):
+    battery = Battery.objects.get(pk=bid)
+    if not request.user.has_perm('battery.edit_battery', battery):
+        return HttpResponseForbidden()
+
+    is_owner = battery.owner == request.user
+
+    if request.method == "POST":
+        # A hit is generated for each batch
+        for x in range(int(request.POST["id_number_batches"])):
+            hit = HIT(owner=request.user,battery=battery)
+            form = HITForm(request.POST,instance=hit)
+            if form.is_valid():
+                hit = form.save(commit=False)
+                hit.title = "%s #%s" %(hit.title,x)
+                hit.save()
+        return HttpResponseRedirect(battery.get_absolute_url())
+    else:
+
+        context = {"is_owner": is_owner,
+                  "header_text":battery.name,
+                  "battery":battery}
+
+    return render(request, "multiple_new_hit.html", context)
+
 
 @login_required
 def edit_hit(request, bid, hid=None):
@@ -120,11 +189,11 @@ def edit_hit(request, bid, hid=None):
     header_text = "%s HIT" %(battery.name)
     if not request.user.has_perm('battery.edit_battery', battery):
         return HttpResponseForbidden()
-    
+
     if hid:
         hit = get_hit(hid,request)
         is_owner = battery.owner == request.user
-        header_text = hit.title 
+        header_text = hit.title
     else:
         is_owner = True
         hit = HIT(owner=request.user,battery=battery)
@@ -141,18 +210,26 @@ def edit_hit(request, bid, hid=None):
         else:
             form = HITForm(instance=hit)
 
-    context = {"form": form, 
+    context = {"form": form,
                "is_owner": is_owner,
                "header_text":header_text}
 
     return render(request, "new_hit.html", context)
 
+# Expire a hit
+@login_required
+def expire_hit(request, hid):
+    hit = get_hit(hid,request)
+    if check_battery_edit_permission(request,hit.battery):
+        hit.expire()
+    return redirect(hit.battery.get_absolute_url())
 
 # Delete a hit
 @login_required
 def delete_hit(request, hid):
     hit = get_hit(hid,request)
     if check_battery_edit_permission(request,hit.battery):
+        hit.expire()
         hit.delete()
     return redirect(hit.battery.get_absolute_url())
 
@@ -173,38 +250,41 @@ def get_flagged_questions(number=None):
 #### DATA #############################################################
 
 # These views are to work with backbone.js
-def sync(request):
+def sync(request,rid=None):
     '''sync
-    view/method for running experiments to get/send data from the server
+    view/method for running experiments to get data from the server
+    :param rid: the result object ID, obtained before user sees page
     '''
-
-    return_data = {
-        "assignmentId": 0,
-        "hitId": 0,
-        "workerId": 0
-    }
 
     if request.method == "POST":
 
-        data = request.POST["taskdata"]
+        data = json.loads(request.body)
 
+        if rid != None:
         # Update the result, already has worker and assignment ID stored
-        result = Result.objects.update_or_create(id=data["uniqueId"],
-                                                 datetime=data["dateTime"],
-                                                 taskdata=data["trialdata"],
-                                                 current_trial=data["current_trial"])
+            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            battery = result.battery
+            result.taskdata = data["taskdata"]["data"]
+            result.current_trial = data["taskdata"]["currenttrial"]
+            result.save()
 
-        # Update the assignmentID object, obtained from Amazon
-        # NOTE: This could not be reasonable to update at each data update - may want to include
-        # variable to signify end of task, and update then. Will leave like this for now.
-        assignment = Assignment.objects.update(mturk_id=result.assignment_id) 
-        return_data["assignmentId"] = assignment.id
-        return_data["hitId"] = assignment.hit_id
-        return_data["workerId"] = assignment.worker_id
+            # if the worker finished the current experiment
+            if data["djstatus"] == "FINISHED":
+                # Mark experiment as completed
+                result.completed = True
+                result.save()
 
-        # Need to return something? Redirect somewhere?
+                # if the worker has completed all tasks, give final credit
+                completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
+                if len(completed_experiments) == result.assignment.battery.experiments.count():
+                    assignment = Assignment.objects.filter(id=result.assignment_id)[0]
+                    assignment.update()
+                    assign_experiment_credit(result.worker.id)
 
+            # The worker can choose to be presented with the task again
+            elif data["djstatus"] == "REDO":
+                result.delete()
 
-    # If we have a GET, return updated assignmentId, hitId, workerId
-    data = json.dumps(return_data)
+    else:
+        data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')

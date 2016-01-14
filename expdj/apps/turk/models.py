@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from expdj.settings import DOMAIN_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
 from django.contrib.contenttypes.models import ContentType
-from expdj.apps.experiments.models import Experiment, Battery
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
+from boto.mturk.question import ExternalQuestion
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
-from expdj.settings import DOMAIN_NAME
+from boto.mturk.price import Price
 from jsonfield import JSONField
 from django.db import models
 import collections
@@ -21,10 +22,8 @@ def init_connection_callback(sender, **signal_args):
     signal.
     """
     sender.args = sender
-    aws_secret_key_id = sender.battery.aws_secret_access_key_id
-    aws_access_key_id = sender.battery.aws_access_key_id
     object_args = signal_args['kwargs']
-    sender.connection = get_connection(aws_access_key_id,aws_secret_key_id)
+    sender.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
 
 
 class DisposeException(Exception):
@@ -36,31 +35,33 @@ class DisposeException(Exception):
         return repr(self.parameter)
     __str__ = __unicode__
 
-
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    experiments = models.ManyToManyField(Experiment,related_name="experiments_completed",related_query_name="experiments", blank=True,help_text="These are experiments that have been granted to a worker.",verbose_name="Worker experiments")
 
     def __str__(self):
-        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
-    
+        return "%s" %(self.id)
+
     def __unicode__(self):
-        return "%s: experiments[%s]" %(self.worker_id,self.experiments.count())
-    
+        return "%s" %(self.id)
+
     class Meta:
         ordering = ['id']
 
 
+
+
+
 def get_worker(worker_id):
-    # (<Worker: WORKER_ID: experiments[0]>, True)    
-    return Worker.objects.update_or_create(id=worker_id)[0]
+    # (<Worker: WORKER_ID: experiments[0]>, True)
+    worker,_ = Worker.objects.update_or_create(id=worker_id)
+    return worker
 
 class HIT(models.Model):
     """An Amazon Mechanical Turk Human Intelligence Task as a Django Model"""
 
     def __str__(self):
         return "%s: %s" %(self.title,self.battery)
-    
+
     def __unicode__(self):
         return "%s: %s" %(self.title,self.battery)
 
@@ -159,6 +160,7 @@ class HIT(models.Model):
         This is a wrapper around the Boto API. Also see:
         http://boto.cloudhackers.com/en/latest/ref/mturk.html
         """
+
         # Don't waste time or resources if already marked as DISPOSED
         if self.status == self.DISPOSED:
             return
@@ -202,6 +204,8 @@ class HIT(models.Model):
         documentation:
         http://boto.cloudhackers.com/en/latest/ref/mturk.html
         """
+        if not self.has_connection():
+            self.generate_connection()
         self.connection.expire_hit(self.mturk_id)
         self.update()
 
@@ -247,22 +251,23 @@ class HIT(models.Model):
         self.connection.set_reviewing(self.mturk_id, revert=revert)
         self.update()
 
-    def create(self):
-        aws_secret_key_id = self.battery.aws_secret_access_key_id
-        aws_access_key_id = self.battery.aws_access_key_id
-        self.connection = get_connection(aws_access_key_id,aws_secret_key_id)
+    def generate_connection(self):
+        self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
         self.save()
 
-    def send_hits(self,N=100):
+    def has_connection(self):
+        if "turk.HIT.connection" in [x.__str__() for x in self._meta.fields]:
+            return True
+        return False
 
+    def send_hit(self):
+
+        # Domain name must be https
         url = "%s/turk/%s" %(DOMAIN_NAME,self.id)
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
 
-        for _ in xrange(N):
-            #TODO: we may want to save these create_hit_result somewhere...
-            # When battery is ready and working, test and see what comes out
-            create_hit_result = self.connection.create_hit(
+        result = self.connection.create_hit(
                 title=self.title,
                 description=self.description,
                 keywords=self.keywords,
@@ -270,8 +275,28 @@ class HIT(models.Model):
                 question=questionform,
                 reward=Price(amount=self.reward),
                 response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
-             )
+        )[0]
+        # Update our hit object with the aws HIT
+        self.mturk_id = result.HITId
 
+        # When we generate the hit, we won't have any assignments to update
+        self.update(mturk_hit=result)
+
+    def save(self, *args, **kwargs):
+        '''save will generate a connection and get
+        the mturk_id for hits that have not been saved yet
+        '''
+        is_new_hit = False
+        send_to_mturk = False
+        if not self.pk:
+            is_new_hit = True
+        if not self.mturk_id:
+            send_to_mturk = True
+        super(HIT, self).save(*args, **kwargs)
+        if is_new_hit:
+            self.generate_connection()
+        if send_to_mturk:
+            self.send_hit()
 
     def update(self, mturk_hit=None, do_update_assignments=False):
         """Update self with Mechanical Turk API data
@@ -283,6 +308,7 @@ class HIT(models.Model):
 
         This instance's attributes are updated.
         """
+        self.generate_connection()
         if mturk_hit is None or not hasattr(mturk_hit, "HITStatus"):
             hit = self.connection.get_hit(self.mturk_id)[0]
         else:
@@ -300,14 +326,11 @@ class HIT(models.Model):
         self.hit_type_id = hit.HITTypeId
         self.keywords = hit.Keywords
         if hasattr(self, 'NumberOfAssignmentsCompleted'):
-            self.number_of_assignments_completed =\
-                    hit.NumberOfAssignmentsCompleted
+            self.number_of_assignments_completed = hit.NumberOfAssignmentsCompleted
         if hasattr(self, 'NumberOfAssignmentsAvailable'):
-            self.number_of_assignments_available =\
-                    hit.NumberOfAssignmentsAvailable
+            self.number_of_assignments_available = hit.NumberOfAssignmentsAvailable
         if hasattr(self, 'NumberOfAssignmentsPending'):
-            self.number_of_assignments_pending =\
-                    hit.NumberOfAssignmentsPending
+            self.number_of_assignments_pending = hit.NumberOfAssignmentsPending
         #'CurrencyCode', 'Reward', 'Expiration', 'expired']
 
         self.save()
@@ -316,6 +339,7 @@ class HIT(models.Model):
             self.update_assignments()
 
     def update_assignments(self, page_number=1, page_size=10, update_all=True):
+        self.generate_connection()
         assignments = self.connection.get_assignments(self.mturk_id,
                                                       page_size=page_size,
                                                       page_number=page_number)
@@ -361,24 +385,31 @@ class Assignment(models.Model):
     rejection_time = models.DateTimeField(null=True,blank=True,help_text=("If requester has rejected the results, this is the date and time, in UTC, the results were rejected"))
     deadline = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, of the deadline for the assignment"))
     requester_feedback = models.TextField(null=True,blank=True,help_text=("The optional text included with the call to either approve or reject the assignment."))
+    completed = models.BooleanField(choices=((False, 'Not completed'),
+                                             (True, 'Completed')),
+                                              default=False,verbose_name="participant completed the entire assignment")
+
 
     def create(self):
         init_connection_callback(sender=self.hit)
 
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""
-        self.connection.approve_assignment(self.mturk_id, feedback=feedback)
+        self.hit.generate_connection()
+        self.hit.connection.approve_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def reject(self, feedback=None):
         """Thin wrapper around Boto reject function."""
-        self.connection.reject_assignment(self.mturk_id, feedback=feedback)
+        self.hit.generate_connection()
+        self.hit.connection.reject_assignment(self.mturk_id, feedback=feedback)
         self.update()
 
     def bonus(self, value=0.0, feedback=None):
         """Thin wrapper around Boto bonus function."""
+        self.hit.generate_connection()
 
-        self.connection.grant_bonus(
+        self.hit.connection.grant_bonus(
                 self.worker_id,
                 self.mturk_id,
                 bonus_price=boto.mturk.price.Price(amount=value),
@@ -395,9 +426,12 @@ class Assignment(models.Model):
 
         This instance's attributes are updated.
         """
+        self.hit.generate_connection()
+        assignment = None
+
         if mturk_assignment is None:
-            hit = self.connection.get_hit(self.hit.mturk_id)[0]
-            for a in self.connection.get_assignments(hit.HITId):
+            hit = self.hit.connection.get_hit(self.hit.mturk_id)[0]
+            for a in self.hit.connection.get_assignments(hit.HITId):
                 # While we have the query, we may as well update
                 if a.AssignmentId == self.mturk_id:
                     # That's this record. Hold onto so we can update below
@@ -411,30 +445,30 @@ class Assignment(models.Model):
                               boto.mturk.connection.Assignment)
             assignment = mturk_assignment
 
-        self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
-        self.worker_id = get_worker(assignment.WorkerId)
-        self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
-        self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
-        self.auto_approval_time = amazon_string_to_datetime(assignment.AutoApprovalTime)
-        self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
+        if assignment != None:
+            self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
+            self.worker_id = get_worker(assignment.WorkerId)
+            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
+            self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
+            self.auto_approval_time = amazon_string_to_datetime(assignment.AutoApprovalTime)
+            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
 
-        # Different response groups for query
-        if hasattr(assignment, 'RejectionTime'):
-            self.rejection_time = amazon_string_to_datetime(assignment.RejectionTime)
-        if hasattr(assignment, 'ApprovalTime'):
-            self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
+            # Different response groups for query
+            if hasattr(assignment, 'RejectionTime'):
+                self.rejection_time = amazon_string_to_datetime(assignment.RejectionTime)
+            if hasattr(assignment, 'ApprovalTime'):
+                self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
+
+            # Update any Key-Value Pairs that were associated with this
+            # assignment
+            for result_set in assignment.answers:
+                for question in result_set:
+                    for key, value in question.fields:
+                        kv = KeyValue.objects.get_or_create(key=key,assignment=self)[0]
+                        if kv.value != value:
+                            kv.value = value
+                            kv.save()
         self.save()
-
-        # Update any Key-Value Pairs that were associated with this
-        # assignment
-        for result_set in assignment.answers:
-            for question in result_set:
-                for key, value in question.fields:
-                    kv = KeyValue.objects.get_or_create(key=key,
-                                                        assignment=self)[0]
-                    if kv.value != value:
-                        kv.value = value
-                        kv.save()
 
     def __unicode__(self):
         return self.mturk_id
@@ -445,26 +479,34 @@ class Assignment(models.Model):
 
 
 class Result(models.Model):
+    '''A result holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
     taskdata = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
-    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='worker')
+    worker = models.ForeignKey(Worker,null=False,blank=False,related_name='result_worker')
+    experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
+    battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
     assignment = models.ForeignKey(Assignment,null=False,blank=False,related_name='assignment')
     datetime = models.CharField(max_length=128,null=True,blank=True,help_text="DateTime string returned by browser at last submission of data")
     current_trial = models.PositiveIntegerField(null=True,blank=True,help_text=("The last (current) trial recorded as complete represented in the results."))
     language = models.CharField(max_length=128,null=True,blank=True,help_text="language of the browser associated with the result")
     browser = models.CharField(max_length=128,null=True,blank=True,help_text="browser of the result")
     platform = models.CharField(max_length=128,null=True,blank=True,help_text="platform of the result")
+    completed = models.BooleanField(choices=((False, 'Not completed'),
+                                             (True, 'Completed')),
+                                              default=False,verbose_name="participant completed the experiment")
+    credit_granted = models.BooleanField(choices=((False, 'Not granted'),
+                                                  (True, 'Granted')),
+                                                  default=False,verbose_name="the function assign_experiment_credit has been run to allocate credit for this result")
 
     class Meta:
         verbose_name = "Result"
         verbose_name_plural = "Results"
-        unique_together = ("worker","assignment")
+        unique_together = ("worker","assignment","battery","experiment")
 
     def __repr__(self):
-        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
+        return u"Result: id[%s],worker[%s],battery[%s],experiment[%s]" %(self.id,self.worker,self.battery,self.experiment)
 
     def __unicode__(self):
-        return u"Result: id[%s],worker[%s],experiment[%s]" %(self.mturk_id,self.worker,self.experiment)
-
+        return u"Result: id[%s],worker[%s],battery[%s],experiment[%s]" %(self.id,self.worker,self.battery,self.experiment)
 
 
 class KeyValue(models.Model):

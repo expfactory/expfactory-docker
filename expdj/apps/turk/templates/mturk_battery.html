@@ -2,17 +2,11 @@
 {% load static %}
   <head>
     <title>The Experiment Factory</title>
-
-    <script type="text/javascript" src="{% static "js/jquery.min.js"%}"></script>
+    <meta charset="utf-8" />
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/underscore-min.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js""></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/d3.v3.min.js""></script>
-
-    <script type="text/javascript">
-        // Unique id of the result associated with the assignment and worker 
-        var uniqueId = "{{ uniqueId }}";
-    </script>
-
+    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/jspsych.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-text.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-instructions.js"></script>
@@ -20,16 +14,51 @@
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-categorize.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-consent.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-survey-text.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>    
-    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>    
+    <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>
     {{ experiment_load | safe }}
 
     <link rel="stylesheet" href="{% get_media_prefix %}css/jspsych.css" />
-    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />	
+    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />
 </head>
 <body>
 
-<script> 
+<script>
+
+    $(function() {
+
+      var uniqueId = "{{ uniqueId }}";
+
+       function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+        return cookieValue;
+      }
+
+    var csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
 
     experiment_list = []
     experiment_names = []
@@ -38,8 +67,8 @@
     var expfactory = new ExpFactory(uniqueId);
 
     {% for experiment in experiments %}
-        experiment_list.push({"name":"{{ experiment.tag }}","time":{{ experiment.time }}})
-        experiment_names.push("{{ experiment.tag }}")
+        experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
+        experiment_names.push("{{ experiment.template.tag }}")
     {% endfor %}
 
     /* takes an experiment array and concatenates it with the array of each experiment \
@@ -51,7 +80,7 @@
             }
         }
     }
-    
+
 
     var task_list = '<ul list-text>'
     for (i=0; i<experiment_names.length; i++) {
@@ -68,27 +97,104 @@
     experiments.push(task_list_block)
     cat_experiments(experiments)
 
-    jsPsych.init({
-        experiment_structure: experiments,
-	    on_finish: function() {
-                console.log("Finished!");
-                expfactory.saveData({
-                    success: function() { 
-                        $("#turkey_form").submit()
-                    }
-                });
-            },
-            on_data_update: function(data) {
-                expfactory.recordTrialData(data);
-            }
-     });	
-</script>
+    // Start experiment when participant pushes button
+    $("#start_experiment_button").click(function(){
+       $("#consent_form").hide();
+       jsPsych.init({
+          experiment_structure: experiments,
+    	    on_finish: function() {
+                   // Show the modal to to back or submit
+                   $("#finished_message").show();
+               },
+               on_data_update: function(data) {
+                   console.log(data);
+                   expfactory.recordTrialData(data);
+                   expfactory.djstatus = "UPDATE";
+                   $.ajax({ type: "POST",
+                            contentType: "application/json",
+                            url : "{% url 'sync_data' uniqueId %}",
+                            data : JSON.stringify(expfactory),
+                            dataType: "json",
+                            success: function(data){
+                              console.log(data);
+                            }
+                          });
+                   }
+        });
+    });
+
+    $("#redo_experiment_button").click( function(){
+            expfactory.djstatus = "REDO";
+            $.ajax({ type: "POST",
+                  contentType: "application/json",
+                  url : "{% url 'sync_data' uniqueId %}",
+                  data : JSON.stringify(expfactory),
+                  dataType: "json",
+                  success: function(data){
+                      console.log(data);
+                      console.log("Finished!");
+                      javascript:window.location.reload();
+                  }
+            });
+      });
+
+     // Submit data and complete experiment
+      $("#next_experiment_button").click( function(){
+             expfactory.djstatus = "FINISHED";
+
+             // Submit to AWS first to obtain the complete assignment object
+             {% if next_page == "/finished" %}
+                 //$("#turkey_form").submit()
+             {% endif %}
+             $.ajax({ type: "POST",
+                      contentType: "application/json",
+                      url : "{% url 'sync_data' uniqueId %}",
+                      data : JSON.stringify(expfactory),
+                      dataType: "json",
+                      success: function(data){
+                        console.log(data);
+                        console.log("Finished!");
+                        document.location = "{{ next_page }}"
+                      }
+             });
+           });
+
+    // Start with finished message hidden
+    $("#finished_message").hide()
+
+    });
+    </script>
 
     <form action="{{ amazon_host }}" method="POST" id="turkey_form">
             <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
             <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
             <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
     </form>
+
+    <!-- Consent Form-->
+    {% if consent %}
+    <div id="consent_form" style="margin:100px">
+        <h1>Consent</h1>
+       {{ consent | safe }}<br>
+       <button id="start_experiment_button" type="button" class="btn">Agree</button>
+       <button href="{% url 'end_assignment' uniqueId %}" type="button" class="btn">Disagree</button>
+   </div>
+   {% else %}
+   <script>
+   $(function() {
+       $("#start_experiment_button").click();
+   });
+   </script>
+   {% endif %}
+
+    <!-- Finished Div-->
+    <div id="finished_message" style="margin:100px">
+        <h1>Experiment Complete</h1>
+       {{ consent | safe }}<br>
+       <p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p>
+       <button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button>
+       <button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button>
+   </div>
 
   </body>
 </html>
