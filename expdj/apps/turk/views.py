@@ -1,15 +1,15 @@
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
 select_random_n
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
+from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
-from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
+from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
 from expfactory.battery import get_load_static, get_concat_js
 from django.core.management.base import BaseCommand
-from expdj.apps.experiments.models import Battery
 from expdj.apps.turk.forms import HITForm
 from optparse import make_option
 from numpy.random import choice
@@ -69,9 +69,6 @@ def serve_hit(request,hid):
             if "" in [worker_id,hit_id]:
                 return render_to_response("error_sorry.html")
 
-            if hit_id != hid:
-                return render_to_response("error_sorry.html")
-
             # Get Experiment Factory objects for each
             worker = get_worker(worker_id)
 
@@ -89,12 +86,13 @@ def serve_hit(request,hid):
 
             # Does the worker have experiments remaining for the hit?
             uncompleted_experiments = get_worker_experiments(worker,hit.battery)
-            if len(completed_experiments) == 0:
+            if len(uncompleted_experiments) == 0:
                 # Thank you for your participation - no more experiments!
                 return render_to_response("worker_sorry.html")
 
-            task_list = [select_random_n(uncompleted_experiments,1)]
-            experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])
+            task_list = select_random_n(uncompleted_experiments,1)
+            experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])[0]
+            task_list = battery.experiments.filter(template=experimentTemplate)
 
             # Generate a new results object for the worker, assignment, experiment
             result,_ = Result.objects.update_or_create(worker=worker,
@@ -104,6 +102,15 @@ def serve_hit(request,hid):
                                                        defaults={"browser":browser,"platform":platform})
             result.save()
 
+            context = {
+                "worker_id": worker_id,
+                "assignment_id": assignment_id,
+                "amazon_host": host,
+                "hit_id": hit_id,
+                "experiments":task_list,
+                "uniqueId":result.id
+            }
+
             # If this is the last experiment, the finish button will link to a thank you page.
             if len(uncompleted_experiments) == 1:
                 context["next_page"] = "/finished"
@@ -111,15 +118,6 @@ def serve_hit(request,hid):
                 # Or reload the page to get the next experiment
                 context["next_page"] = "javascript:window.location.reload();"
 
-            context = {
-                "worker_id": worker_id,
-                "battery_id": battery_id,
-                "assignment_id": assignment_id,
-                "amazon_host": host,
-                "hit_id": hit_id,
-                "experiments":task_list,
-                "uniqueId":result.id
-            }
 
         # if the consent has been defined, add it to the context
         if battery.consent != None:
@@ -151,16 +149,13 @@ def end_assignment(request,rid):
     the worker from doing new experiments (if there are any remaining)
     and triggering function to allocate credit for what is completed
     '''
-    if request.user_agent.is_pc:
-        result = Result.objects.filter(id=rid)[0]
-        assignment = result.assignment
-        assignment.completed = True
-        assignment.save()
-        assign_experiment_credit(result.worker.id)
-        return render_to_response("worker_sorry.html")
-    else:
-        return render_to_response("robot_sorry.html")
-
+    result = Result.objects.filter(id=rid)[0]
+    assignment = result.assignment
+    assignment.completed = True
+    assignment.save()
+    assign_experiment_credit(result.worker.id)
+    return render_to_response("worker_sorry.html")
+    
 @login_required
 def multiple_new_hit(request, bid):
     battery = Battery.objects.get(pk=bid)

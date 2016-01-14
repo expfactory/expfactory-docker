@@ -3,17 +3,10 @@
   <head>
     <title>The Experiment Factory</title>
     <meta charset="utf-8" />
-
-    <script type="text/javascript" src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/underscore-min.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js""></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/d3.v3.min.js""></script>
-
-    <script type="text/javascript">
-        // Unique id of the result associated with the assignment and worker
-        var uniqueId = "{{ uniqueId }}";
-    </script>
-
+    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/jspsych.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-text.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-instructions.js"></script>
@@ -32,7 +25,11 @@
 
 <script>
 
-    function getCookie(name) {
+    $(function() {
+
+      var uniqueId = "{{ uniqueId }}";
+
+       function getCookie(name) {
         var cookieValue = null;
         if (document.cookie && document.cookie != '') {
             var cookies = document.cookie.split(';');
@@ -100,30 +97,33 @@
     experiments.push(task_list_block)
     cat_experiments(experiments)
 
-    jsPsych.init({
-       timeline: experiments,
-	     on_finish: function() {
-                // Show the modal to to back or submit
-                $("#finished_modal").show();
-            },
-            on_data_update: function(data) {
-                console.log(data);
-                expfactory.recordTrialData(data);
-                expfactory.djstatus = "UPDATE";
-                $.ajax({ type: "POST",
-                         contentType: "application/json",
-                         url : "{% url 'sync_data' uniqueId %}",
-                         data : JSON.stringify(expfactory),
-                         dataType: "json",
-                         success: function(data){
-                           console.log(data);
-                         }
-                       });
-                }
-           });
+    // Start experiment when participant pushes button
+    $("#start_experiment_button").click(function(){
+       $("#consent_form").hide();
+       jsPsych.init({
+          experiment_structure: experiments,
+    	    on_finish: function() {
+                   // Show the modal to to back or submit
+                   $("#finished_message").show();
+               },
+               on_data_update: function(data) {
+                   console.log(data);
+                   expfactory.recordTrialData(data);
+                   expfactory.djstatus = "UPDATE";
+                   $.ajax({ type: "POST",
+                            contentType: "application/json",
+                            url : "{% url 'sync_data' uniqueId %}",
+                            data : JSON.stringify(expfactory),
+                            dataType: "json",
+                            success: function(data){
+                              console.log(data);
+                            }
+                          });
+                   }
+        });
+    });
 
-     $(function() {
-      $("#redo_experiment_button").click( function(){
+    $("#redo_experiment_button").click( function(){
             expfactory.djstatus = "REDO";
             $.ajax({ type: "POST",
                   contentType: "application/json",
@@ -136,12 +136,9 @@
                       javascript:window.location.reload();
                   }
             });
-           }
-        );
-     });
+      });
 
      // Submit data and complete experiment
-     $(function() {
       $("#next_experiment_button").click( function(){
              expfactory.djstatus = "FINISHED";
 
@@ -160,8 +157,11 @@
                         document.location = "{{ next_page }}"
                       }
              });
-           }
-      );
+           });
+
+    // Start with finished message hidden
+    $("#finished_message").hide()
+
     });
     </script>
 
@@ -171,43 +171,30 @@
             <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
     </form>
 
-    <!-- Consent Modal-->
+    <!-- Consent Form-->
     {% if consent %}
-    <div class="modal fade" id="consent_modal">
-      <div class="modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Consent</h4>
-          </div>
-          <div class="modal-body" id="consent" style="text-align: center;">
-          {{ consent }}
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-success" data-dismiss="modal">Agree</button>
-            <!-- Disagree ends battery for assignement completely-->
-            <a href="{% url 'end_assignment' uniqueId %}"><button type="button" class="btn btn-danger">Disagree</button></a>
-          </div>
-        </div><!-- /.modal-content -->
-      </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
-    {% endif %}
+    <div id="consent_form" style="margin:100px">
+        <h1>Consent</h1>
+       {{ consent | safe }}<br>
+       <button id="start_experiment_button" type="button" class="btn">Agree</button>
+       <button href="{% url 'end_assignment' uniqueId %}" type="button" class="btn">Disagree</button>
+   </div>
+   {% else %}
+   <script>
+   $(function() {
+       $("#start_experiment_button").click();
+   });
+   </script>
+   {% endif %}
 
-    <!-- Finished Modal-->
-    <div class="modal fade" id="consent_modal">
-      <div class="modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Experiment complete</h4>
-          </div>
-          <div class="modal-body" id="consent" style="text-align: center;">
-            <p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p>
-            <button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button>
-            <button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button>
-          </div>
-        </div><!-- /.modal-content -->
-      </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
+    <!-- Finished Div-->
+    <div id="finished_message" style="margin:100px">
+        <h1>Experiment Complete</h1>
+       {{ consent | safe }}<br>
+       <p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p>
+       <button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button>
+       <button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button>
+   </div>
 
   </body>
 </html>

@@ -3,16 +3,10 @@
   <head>
     <title>The Experiment Factory</title>
     <meta charset="utf-8" />
-
-    <script type="text/javascript" src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/underscore-min.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js""></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/d3.v3.min.js""></script>
-
-    <script type="text/javascript">
-        var uniqueId = "{{ uniqueId }}";
-    </script>
-
+    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/jspsych.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-text.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-instructions.js"></script>
@@ -31,75 +25,83 @@
 
 <script>
 
-    experiment_list = []
-    experiment_names = []
+    $(function() {
 
-    /*Just to store task data as we go*/
-    var expfactory = new ExpFactory(uniqueId);
+      var uniqueId = "{{ uniqueId }}";
 
-    {% for experiment in experiments %}
-        experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
-        experiment_names.push("{{ experiment.template.tag }}")
-    {% endfor %}
+      experiment_list = []
+      experiment_names = []
 
-    /* takes an experiment array and concatenates it with the array of each experiment \
-    identified in 'experiment_names' */
-    function cat_experiments(experiment_array) {
-        for (i = 0; i < experiment_names.length; i++) {
-            switch (experiment_names[i]) {
-                {{ experiment_concat | safe }}
-            }
-        }
-    }
+      /*Just to store task data as we go*/
+      var expfactory = new ExpFactory(uniqueId);
+
+      {% for experiment in experiments %}
+          experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
+          experiment_names.push("{{ experiment.template.tag }}")
+      {% endfor %}
+
+      /* takes an experiment array and concatenates it with the array of each experiment \
+      identified in 'experiment_names' */
+      function cat_experiments(experiment_array) {
+          for (i = 0; i < experiment_names.length; i++) {
+              switch (experiment_names[i]) {
+                  {{ experiment_concat | safe }}
+              }
+          }
+      }
 
 
-    var task_list = '<ul list-text>'
-    for (i=0; i<experiment_names.length; i++) {
-        task_list += '<li>' + experiment_names[i] + '</li>'
-    }
+      var task_list = '<ul list-text>'
+      for (i=0; i<experiment_names.length; i++) {
+          task_list += '<li>' + experiment_names[i] + '</li>'
+      }
 
-    var task_list_block = {
-        type: 'text',
-	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
-	cont_key: 13,
-    };
+      var task_list_block = {
+          type: 'text',
+  	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
+  	cont_key: 13,
+      };
 
-    var experiments = []
-    experiments.push(task_list_block)
-    cat_experiments(experiments)
+      var experiments = []
+      experiments.push(task_list_block)
+      cat_experiments(experiments)
 
-    jsPsych.init({
-      timeline: experiments,
-	    on_finish: function() {
+      $("#end_preview_button").click(function(){
+         $("#consent_form").hide();
+      });
+
+      // Start experiment when participant pushes button
+      $("#start_experiment_button").click(function(){
+         $("#consent_form").hide();
+         jsPsych.init({
+            experiment_structure: experiments,
+            on_finish: function() {
                 console.log("Finished!");
             },
             on_data_update: function(data) {
                 console.log(data);
                 expfactory.recordTrialData(data);
             }
+         });
      });
+   });
    </script>
 
-   <!-- Consent Modal-->
+   <!-- Consent Form-->
    {% if consent %}
-   <div class="modal fade" id="consent_modal">
-     <div class="modal-lg">
-       <div class="modal-content">
-         <div class="modal-header">
-           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-           <h4 class="modal-title">Consent</h4>
-         </div>
-         <div class="modal-body" id="consent" style="text-align: center;">
-         {{ consent }}
-         </div>
-         <div class="modal-footer">
-           <button type="button" class="btn btn-success" data-dismiss="modal">Agree</button>
-           <button type="button" class="btn btn-danger">Disagree</button>
-         </div>
-       </div><!-- /.modal-content -->
-     </div><!-- /.modal-dialog -->
-   </div><!-- /.modal -->
-   {% endif %}
+   <div id="consent_form" style="margin:100px">
+       <h1>Consent</h1>
+      {{ consent | safe }}<br>
+      <button id="start_experiment_button" type="button" class="btn">Agree</button>
+      <button id="end_preview_button" type="button" class="btn">Disagree</button>
+  </div>
+  {% else %}
+  <script>
+  $(function() {
+      $("#start_experiment_button").click();
+  });
+  </script>
+  {% endif %}
 
   </body>
 </html>

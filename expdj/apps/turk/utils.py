@@ -183,7 +183,7 @@ def select_random_n(experiments,N):
     :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
     :param N: the number of experiments to select
     '''
-    if N<len(experiments):
+    if N>len(experiments):
         N=len(experiments)
     return choice(experiments,N).tolist()
 
@@ -192,9 +192,10 @@ def get_worker_experiments(worker,battery,completed=False):
     '''get_worker_experiments returns a list of experiment tags that
     a worker has/has not completed for a particular battery
     '''
-    battery_tags = [x.template.tag for x in battery_experiments.all()]
+    from expdj.apps.turk.models import Result
+    battery_tags = [x.template.tag for x in battery.experiments.all()]
     worker_experiments = Result.objects.filter(worker=worker,battery=battery)
-    worker_tags = [x.experiment.tag for x in worker_experiments]
+    worker_tags = [x.experiment.tag for x in worker_experiments if x.completed==True]
 
     if completed==False:
         uncompleted_experiments = [e for e in battery_tags if e not in worker_tags]

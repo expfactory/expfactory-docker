@@ -39,10 +39,10 @@ class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
 
     def __str__(self):
-        return "%s: experiments[%s]" %(self.id)
+        return "%s" %(self.id)
 
     def __unicode__(self):
-        return "%s: experiments[%s]" %(self.id)
+        return "%s" %(self.id)
 
     class Meta:
         ordering = ['id']
