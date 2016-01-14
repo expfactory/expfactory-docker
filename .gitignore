@@ -7,4 +7,10 @@
 # Static #
 ##########
 /assets
+/static/css
+/static/images
+/static/js
+/static/favicon.ico
+/static/lib
+/static/fonts
 /static/experiments
