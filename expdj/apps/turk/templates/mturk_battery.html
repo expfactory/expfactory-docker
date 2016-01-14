@@ -5,8 +5,8 @@
     <meta charset="utf-8" />
     <script src="{% static "js/jquery.min.js"%}"></script>
     <script src="{% static "js/bootstrap.min.js"%}"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/underscore-min.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/backbone-min.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/underscore-min.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/backbone-min.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/jspsych.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-text.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-instructions.js"></script>
@@ -15,7 +15,7 @@
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-consent.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/plugins/jspsych-survey-text.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}js/jspsych/custom_plugins/jspsych-stim-feedback-IE.js"></script>
-    <script type="text/javascript" src="{% get_media_prefix %}js/expfactory.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/expfactory.js"></script>
     {{ experiment_load | safe }}
 
     <link rel="stylesheet" href="{% get_media_prefix %}css/jspsych.css" />
@@ -97,33 +97,6 @@
     experiments.push(task_list_block)
     cat_experiments(experiments)
 
-    // Start experiment when participant pushes button
-    $("#start_experiment_button").click(function(){
-       $("#consent_form").hide();
-       jsPsych.init({
-          experiment_structure: experiments,
-    	    on_finish: function() {
-                   // Show the modal to to back or submit
-                   finished_message = '<div id="finished_message" style="margin:100px"><h1>Experiment Complete</h1><p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p><button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button><button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button></div>'
-                   $("body").append(finished_message)
-               },
-               on_data_update: function(data) {
-                   console.log(data);
-                   expfactory.recordTrialData(data);
-                   expfactory.djstatus = "UPDATE";
-                   $.ajax({ type: "POST",
-                            contentType: "application/json",
-                            url : "{% url 'sync_data' uniqueId %}",
-                            data : JSON.stringify(expfactory),
-                            dataType: "json",
-                            success: function(data){
-                              console.log(data);
-                            }
-                          });
-                   }
-        });
-    });
-
     $("#redo_experiment_button").click( function(){
             expfactory.djstatus = "REDO";
             $.ajax({ type: "POST",
@@ -159,6 +132,35 @@
                       }
              });
            });
+
+    // Start experiment when participant pushes button
+    $("#start_experiment_button").click(function(){
+       $("#consent_form").hide();
+       jsPsych.init({
+          experiment_structure: experiments,
+    	    on_finish: function() {
+
+                   // Show the modal to to back or submit
+                   finished_message = '<div id="finished_message" style="margin:100px"><h1>Experiment Complete</h1><p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p><button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button><button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button></div>'
+                   $("body").append(finished_message)
+               },
+               on_data_update: function(data) {
+                   console.log(data);
+                   expfactory.recordTrialData(data);
+                   expfactory.djstatus = "UPDATE";
+                   $.ajax({ type: "POST",
+                            contentType: "application/json",
+                            url : "{% url 'sync_data' uniqueId %}",
+                            data : JSON.stringify(expfactory),
+                            dataType: "json",
+                            success: function(data){
+                              console.log(data);
+                            }
+                          });
+                   }
+        });
+    });
+
     });
     </script>
 
