@@ -86,10 +86,11 @@ def assign_experiment_credit(worker_id):
 def get_unique_experiments(results):
     experiments = []
     for result in results:
-        for trial in result.taskdata:
-            if "exp_id" in trial["trialdata"]:
-                if trial["trialdata"]["exp_id"] not in experiments:
-                    experiments.append(trial["trialdata"]["exp_id"])
+        if result.completed == True:
+            for trial in result.taskdata:
+                if "exp_id" in trial["trialdata"]:
+                    if trial["trialdata"]["exp_id"] not in experiments:
+                        experiments.append(trial["trialdata"]["exp_id"])
     return numpy.unique(experiments).tolist()
 
 
@@ -126,10 +127,11 @@ def find_variable(taskdata,exp_id,variable_name):
 def get_unique_variables(results):
     variables = []
     for result in results:
-        for trial in result.taskdata:
-            new_variables = [x for x in trial.keys() if x not in variables and x!="trialdata"]
-            variables = variables + new_variables
-            if "trialdata" in trial.keys():
-                new_variables = [x for x in trial["trialdata"].keys() if x not in variables]
+        if result.completed == True:
+            for trial in result.taskdata:
+                new_variables = [x for x in trial.keys() if x not in variables and x!="trialdata"]
                 variables = variables + new_variables
+                if "trialdata" in trial.keys():
+                    new_variables = [x for x in trial["trialdata"].keys() if x not in variables]
+                    variables = variables + new_variables
     return numpy.unique(variables).tolist()

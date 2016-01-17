@@ -141,19 +141,20 @@ def make_results_df(battery,results):
     column_names = header + variables
     df = pandas.DataFrame(columns=column_names)
     for result in results:
-        worker_id = result.worker_id
-        for t in range(len(result.taskdata)):
-            row_id = "%s_%s" %(worker_id,t)
-            trial = result.taskdata[t]
-            df.loc[row_id,["worker_id","worker_platform","worker_browser","battery_name","battery_owner","battery_owner_email","battery_completed"]] = [worker_id,result.platform,result.browser,battery.name,battery.owner.username,battery.owner.email,result.completed]
-            for key in trial.keys():
-                if key != "trialdata":
-                    df.loc[row_id,key] = trial[key]
-            for key in trial["trialdata"].keys():
-                df.loc[row_id,key] = trial["trialdata"][key]
-                if key == "exp_id":
-                    exp=lookup[trial["trialdata"][key]]
-                    df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_tag","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].tag,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
+        if result.completed == True:
+            worker_id = result.worker_id
+            for t in range(len(result.taskdata)):
+                row_id = "%s_%s" %(worker_id,t)
+                trial = result.taskdata[t]
+                df.loc[row_id,["worker_id","worker_platform","worker_browser","battery_name","battery_owner","battery_owner_email","battery_completed"]] = [worker_id,result.platform,result.browser,battery.name,battery.owner.username,battery.owner.email,result.completed]
+                for key in trial.keys():
+                    if key != "trialdata":
+                        df.loc[row_id,key] = trial[key]
+                for key in trial["trialdata"].keys():
+                    df.loc[row_id,key] = trial["trialdata"][key]
+                    if key == "exp_id":
+                        exp=lookup[trial["trialdata"][key]]
+                        df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_tag","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].tag,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
 
     # Change all names that don't start with experiment or worker or experiment to be result
     result_variables = [x for x in column_names if x not in header]

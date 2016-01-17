@@ -527,7 +527,9 @@ def export_experiments(battery,output_name,experiment_tags=None):
 
     # Specifying individual experiments removes between trial stufs
     if experiment_tags != None:
-        df = df[df.experiment_tag.isin(["test_task"])]
+        if isinstance(experiment_tags,str):
+            experiment_tags = [experiment_tags]
+        df = df[df.experiment_tag.isin(experiment_tags)]
 
     # The program reading in values should fill in appropriate nan value
     df[df.isnull()]=""
