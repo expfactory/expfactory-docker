@@ -18,6 +18,8 @@ for content in static_content:
     if os.path.isfile(content):
         shutil.copyfile(content,"%s/%s" %(copy_to,basename))
     else:
+        if os.path.exists("%s/%s" %(copy_to,basename)):
+            shutil.rmtree("%s/%s" %(copy_to,basename))
         copy_directory(content,"%s/%s" %(copy_to,basename))
 
 shutil.rmtree(tmpdir)

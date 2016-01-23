@@ -6,9 +6,9 @@ from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experimen
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.views import check_battery_edit_permission
 from expdj.apps.experiments.models import Battery, ExperimentTemplate
+from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
-from expfactory.battery import get_load_static, get_concat_js
 from django.core.management.base import BaseCommand
 from expdj.apps.turk.forms import HITForm
 from optparse import make_option
@@ -55,9 +55,8 @@ def serve_hit(request,hid):
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
             template = "mturk_battery_preview.html"
             task_list = [battery.experiments.all()[0]]
-            context = {
-                "experiments":task_list
-            }
+            context = dict()
+            deployment = "docker-preview"
 
         # worker has accepted the task
         else:
@@ -75,6 +74,7 @@ def serve_hit(request,hid):
             # Try to get some info about browser, language, etc.
             browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
             platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
+            deployment = "docker"
 
             # Initialize Assignment object, obtained from Amazon, and Result
             assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
@@ -107,16 +107,15 @@ def serve_hit(request,hid):
                 "assignment_id": assignment_id,
                 "amazon_host": host,
                 "hit_id": hit_id,
-                "experiments":task_list,
                 "uniqueId":result.id
             }
 
             # If this is the last experiment, the finish button will link to a thank you page.
             if len(uncompleted_experiments) == 1:
-                context["next_page"] = "/finished"
+                next_page = "/finished"
             else:
                 # Or reload the page to get the next experiment
-                context["next_page"] = "javascript:window.location.reload();"
+                next_page = "javascript:window.location.reload();"
 
 
         # if the consent has been defined, add it to the context
@@ -125,10 +124,13 @@ def serve_hit(request,hid):
 
         # Get experiment folders
         experiment_folders = [os.path.join(media_dir,"experiments",x.template.tag) for x in task_list]
-        loadjs = get_load_static(experiment_folders,url_prefix="/")
-        concatjs = get_concat_js(experiment_folders)
-        context["experiment_load"] = loadjs
-        context["experiment_concat"] = concatjs
+        context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
+
+        # Get code to run the experiment (not in external file)
+        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0]]
+        runcode = runcode.replace("{{result.id}}",result.id)
+        runcode = runcode.replace("{{next_page}}",next_page)
+        context["run"] = runcode
 
         response = render_to_response(template, context)
         # without this header, the iFrame will not render in Amazon

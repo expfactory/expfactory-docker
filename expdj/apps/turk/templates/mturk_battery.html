@@ -49,98 +49,13 @@
         }
     });
 
-    experiment_list = []
-    experiment_names = []
-
     /*Just to store task data as we go*/
     var expfactory = new ExpFactory(uniqueId);
-
-    {% for experiment in experiments %}
-        experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
-        experiment_names.push("{{ experiment.template.tag }}")
-    {% endfor %}
-
-    /* takes an experiment array and concatenates it with the array of each experiment \
-    identified in 'experiment_names' */
-    function cat_experiments(experiment_array) {
-        for (i = 0; i < experiment_names.length; i++) {
-            switch (experiment_names[i]) {
-                {{ experiment_concat | safe }}
-            }
-        }
-    }
-
-
-    var task_list = '<ul list-text>'
-    for (i=0; i<experiment_names.length; i++) {
-        task_list += '<li>' + experiment_names[i] + '</li>'
-    }
-
-    var task_list_block = {
-        type: 'text',
-	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
-	cont_key: [13],
-    };
-
-    var experiments = []
-    experiments.push(task_list_block)
-    cat_experiments(experiments)
 
     // Start experiment when participant pushes button
     $("#start_experiment_button").click(function(){
        $("#consent_form").hide();
-       jsPsych.init({
-          timeline: experiments,
-    	    on_finish: function() {
-                   // Show the modal to to back or submit
-                   finished_message = '<div id="finished_message" style="margin:100px"><h1>Experiment Complete</h1><p>You have completed the experiment. You can click "Next Experiment" to keep your result, or "Redo Experiment" to be presented with the task again at a later time.</p><button type="button" id="redo_experiment_button" class="btn btn-danger">Redo Experiment</button><button id="next_experiment_button" type="button" class="btn btn-success">Next Experiment</button></div>'
-                   $("body").append(finished_message)
-
-                   $("#redo_experiment_button").click( function(){
-                      javascript:window.location.reload();
-                   });
-
-                    // Submit data and complete experiment
-                     $("#next_experiment_button").click( function(){
-                            expfactory.djstatus = "FINISHED";
-
-                            // Submit to AWS first to obtain the complete assignment object
-                            {% if next_page == "/finished" %}
-                                //$("#turkey_form").submit()
-                            {% endif %}
-                            $.ajax({ type: "POST",
-                                     contentType: "application/json",
-                                     url : "{% url 'sync_data' uniqueId %}",
-                                     data : JSON.stringify(expfactory),
-                                     dataType: "json",
-                                     error: function(error){
-                                       console.log(error)
-                                     },
-                                     success: function(data){
-                                       console.log(data);
-                                       console.log("Finished!");
-                                       document.location = "{{ next_page }}";
-                                     }
-                            });
-                          });
-
-               },
-               on_data_update: function(data) {
-                   console.log(data);
-                   expfactory.recordTrialData(data);
-                   expfactory.djstatus = "UPDATE";
-                   $.ajax({ type: "POST",
-                            contentType: "application/json",
-                            url : "{% url 'sync_data' uniqueId %}",
-                            data : JSON.stringify(expfactory),
-                            dataType: "json",
-                            success: function(data){
-                              console.log(data);
-                              console.log("data update called")
-                            }
-                          });
-                   }
-        });
+       {{run}}
     });
 
     });

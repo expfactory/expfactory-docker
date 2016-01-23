@@ -10,8 +10,6 @@
     <script type="text/javascript" src="{% get_media_prefix %}expdjjs/expfactory.js"></script>
     {{ experiment_load | safe }}
 
-    <link rel="stylesheet" href="{% get_media_prefix %}css/jspsych.css" />
-    <link rel="stylesheet" href="{% get_media_prefix %}css/default_style.css" />
 </head>
 <body>
 
@@ -21,42 +19,8 @@
 
       var uniqueId = "{{ uniqueId }}";
 
-      experiment_list = []
-      experiment_names = []
-
       /*Just to store task data as we go*/
       var expfactory = new ExpFactory(uniqueId);
-
-      {% for experiment in experiments %}
-          experiment_list.push({"name":"{{ experiment.template.tag }}","time":{{ experiment.template.time }}})
-          experiment_names.push("{{ experiment.template.tag }}")
-      {% endfor %}
-
-      /* takes an experiment array and concatenates it with the array of each experiment \
-      identified in 'experiment_names' */
-      function cat_experiments(experiment_array) {
-          for (i = 0; i < experiment_names.length; i++) {
-              switch (experiment_names[i]) {
-                  {{ experiment_concat | safe }}
-              }
-          }
-      }
-
-
-      var task_list = '<ul list-text>'
-      for (i=0; i<experiment_names.length; i++) {
-          task_list += '<li>' + experiment_names[i] + '</li>'
-      }
-
-      var task_list_block = {
-          type: 'text',
-  	text: '<div class = centerbox><p class = block-text>In this HIT you will be completing the following tasks: </p>' + task_list + '</ul><p class = block-text>Press <strong>enter</strong> to continue.</p></div>',
-  	cont_key: [13],
-      };
-
-      var experiments = []
-      experiments.push(task_list_block)
-      cat_experiments(experiments)
 
       $("#end_preview_button").click(function(){
          $("#consent_form").hide();
@@ -65,16 +29,7 @@
       // Start experiment when participant pushes button
       $("#start_experiment_button").click(function(){
          $("#consent_form").hide();
-         jsPsych.init({
-            timeline: experiments,
-            on_finish: function() {
-                console.log("Finished!");
-            },
-            on_data_update: function(data) {
-                console.log(data);
-                expfactory.recordTrialData(data);
-            }
-         });
+         {{run}}
      });
    });
    </script>
