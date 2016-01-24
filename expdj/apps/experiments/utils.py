@@ -69,14 +69,15 @@ def install_experiments(experiment_tags=None):
         try:
             performance_variable = None
             rejection_variable = None
-            if isinstance(experiment[0]["experiment_variables"],list):
-                for var in experiment[0]["experiment_variables"]:
-                    if var["type"].lower().strip() == "bonus":
-                        performance_variable = parse_experiment_variable(var)
-                    elif var["type"].lower().strip() == "credit":
-                        rejection_variable = parse_experiment_variable(var)
-                    else:
-                        parse_experiment_variable(var) # adds to database
+            if "experiment_variable" in experiment[0]:
+                if isinstance(experiment[0]["experiment_variables"],list):
+                    for var in experiment[0]["experiment_variables"]:
+                        if var["type"].lower().strip() == "bonus":
+                            performance_variable = parse_experiment_variable(var)
+                        elif var["type"].lower().strip() == "credit":
+                            rejection_variable = parse_experiment_variable(var)
+                        else:
+                            parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
             new_experiment = ExperimentTemplate(tag=experiment[0]["tag"],
                                                 name=experiment[0]["name"],

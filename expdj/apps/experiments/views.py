@@ -275,8 +275,10 @@ def edit_experiment_template(request,eid=None):
 @login_required
 def delete_experiment_template(request, eid, do_redirect=True):
     experiment = get_experiment_template(eid,request)
+    experiment_instances = Experiment.objects.filter(template=experiment)
     if check_experiment_edit_permission(request):
         # Static Files
+        [e.delete() for e in experiment_instances]
         static_files_dir = os.path.join(media_dir,"experiments",experiment.tag)
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task

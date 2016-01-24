@@ -127,9 +127,10 @@ def serve_hit(request,hid):
         context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
 
         # Get code to run the experiment (not in external file)
-        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0]]
-        runcode = runcode.replace("{{result.id}}",result.id)
-        runcode = runcode.replace("{{next_page}}",next_page)
+        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.tag]
+        if deployment == "docker":
+            runcode = runcode.replace("{{result.id}}",str(result.id))
+            runcode = runcode.replace("{{next_page}}",next_page)
         context["run"] = runcode
 
         response = render_to_response(template, context)

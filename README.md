@@ -95,13 +95,31 @@ Then you can bring up the container (see steps at beginning of README), essentia
 
       docker-compose up -d
 
-You should first log in with the super user account, with the following credentials:
+You will then need to log into the container to create the superuser. First do docker ps to get the container id of the uwsgi that is running vanessa/expfactory image, and then connect to the running container:
 
-      username: expfactory
-      password: expfactory
+      docker ps
+      docker exec -it [container_id] bash
 
-You should change this password immediately to ensure the security of your application.
+Then you will want to make sure migrations are done, and then you can [interactively generate a superuser](scripts/generate_superuser.py):
+
+      python manage.py makemigrations
+      python manage.py syncdb
+      python manage.py shell
+
+Then to create your superuser, for example:
+
+      from django.contrib.auth.models import User
+      User.objects.create_superuser(username='ADMINUSER', password='ADMINPASS', email='')
+
+and replace `ADMINUSER` and `ADMINPASS` with your chosen username and password, respectively. Finally, you will want to download the most recent battery files:
+
+      python scripts/download_battery.py
+      python manage.py collectstatic
+
+The last step is probably not necessary, but it's good to be sure.
 
 ### Configuration with Mechanical Turk
 
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but with a battery object. Thus, you will need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.
+
+### Installing expfactory-battery
