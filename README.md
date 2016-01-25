@@ -122,4 +122,7 @@ The last step is probably not necessary, but it's good to be sure.
 
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but with a battery object. Thus, you will need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.
 
+### HTTPS
+The docker container is set up to have a secure connection with https (port 443). There is no easy, programmatic way to set this up on a server, so you must walk through the steps at [https://gethttpsforfree.com/](https://gethttpsforfree.com/). It's basically an exercise in copy pasting, and you should follow the steps to a T to generate the certificates on the server. The docker image will take care of setting up the web server (the nginx.conf file).
+
 ### Installing expfactory-battery

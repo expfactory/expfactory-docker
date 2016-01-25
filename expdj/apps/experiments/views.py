@@ -192,6 +192,7 @@ def batteries_view(request,uid=None):
         batteries = Battery.objects.all()
     else:
         batteries = Battery.objects.filter(owner_id=uid)
+    generate_battery_permission = False
     context = {'batteries': batteries}
     return render(request, 'all_batteries.html', context)
 
@@ -449,44 +450,46 @@ def add_battery(request):
 
 @login_required
 def edit_battery(request, bid=None):
-    header_text = "Add new battery"
-    if bid:
-        battery = get_battery(bid,request)
-        is_owner = battery.owner == request.user
-        header_text = battery.name
-        if not request.user.has_perm('battery.edit_battery', battery):
-            return HttpResponseForbidden()
-    else:
-        is_owner = True
-        battery = Battery(owner=request.user)
-    if request.method == "POST":
-        if is_owner:
-            form = BatteryForm(request.POST,instance=battery)
-        if form.is_valid():
-            previous_contribs = set()
-            if form.instance.pk is not None:
-                previous_contribs = set(form.instance.contributors.all())
-            battery = form.save(commit=False)
-            battery.save()
-
-            if is_owner:
-                form.save_m2m()  # save contributors
-                current_contribs = set(battery.contributors.all())
-                new_contribs = list(current_contribs.difference(previous_contribs))
-
-            return HttpResponseRedirect(battery.get_absolute_url())
-    else:
-        if is_owner:
-            form = BatteryForm(instance=battery)
+    if request.user.is_superuser:
+        header_text = "Add new battery"
+        if bid:
+            battery = get_battery(bid,request)
+            is_owner = battery.owner == request.user
+            header_text = battery.name
+            if not request.user.has_perm('battery.edit_battery', battery):
+                return HttpResponseForbidden()
         else:
-            form = BatteryForm(instance=battery)
+            is_owner = True
+            battery = Battery(owner=request.user)
+        if request.method == "POST":
+            if is_owner:
+                form = BatteryForm(request.POST,instance=battery)
+            if form.is_valid():
+                previous_contribs = set()
+                if form.instance.pk is not None:
+                    previous_contribs = set(form.instance.contributors.all())
+                battery = form.save(commit=False)
+                battery.save()
 
-    context = {"form": form,
-               "is_owner": is_owner,
-               "header_text":header_text}
+                if is_owner:
+                    form.save_m2m()  # save contributors
+                    current_contribs = set(battery.contributors.all())
+                    new_contribs = list(current_contribs.difference(previous_contribs))
 
-    return render(request, "edit_battery.html", context)
+                return HttpResponseRedirect(battery.get_absolute_url())
+        else:
+            if is_owner:
+                form = BatteryForm(instance=battery)
+            else:
+                form = BatteryForm(instance=battery)
 
+        context = {"form": form,
+                   "is_owner": is_owner,
+                   "header_text":header_text}
+
+        return render(request, "edit_battery.html", context)
+    else:
+        return redirect("batteries")
 
 # Delete a battery
 @login_required
