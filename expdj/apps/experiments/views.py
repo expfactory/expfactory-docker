@@ -106,7 +106,7 @@ def update_experiment_templates(request,eid=None):
             experiments = ExperimentTemplate.objects.all()
         else:
             experiments = [get_experiment_template(request,eid)]
-        current_experiments = [e.tag for e in experiments]
+        current_experiments = [e.exp_id for e in experiments]
         [delete_experiment_template(request, e, do_redirect=False) for e in current_experiments]
         errored_experiments = install_experiments(experiment_tags=current_experiments)
         if len(errored_experiments) > 0:
@@ -202,7 +202,7 @@ def batteries_view(request,uid=None):
 @login_required
 def preview_experiment(request,eid):
     experiment = get_experiment_template(eid,request)
-    experiment_folder = os.path.join(media_dir,"experiments",experiment.tag)
+    experiment_folder = os.path.join(media_dir,"experiments",experiment.exp_id)
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response('experiment_preview.html', context)
@@ -219,8 +219,8 @@ def add_experiment_template(request):
     '''
     experiment_selection = get_experiment_selection()
     current_experiments = ExperimentTemplate.objects.all()
-    tags = [e.tag for e in current_experiments]
-    newexperiments = [e for e in experiment_selection if e["tag"] not in tags]
+    tags = [e.exp_id for e in current_experiments]
+    newexperiments = [e for e in experiment_selection if e["exp_id"] not in tags]
     context = {"newexperiments": newexperiments,
                "experiments": current_experiments}
     return render(request, "add_experiment_template.html", context)
@@ -232,7 +232,7 @@ def save_experiment_template(request):
     '''
     newexperiments = request.POST.keys()
     experiment_selection = get_experiment_selection()
-    selected_experiments = [e["tag"] for e in experiment_selection if e["tag"] in newexperiments]
+    selected_experiments = [e["exp_id"] for e in experiment_selection if e["exp_id"] in newexperiments]
     errored_experiments = install_experiments(experiment_tags=selected_experiments)
     if len(errored_experiments) > 0:
         message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
@@ -280,7 +280,7 @@ def delete_experiment_template(request, eid, do_redirect=True):
     if check_experiment_edit_permission(request):
         # Static Files
         [e.delete() for e in experiment_instances]
-        static_files_dir = os.path.join(media_dir,"experiments",experiment.tag)
+        static_files_dir = os.path.join(media_dir,"experiments",experiment.exp_id)
         shutil.rmtree(static_files_dir)
         # Cognitive Atlas Task
         task = experiment.cognitive_atlas_task
@@ -366,7 +366,7 @@ def save_experiment(request,bid):
         experiment.save()
 
         # Add to battery, will replace old version if it exists
-        current_experiments = [e for e in battery.experiments.all() if e.template.tag not in template.tag]
+        current_experiments = [e for e in battery.experiments.all() if e.template.exp_id not in template.exp_id]
         current_experiments.append(experiment)
         battery.experiments = current_experiments
         battery.save()
@@ -382,7 +382,7 @@ def add_experiment(request,bid,eid=None):
     newexperiments = [x for x in ExperimentTemplate.objects.all() if x not in battery.experiments.all()]
 
     # Capture the performance and rejection variables appropriately
-    # We should be able to look up by tag
+    # We should be able to look up by exp_id
     experimentsbytag = dict()
     for newexperiment in newexperiments:
         newexperimentjson = model_to_dict(newexperiment)
@@ -390,7 +390,7 @@ def add_experiment(request,bid,eid=None):
             newexperimentjson["performance_variable"] = model_to_dict(newexperiment.performance_variable)
         if newexperiment.rejection_variable:
             newexperimentjson["rejection_variable"] = model_to_dict(newexperiment.rejection_variable)
-        experimentsbytag[newexperimentjson["tag"]] = newexperimentjson
+        experimentsbytag[newexperimentjson["exp_id"]] = newexperimentjson
 
     context = {"newexperiments": newexperiments,
                "newexperimentsjson":json.dumps(experimentsbytag),
@@ -515,8 +515,8 @@ def export_battery(request,bid):
 def export_experiment(request,eid):
     battery = Battery.objects.filter(experiments__id=eid)[0]
     experiment = get_experiment(eid,request)
-    output_name = "expfactory_experiment_%s.tsv" %(experiment.template.tag)
-    return export_experiments(battery,output_name,[experiment.template.tag])
+    output_name = "expfactory_experiment_%s.tsv" %(experiment.template.exp_id)
+    return export_experiments(battery,output_name,[experiment.template.exp_id])
 
 # General function to export some number of experiments
 def export_experiments(battery,output_name,experiment_tags=None):
@@ -534,7 +534,7 @@ def export_experiments(battery,output_name,experiment_tags=None):
     if experiment_tags != None:
         if isinstance(experiment_tags,str):
             experiment_tags = [experiment_tags]
-        df = df[df.experiment_tag.isin(experiment_tags)]
+        df = df[df.experiment_exp_id.isin(experiment_tags)]
 
     # The program reading in values should fill in appropriate nan value
     df[df.isnull()]=""

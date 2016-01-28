@@ -22,7 +22,7 @@
                 <select class="form-control" id="experiment" name="experiment">
                   <option>--</option>
                   {% for experiment in newexperiments %}
-                  <option value="{{ experiment.tag }}">{{ experiment.name }}</option>
+                  <option value="{{ experiment.exp_id }}">{{ experiment.name }}</option>
                   {% endfor %}
                 </select>
               </div>

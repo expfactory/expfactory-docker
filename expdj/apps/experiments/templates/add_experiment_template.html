@@ -21,7 +21,7 @@
             {% if newexperiments %}
             <form method="POST" action="{% url 'save_experiment_template' %}">
                 {% for newexperiment in newexperiments %}
-                <input type="checkbox" name="{{ newexperiment.tag }}" value="{{ newexperiment.tag }}"><a href="http://expfactory.github.io/{{ newexperiment.tag }}.html" target="_blank">{{ newexperiment.tag }}</a><br>
+                <input type="checkbox" name="{{ newexperiment.exp_id }}" value="{{ newexperiment.exp_id }}"><a href="http://expfactory.github.io/{{ newexperiment.exp_id }}.html" target="_blank">{{ newexperiment.exp_id }}</a><br>
                 {% endfor %}
                 {% csrf_token %}
                 <input class="submit" type="submit" value="Add">

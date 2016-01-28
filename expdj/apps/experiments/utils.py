@@ -62,7 +62,7 @@ def install_experiments(experiment_tags=None):
     tmpdir = custom_battery_download(repos=["experiments","battery"])
     experiments = get_experiments("%s/experiments" %tmpdir,load=True,warning=False)
     if experiment_tags != None:
-        experiments = [e for e in experiments if e[0]["tag"] in experiment_tags]
+        experiments = [e for e in experiments if e[0]["exp_id"] in experiment_tags]
 
     for experiment in experiments:
 
@@ -79,7 +79,7 @@ def install_experiments(experiment_tags=None):
                         else:
                             parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = ExperimentTemplate(tag=experiment[0]["tag"],
+            new_experiment = ExperimentTemplate(tag=experiment[0]["exp_id"],
                                                 name=experiment[0]["name"],
                                                 cognitive_atlas_task=cognitive_atlas_task,
                                                 publish=bool(experiment[0]["publish"]),
@@ -88,10 +88,10 @@ def install_experiments(experiment_tags=None):
                                                 performance_variable=performance_variable,
                                                 rejection_variable=rejection_variable)
             new_experiment.save()
-            experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["tag"])
-            copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["tag"]))
+            experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["exp_id"])
+            copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["exp_id"]))
         except:
-            errored_experiments.append(experiment[0]["tag"])
+            errored_experiments.append(experiment[0]["exp_id"])
 
     shutil.rmtree(tmpdir)
     return errored_experiments
@@ -99,13 +99,13 @@ def install_experiments(experiment_tags=None):
 # EXPERIMENTS AND BATTERIES ###############################################################
 
 def make_experiment_lookup(tags,battery=None):
-    '''Generate lookup based on tag'''
+    '''Generate lookup based on exp_id'''
     experiment_lookup = dict()
     for tag in tags:
         experiment = None
         if battery != None:
             # First try retrieving from battery
-            experiment = battery.experiments.filter(template__tag=tag)[0]
+            experiment = battery.experiments.filter(template__exp_id=tag)[0]
             if isinstance(experiment,Experiment):
                 tmp = {"include_bonus":experiment.include_bonus,
                        "include_catch":experiment.include_catch,
@@ -113,7 +113,7 @@ def make_experiment_lookup(tags,battery=None):
             else:
                experiment = None
         if experiment == None:
-            experiment = ExperimentTemplate.objects.filter(tag=tag)[0]
+            experiment = ExperimentTemplate.objects.filter(exp_id=tag)[0]
             tmp = {"include_bonus":"Unknown",
                    "include_catch":"Unknown",
                    "experiment":experiment}
@@ -135,7 +135,7 @@ def make_results_df(battery,results):
               'battery_completed',
               'experiment_include_bonus',
               'experiment_include_catch',
-              'experiment_tag',
+              'experiment_exp_id',
               'experiment_name',
               'experiment_reference',
               'experiment_cognitive_atlas_task_id']
@@ -155,7 +155,7 @@ def make_results_df(battery,results):
                     df.loc[row_id,key] = trial["trialdata"][key]
                     if key == "exp_id":
                         exp=lookup[trial["trialdata"][key]]
-                        df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_tag","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].tag,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
+                        df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
 
     # Change all names that don't start with experiment or worker or experiment to be result
     result_variables = [x for x in column_names if x not in header]

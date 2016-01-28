@@ -10,7 +10,7 @@
             {% if edit_permission %}
             <a class='button' href='{% url 'edit_experiment' battery.id experiment.id %}'>Edit Experiment</a>
             {% endif %}
-            <a class='button' target="_blank" href='{% url 'preview_experiment' experiment.template.tag %}'>Preview</a>
+            <a class='button' target="_blank" href='{% url 'preview_experiment' experiment.template.exp_id %}'>Preview</a>
             {% if delete_permission %}
             <div class="float_right">
                 <a class='button' href='{% url 'remove_experiment' battery.id experiment.id %}' id="delete_experiment"> Remove Experiment</a>
@@ -39,7 +39,7 @@
       </thead>
       <tbody>
           <tr><td>Experiment Name</td><td>{{ experiment.template.name }}</td></tr>
-          <tr><td>Tag</td><td>{{ experiment.template.tag }}</td></tr>
+          <tr><td>Exp_ID</td><td>{{ experiment.template.exp_id }}</td></tr>
           <tr><td>Time</td><td>{{ experiment.template.time }}</td></tr>
           <tr><td>Cognitive Atlas Task</td><td>{{ experiment.template.cognitive_atlas_task }}</td></tr>
           {% if experiment.template.reference %}

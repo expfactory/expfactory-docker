@@ -70,7 +70,7 @@ class ExperimentTemplate(models.Model):
     '''expfactory-experiments, to be chosen and customized by researchers into Experiments, and deployed in batteries
     fields correspond with a subset in the config.json
     '''
-    tag = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    exp_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     name = models.CharField(max_length=500,help_text="name of the experiment",unique=True)
     cognitive_atlas_task = models.ForeignKey(CognitiveAtlasTask, help_text="Behavioral Paradigm representation in the Cognitive Atlas", verbose_name="Cognitive Atlas Task", null=True, blank=False,on_delete=DO_NOTHING)
     performance_variable = models.ForeignKey(ExperimentVariable, related_name="performance_variable",null=True,blank=True,verbose_name="performance variable",help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.")
@@ -82,11 +82,11 @@ class ExperimentTemplate(models.Model):
     reference = models.CharField(max_length=500,help_text="reference or paper associated with the experiment",unique=False)
 
     def __str__(self):
-        return self.tag
+        return self.exp_id
 
     # Get the url for an experiment
     def get_absolute_url(self):
-        return_cid = self.tag
+        return_cid = self.exp_id
         return reverse('experiment_template_details', args=[str(return_cid)])
 
 class CreditCondition(models.Model):
