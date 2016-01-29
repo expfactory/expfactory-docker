@@ -118,6 +118,12 @@ and replace `ADMINUSER` and `ADMINPASS` with your chosen username and password, 
 
 The last step is probably not necessary, but it's good to be sure.
 
+## Setup for Production
+Log into the production server, and you can run [scripts/prepare_instance.sh](scripts/prepare_instance.sh) to install docker and docker-compose. This script will download the repo and build the image. You can then use the commands specified previously to bring up the image (e.g., `docker-compose up -d`). In the case of using something like AWS, we suggest that before building the image, you create an encrypted (separate) database, and add the credentials to it in your settings.py. There are unfortunately things you will need to do manually to get HTTPS working (see below). You should do the following:
+
+ - set up HTTPS (see instructions below)
+
+
 ### Configuration with Mechanical Turk
 
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but with a battery object. Thus, you will need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.
