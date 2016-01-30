@@ -15,6 +15,8 @@ sudo apt-get purge lxc-docker
 sudo apt-cache policy docker-engine
 sudo apt-get install -y --force-yes docker-engine
 sudo service docker start
+sudo gpasswd -a ubuntu docker
+sudo service docker restart
 
 curl -L https://github.com/docker/compose/releases/download/1.5.2/docker-compose-`uname -s`-`uname -m` > docker-compose
 sudo mv docker-compose /usr/local/bin
