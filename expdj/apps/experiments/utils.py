@@ -79,7 +79,7 @@ def install_experiments(experiment_tags=None):
                         else:
                             parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = ExperimentTemplate(tag=experiment[0]["exp_id"],
+            new_experiment = ExperimentTemplate(exp_id=experiment[0]["exp_id"],
                                                 name=experiment[0]["name"],
                                                 cognitive_atlas_task=cognitive_atlas_task,
                                                 publish=bool(experiment[0]["publish"]),
