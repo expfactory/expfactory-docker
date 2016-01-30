@@ -125,4 +125,30 @@ Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interf
 ### HTTPS
 The docker container is set up to have a secure connection with https (port 443). There is no easy, programmatic way to set this up on a server, so you must walk through the steps at [https://gethttpsforfree.com/](https://gethttpsforfree.com/). It's basically an exercise in copy pasting, and you should follow the steps to a T to generate the certificates on the server. The docker image will take care of setting up the web server (the nginx.conf file).
 
+### Encrypted database connection
+If your provider (eg aws) provides you with a certificate, you can add it to `/etc/ssl/certs` on the server, and this path is already mapped in the docker-compose for the nginx container. You then need to specify to use SSL in the database connection in your `settings.py` or `local_settings.py`:
+
+
+      DATABASES = {
+          'default': {
+              'ENGINE': 'django.db.backends.postgresql_psycopg2',
+              'NAME': 'dbname',
+              'USER': 'dbuser',
+              'PASSWORD':'dbpassword',
+              'HOST': 'dbhost',
+              'PORT': '5432',
+              'OPTIONS': {
+                      'sslmode': 'require',
+                      'sslrootcert':'/etc/ssl/certs/rds-cert.pem'
+              },
+          }
+      }
+
+
 ### Installing expfactory-battery
+Finally, you will need to install the battery files into `static` in the expfactory-docker folder (which is mapped to /var/www/static) and you can do this by running the script [scripts/download_battery.py](scripts/download_battery.py) from the base folder:
+
+      cd $HOME/expfactory-docker
+      python scripts/download_battery.py
+
+
