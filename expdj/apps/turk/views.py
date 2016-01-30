@@ -91,7 +91,7 @@ def serve_hit(request,hid):
                 return render_to_response("worker_sorry.html")
 
             task_list = select_random_n(uncompleted_experiments,1)
-            experimentTemplate = ExperimentTemplate.objects.filter(tag=task_list[0])[0]
+            experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
             task_list = battery.experiments.filter(template=experimentTemplate)
 
             # Generate a new results object for the worker, assignment, experiment
@@ -119,15 +119,15 @@ def serve_hit(request,hid):
 
 
         # if the consent has been defined, add it to the context
-        if battery.consent != None:
+        if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
             context["consent"] = battery.consent
 
         # Get experiment folders
-        experiment_folders = [os.path.join(media_dir,"experiments",x.template.tag) for x in task_list]
+        experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
         context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
 
         # Get code to run the experiment (not in external file)
-        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.tag]
+        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
         if deployment == "docker":
             runcode = runcode.replace("{{result.id}}",str(result.id))
             runcode = runcode.replace("{{next_page}}",next_page)
