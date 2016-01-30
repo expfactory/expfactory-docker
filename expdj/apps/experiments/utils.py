@@ -103,21 +103,24 @@ def make_experiment_lookup(tags,battery=None):
     experiment_lookup = dict()
     for tag in tags:
         experiment = None
-        if battery != None:
-            # First try retrieving from battery
-            experiment = battery.experiments.filter(template__exp_id=tag)[0]
-            if isinstance(experiment,Experiment):
-                tmp = {"include_bonus":experiment.include_bonus,
-                       "include_catch":experiment.include_catch,
-                       "experiment":experiment.template}
-            else:
-               experiment = None
-        if experiment == None:
-            experiment = ExperimentTemplate.objects.filter(exp_id=tag)[0]
-            tmp = {"include_bonus":"Unknown",
-                   "include_catch":"Unknown",
-                   "experiment":experiment}
-        experiment_lookup[tag] = tmp
+        try:
+            if battery != None:
+                # First try retrieving from battery
+                experiment = battery.experiments.filter(template__exp_id=tag)[0]
+                if isinstance(experiment,Experiment):
+                    tmp = {"include_bonus":experiment.include_bonus,
+                           "include_catch":experiment.include_catch,
+                           "experiment":experiment.template}
+                else:
+                    experiment = None
+            if experiment == None:
+                experiment = ExperimentTemplate.objects.filter(exp_id=tag)[0]
+                tmp = {"include_bonus":"Unknown",
+                       "include_catch":"Unknown",
+                       "experiment":experiment}
+            experiment_lookup[tag] = tmp
+        except:
+            pass
     return experiment_lookup
 
 
