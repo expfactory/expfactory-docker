@@ -157,7 +157,7 @@ def make_results_df(battery,results):
                 for key in trial["trialdata"].keys():
                     df.loc[row_id,key] = trial["trialdata"][key]
                     if key == "exp_id":
-                        exp=lookup[trial["trialdata"][key]]
+                        exp=lookup[trial["trialdata"][key].lower()]
                         df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
 
     # Change all names that don't start with experiment or worker or experiment to be result
