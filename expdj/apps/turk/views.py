@@ -117,10 +117,18 @@ def serve_hit(request,hid):
                 # Or reload the page to get the next experiment
                 next_page = "javascript:window.location.reload();"
 
+        # Consent, instructions, and advertisement
+        if deployment == "docker-preview":
+            if battery.consent != None: context["consent"] = battery.consent
+            if battery.ad != None: context["ad"] = battery.advertisement
 
         # if the consent has been defined, add it to the context
-        if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
-            context["consent"] = battery.consent
+        elif deployment == "docker":
+            if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
+                context["consent"] = battery.consent
+
+        # The instructions block is shown for both
+        if battery.instructions != None: context["instructions"] = battery.instructions
 
         # Get experiment folders
         experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
