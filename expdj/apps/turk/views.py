@@ -1,10 +1,10 @@
+from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, deploy_battery
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
 select_random_n
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
-from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access
 from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
@@ -35,6 +35,10 @@ def get_hit(hid,request,mode=None):
 
 
 def serve_hit(request,hid):
+
+    next_page=None
+    uncompleted_experiments = None
+    result = None
 
     # No robots allowed!
     if request.user_agent.is_bot:
@@ -113,38 +117,15 @@ def serve_hit(request,hid):
             # If this is the last experiment, the finish button will link to a thank you page.
             if len(uncompleted_experiments) == 1:
                 next_page = "/finished"
-            else:
-                # Or reload the page to get the next experiment
-                next_page = "javascript:window.location.reload();"
 
-        # Consent, instructions, and advertisement
-        if deployment == "docker-preview":
-            if battery.consent != None: context["consent"] = battery.consent
-            if battery.ad != None: context["ad"] = battery.advertisement
-
-        # if the consent has been defined, add it to the context
-        elif deployment == "docker":
-            if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
-                context["consent"] = battery.consent
-
-        # The instructions block is shown for both
-        if battery.instructions != None: context["instructions"] = battery.instructions
-
-        # Get experiment folders
-        experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
-        context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
-
-        # Get code to run the experiment (not in external file)
-        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
-        if deployment == "docker":
-            runcode = runcode.replace("{{result.id}}",str(result.id))
-            runcode = runcode.replace("{{next_page}}",next_page)
-        context["run"] = runcode
-
-        response = render_to_response(template, context)
-        # without this header, the iFrame will not render in Amazon
-        response['x-frame-options'] = 'this_can_be_anything'
-        return response
+        return deploy_battery(deployment=deployment,
+                              battery=battery,
+                              context=context,
+                              task_list=task_list,
+                              template=template,
+                              uncompleted_experiments=uncompleted_experiments,
+                              next_page=next_page,
+                              result=result)
 
     else:
         return render_to_response("pc_sorry.html")

@@ -12,69 +12,16 @@
 </head>
 <body>
 
+{% include "serve_battery_runjs.html" %}
+
+{% if instruction_forms %}
+    {% include "instructions_modal.html" %}
+{% else %}
 <script>
-
-    $(function() {
-
-      var uniqueId = "{{ uniqueId }}";
-
-       function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = jQuery.trim(cookies[i]);
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-        return cookieValue;
-      }
-
-    var csrftoken = getCookie('csrftoken');
-
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
-
-    /*Just to store task data as we go*/
-    var expfactory = new ExpFactory(uniqueId);
-
-    // Start experiment when participant pushes button
-    $("#start_experiment_button").click(function(){
-       $("#instructions_modal").hide();
-       {{run | safe}}
-    });
-
-    $("#disagree_button").click(function(){
-        document.location = "{% url 'end_assignment' uniqueId %}"
-    })
-
-    });
-    </script>
-
-    <button id="start_experiment_button" type="button" class="btn hidden"></button>
-    {% if instruction_forms %}
-        {% include "instructions_modal.html" %}
-    {% else %}
-    <script>
-    $(function() {
-        $("#start_experiment_button").click();
-    });
-    </script>
-    {% endif %}
-
+$(function() {
+    $("#start_experiment_button").click();
+});
+</script>
+{% endif %}
   </body>
 </html>

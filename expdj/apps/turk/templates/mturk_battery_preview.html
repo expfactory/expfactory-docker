@@ -13,43 +13,26 @@
 </head>
 <body>
 
-<script>
+<div id="mturk_preview_message" class="hidden">
+ <div class="alert alert-info">You must participate in the experiment to view the content.</div>
+</div>
+
+
+    {% include "instructions_modal.html" %}
+
+    <script>
 
     $(function() {
 
-      var uniqueId = "{{ uniqueId }}";
+      {% include "preview_battery_runjs.html" %}
 
-      /*Just to store task data as we go*/
-      var expfactory = new ExpFactory(uniqueId);
-
-      $("#end_preview_button").click(function(){
-         $("#consent_form").hide();
+      $("#start_experiment_button").click(function(){
+         $("#instructions_modal").hide()
+         $("#mturk_preview_message").show();
       });
 
-      // Start experiment when participant pushes button
-      $("#start_experiment_button").click(function(){
-         $("#consent_form").hide();
-         {{run | safe}}
-     });
    });
-   </script>
-
-   <!-- Consent Form-->
-   {% if consent %}
-   <div id="consent_form" style="margin:100px">
-       <h1>Consent</h1>
-      {{ consent | safe }}<br>
-      <button id="start_experiment_button" type="button" class="btn">Agree</button>
-      <button id="end_preview_button" type="button" class="btn">Disagree</button>
-  </div>
-  {% else %}
-  <button id="start_experiment_button" type="button" class="btn hidden"></button>
-  <script>
-  $(function() {
-      $("#start_experiment_button").click();
-  });
-  </script>
-  {% endif %}
+</script>
 
   </body>
 </html>

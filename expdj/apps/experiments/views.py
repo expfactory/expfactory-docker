@@ -238,6 +238,9 @@ def generate_battery_user(request,bid):
 def serve_battery(request,bid,userid=None):
 
     battery = get_battery(bid,request)
+    next_page = None
+    uncompleted_experiments=None
+    result=None
 
     # Is userid not defined, this is a preview
     if userid == None:
@@ -279,18 +282,36 @@ def serve_battery(request,bid,userid=None):
         # If this is the last experiment, the finish button will link to a thank you page.
         if len(uncompleted_experiments) == 1:
             next_page = "/finished"
-        else:
-            # Or reload the page to get the next experiment
-            next_page = "javascript:window.location.reload();"
 
-    # TODO: this needs to be made into a function
-    # Consent, instructions, and advertisement
+    return deploy_battery(deployment=deployment,
+                          battery=battery,
+                          context=context,
+                          task_list=task_list,
+                          template=template,
+                          uncompleted_experiments=uncompleted_experiments,
+                          next_page=next_page,
+                          result=result)
+
+def deploy_battery(deployment,battery,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
+    '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
+    :param deployment: the kind of deployment, either "docker-local","docker",or "docker-preview"
+    :param battery: models.Battery object
+    :param context: context, which should already include next_page,
+    :param next_page: the next page to navigate to [optional] default is to reload the page to go to the next experiment
+    :param task_list: list of models.Experiment instances
+    :param template: html template to render
+    :param result: the result object, turk.models.Result
+    :param uncompleted_experiments: list of uncompleted experiments models.Experiment [optional for preview]
+    '''
+    if next_page == None:
+        next_page = "javascript:window.location.reload();"
+
     instruction_forms = []
 
     # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
     if deployment == "docker-preview":
-        if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
         if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
+        if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
 
     # if the consent has been defined, add it to the context
     elif deployment in ["docker","docker-local"]:
@@ -300,7 +321,12 @@ def serve_battery(request,bid,userid=None):
     # The instructions block is shown for both
     if battery.instructions != None: context["instructions"] = instruction_forms.append({"title":"Instructions","html":battery.instructions})
 
-    context["instruction_forms"] = instruction_forms
+    if deployment == "docker-preview":
+        context["instruction_forms"] = instruction_forms
+    elif deployment in ["docker-local","docker"]:
+        # Only add the instructions forms when no experiments are completed
+        if len(uncompleted_experiments) == battery.number_of_experiments:
+            context["instruction_forms"] = instruction_forms
 
     # Get experiment folders
     experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
@@ -313,7 +339,11 @@ def serve_battery(request,bid,userid=None):
         runcode = runcode.replace("{{next_page}}",next_page)
     context["run"] = runcode
 
-    return render_to_response(template, context)
+    response = render_to_response(template, context)
+
+    # without this header, the iFrame will not render in Amazon
+    response['x-frame-options'] = 'this_can_be_anything'
+    return response
 
 # These views are to work with backbone.js
 def localsync(request,rid=None):

@@ -13,43 +13,14 @@
 </head>
 <body>
 
-<script>
-
+   <script>
     $(function() {
-
-      var uniqueId = "{{ uniqueId }}";
-
-      /*Just to store task data as we go*/
-      var expfactory = new ExpFactory(uniqueId);
-
-      $("#end_preview_button").click(function(){
-         $("#consent_form").hide();
-      });
-
-      // Start experiment when participant pushes button
-      $("#start_experiment_button").click(function(){
-         $("#consent_form").hide();
-         {{run | safe}}
-     });
-   });
+        {% include "preview_battery_runjs.html" %}
+    });
    </script>
 
-   <!-- Consent Form-->
-   {% if consent %}
-   <div id="consent_form" style="margin:100px">
-       <h1>Consent</h1>
-      {{ consent | safe }}<br>
-      <button id="start_experiment_button" type="button" class="btn">Agree</button>
-      <button id="end_preview_button" type="button" class="btn">Disagree</button>
-  </div>
-  {% else %}
-  <button id="start_experiment_button" type="button" class="btn hidden"></button>
-  <script>
-  $(function() {
-      $("#start_experiment_button").click();
-  });
-  </script>
-  {% endif %}
+    <button id="start_experiment_button" type="button" class="btn hidden"></button>
+    {% include "instructions_modal.html" %}
 
   </body>
 </html>

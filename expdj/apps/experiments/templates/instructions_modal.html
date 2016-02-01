@@ -1,7 +1,7 @@
 
 {% block scripts %}
 <script src="{% static "js/jquery_boostrap_modal_steps.js"%}"></script>
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static "css/bootstrap.css"%}" />
 {% endblock %}
 
 <!-- Modal -->
@@ -19,17 +19,7 @@
                {{ html | safe }}<br>
 
                {% if instruction_form.title == "Consent" %}
-                   <script>
-                   $(function() {
-                       $("#next_button").attr('disabled','disabled');
-                       $("#agree_button").click(function(){
-                           $("#next_button").removeAttr('disabled');
-                           $("#next_button").click();
-                       })
-                   });
-                   </script>
                    <button id="disagree_button" type="button" class="btn btn-default">Disagree</button>
-                   <button id="agree_button" type="button" class="btn btn-primary">Agree</button>
                {% endif %}
            </div>
           </div>
