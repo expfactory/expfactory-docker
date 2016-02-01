@@ -1,5 +1,5 @@
 from expdj.apps.turk.views import edit_hit, delete_hit, expire_hit, serve_hit, \
-  multiple_new_hit, sync, end_assignment, finished_view
+ multiple_new_hit, sync, end_assignment, finished_view
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
 

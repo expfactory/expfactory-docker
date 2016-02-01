@@ -197,7 +197,7 @@ def batteries_view(request,uid=None):
     return render(request, 'all_batteries.html', context)
 
 
-# Previews -------------------------------------------------------------
+# Preview and Serving ----------------------------------------------------------
 # Preview experiments - right now just for templates
 @login_required
 def preview_experiment(request,eid):
@@ -209,7 +209,7 @@ def preview_experiment(request,eid):
 
 @login_required
 def generate_battery_user(request,bid):
-   '''add a new user login url to take a battery'''
+    '''add a new user login url to take a battery'''
 
     battery = get_battery(bid,request)
     context = {"battery":battery}
@@ -245,7 +245,7 @@ def serve_battery(request,bid,userid=None):
         # Try to get some info about browser, language, etc.
         browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
         platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
-        deployment = "docker"
+        deployment = "docker-local"
 
         # Does the worker have experiments remaining for the hit?
         uncompleted_experiments = get_worker_experiments(worker,battery)
@@ -298,7 +298,38 @@ def serve_battery(request,bid,userid=None):
         runcode = runcode.replace("{{next_page}}",next_page)
     context["run"] = runcode
 
-    return = render_to_response(template, context)
+    return render_to_response(template, context)
+
+# These views are to work with backbone.js
+def localsync(request,rid=None):
+    '''localsync
+    view/method for running experiments to get data from the server
+    :param rid: the result object ID, obtained before user sees page
+    '''
+
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+
+        if rid != None:
+        # Update the result, already has worker and assignment ID stored
+            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            battery = result.battery
+            result.taskdata = data["taskdata"]["data"]
+            result.current_trial = data["taskdata"]["currenttrial"]
+            result.save()
+
+            # if the worker finished the current experiment
+            if data["djstatus"] == "FINISHED":
+                # Mark experiment as completed
+                result.completed = True
+                result.save()
+
+            data = json.dumps(data)
+
+    else:
+        data = json.dumps({"message":"received!"})
+    return HttpResponse(data, content_type='application/json')
 
 
 #### EDIT/ADD/DELETE ###################################################

@@ -1,9 +1,9 @@
 from expdj.apps.experiments.views import experiments_view, edit_experiment_template, \
- delete_experiment_template, add_experiment_template, save_experiment_template, \
- view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, \
- edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
- add_experiment, edit_experiment, save_experiment, update_experiment_templates, \
- remove_condition, serve_battery, generate_battery_user
+delete_experiment_template, add_experiment_template, save_experiment_template, \
+view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, \
+edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
+add_experiment, edit_experiment, save_experiment, update_experiment_templates, \
+remove_condition, serve_battery, generate_battery_user, localsync
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -41,7 +41,8 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/delete$',delete_battery,name='delete_battery'),
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'))
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'),
+    url(r'^local/$',localsync,name='local')) # local sync of data
 
 if settings.DEBUG:
     urlpatterns += patterns('',
