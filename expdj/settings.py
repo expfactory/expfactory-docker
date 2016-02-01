@@ -122,7 +122,8 @@ WSGI_APPLICATION = 'expdj.wsgi.application'
 
 USER_ROLES = (
     'mturk',
-    'facebook'
+    'facebook',
+    'local'    
 )
 
 # Internationalization

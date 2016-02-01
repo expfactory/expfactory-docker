@@ -10,7 +10,8 @@ from .forms import UserEditForm, UserCreateForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from rest_framework import status
-
+from userroles.models import set_user_role
+from userroles import roles
 
 def to_json_response(response):
     status_code = response.status_code
@@ -61,6 +62,9 @@ def create_user(request, template_name='registration/signup.html'):
             new_user = auth.authenticate(username=request.POST['username'],
                                          password=request.POST['password1'])
             auth.login(request, new_user)
+            set_user_role(new_user, roles.local)
+            new_user.save()
+
             # Do something. Should generally end with a redirect. For example:
             if request.POST['next']:
                 return HttpResponseRedirect(request.POST['next'])

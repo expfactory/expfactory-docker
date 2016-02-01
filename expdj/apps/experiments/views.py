@@ -48,7 +48,9 @@ def check_experiment_edit_permission(request):
     return False
 
 def check_mturk_access(request):
-    if request.user.is_superuser or request.user.role.is_mturk:
+    if request.user.is_superuser:
+        return True
+    elif request.user.role.is_mturk:
         return True
     else:
         return False
@@ -280,7 +282,7 @@ def serve_battery(request,bid,userid=None):
         if battery.ad != None: context["ad"] = battery.advertisement
 
     # if the consent has been defined, add it to the context
-    elif deployment == "docker":
+    elif deployment in ["docker","docker-local"]:
         if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
             context["consent"] = battery.consent
 
