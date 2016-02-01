@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block head %}
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+{% endblock %}
+{% block content %}
+<div class="row">
+
+    <div class="col-md-12">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+                <h2>New Battery User <i style="font-size:12" data-toggle="tooltip" title="This user will be able to take a battery from his or her local machine." class="fa fa-question-circle"></i></h2>
+            </header>
+          <div style="padding-top:20px" class="alert alert-info" role="alert">Store this userid in a safe place, it will not be revealed again.</div>
+
+         <table>
+           <thead>
+             <th>UserID</th>
+             <th>Battery Link</th>
+           </thead>
+           <tbody>
+             <tr>
+                 <td>{{ new_user }}</td>
+                 <td><a target="_blank" href="/batteries/{{ battery.id }}/{{ new_user }}/serve">/batteries/{{ battery.id }}/{{ new_user }}/serve</a></td>
+             </tr>
+           </tbody>
+         </table>
+
+        </article>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+{% endblock %}

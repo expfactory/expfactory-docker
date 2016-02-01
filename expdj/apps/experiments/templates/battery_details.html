@@ -12,12 +12,19 @@
                 {% if has_results %}
                 <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
                 {% endif %}
-                {% if hits %}
-                    <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                {% if mturk_permission %}
+                    {% if hits %}
+                        <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                    {% endif %}
                 {% endif %}
             {% else %}
+                {% if mturk_permission %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
                 <a href='{% url 'serve_hit' hits.0.id %}' target="_blank">preview</a> it.</div>
+                {% else %}
+                <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
+                <a href='{% url 'serve_battery' battery.id %}' target="_blank">preview</a> it.</div>
+                {% endif %}
             {% endif %}
 
             <div class="float_right">

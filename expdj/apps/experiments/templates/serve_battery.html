@@ -1,0 +1,89 @@
+<html>
+{% load static %}
+  <head>
+    <title>The Experiment Factory</title>
+    <meta charset="utf-8" />
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/underscore-min.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/backbone-min.js"></script>
+    <script type="text/javascript" src="{% get_media_prefix %}expdjjs/expfactory.js"></script>
+    {{ experiment_load | safe }}
+</head>
+<body>
+
+<script>
+
+    $(function() {
+
+      var uniqueId = "{{ uniqueId }}";
+
+       function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+        return cookieValue;
+      }
+
+    var csrftoken = getCookie('csrftoken');
+
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
+
+    /*Just to store task data as we go*/
+    var expfactory = new ExpFactory(uniqueId);
+
+    // Start experiment when participant pushes button
+    $("#start_experiment_button").click(function(){
+       $("#consent_form").hide();
+       {{run | safe}}
+    });
+
+    });
+    </script>
+
+    <!-- Consent Form-->
+    {% if consent %}
+    <div id="consent_form" style="margin:100px">
+        <h1>Consent</h1>
+        <script>
+        $(function() {
+          $("#disagree_button").click(function(){
+              document.location = "{% url 'end_assignment' uniqueId %}"
+          })
+       });
+       </script>
+       {{ consent | safe }}<br>
+       <button id="start_experiment_button" type="button" class="btn">Agree</button>
+       <button id="disagree_button" type="button" class="btn">Disagree</button>
+   </div>
+   {% else %}
+   <button id="start_experiment_button" type="button" class="btn hidden"></button>
+   <script>
+   $(function() {
+       $("#start_experiment_button").click();
+   });
+   </script>
+   {% endif %}
+
+  </body>
+</html>

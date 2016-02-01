@@ -4,7 +4,7 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Ht
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
-from expdj.apps.experiments.views import check_battery_edit_permission
+from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access
 from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
@@ -169,80 +169,103 @@ def end_assignment(request,rid):
 
 @login_required
 def multiple_new_hit(request, bid):
-    battery = Battery.objects.get(pk=bid)
-    if not request.user.has_perm('battery.edit_battery', battery):
-        return HttpResponseForbidden()
 
-    is_owner = battery.owner == request.user
+    mturk_permission = check_mturk_access(request)
 
-    if request.method == "POST":
-        # A hit is generated for each batch
-        for x in range(int(request.POST["id_number_batches"])):
-            hit = HIT(owner=request.user,battery=battery)
-            form = HITForm(request.POST,instance=hit)
-            if form.is_valid():
-                hit = form.save(commit=False)
-                hit.title = "%s #%s" %(hit.title,x)
-                hit.save()
-        return HttpResponseRedirect(battery.get_absolute_url())
+    if mturk_permission == True:
+        battery = Battery.objects.get(pk=bid)
+        if not request.user.has_perm('battery.edit_battery', battery):
+            return HttpResponseForbidden()
+
+        is_owner = battery.owner == request.user
+
+        if request.method == "POST":
+            # A hit is generated for each batch
+            for x in range(int(request.POST["id_number_batches"])):
+                hit = HIT(owner=request.user,battery=battery)
+                form = HITForm(request.POST,instance=hit)
+                if form.is_valid():
+                    hit = form.save(commit=False)
+                    hit.title = "%s #%s" %(hit.title,x)
+                    hit.save()
+            return HttpResponseRedirect(battery.get_absolute_url())
+        else:
+
+            context = {"is_owner": is_owner,
+                      "header_text":battery.name,
+                      "battery":battery,
+                      "mturk_permission":mturk_permission}
+
+        return render(request, "multiple_new_hit.html", context)
     else:
-
-        context = {"is_owner": is_owner,
-                  "header_text":battery.name,
-                  "battery":battery}
-
-    return render(request, "multiple_new_hit.html", context)
+        return HttpResponseForbidden()
 
 
 @login_required
 def edit_hit(request, bid, hid=None):
-    battery = Battery.objects.get(pk=bid)
-    header_text = "%s HIT" %(battery.name)
-    if not request.user.has_perm('battery.edit_battery', battery):
-        return HttpResponseForbidden()
 
-    if hid:
-        hit = get_hit(hid,request)
-        is_owner = battery.owner == request.user
-        header_text = hit.title
-    else:
-        is_owner = True
-        hit = HIT(owner=request.user,battery=battery)
-    if request.method == "POST":
-        if is_owner:
-            form = HITForm(request.POST,instance=hit)
-        if form.is_valid():
-            hit = form.save(commit=False)
-            hit.save()
-            return HttpResponseRedirect(battery.get_absolute_url())
-    else:
-        if is_owner:
-            form = HITForm(instance=hit)
+    mturk_permission = check_mturk_access(request)
+
+    if mturk_permission == True:
+        battery = Battery.objects.get(pk=bid)
+        header_text = "%s HIT" %(battery.name)
+        if not request.user.has_perm('battery.edit_battery', battery):
+            return HttpResponseForbidden()
+
+        if hid:
+            hit = get_hit(hid,request)
+            is_owner = battery.owner == request.user
+            header_text = hit.title
         else:
-            form = HITForm(instance=hit)
+            is_owner = True
+            hit = HIT(owner=request.user,battery=battery)
+        if request.method == "POST":
+            if is_owner:
+                form = HITForm(request.POST,instance=hit)
+            if form.is_valid():
+                hit = form.save(commit=False)
+                hit.save()
+                return HttpResponseRedirect(battery.get_absolute_url())
+        else:
+            if is_owner:
+                form = HITForm(instance=hit)
+            else:
+                form = HITForm(instance=hit)
 
-    context = {"form": form,
-               "is_owner": is_owner,
-               "header_text":header_text}
+        context = {"form": form,
+                   "is_owner": is_owner,
+                   "header_text":header_text}
 
-    return render(request, "new_hit.html", context)
+        return render(request, "new_hit.html", context)
+    else:
+        return HttpResponseForbidden()
 
 # Expire a hit
 @login_required
 def expire_hit(request, hid):
-    hit = get_hit(hid,request)
-    if check_battery_edit_permission(request,hit.battery):
-        hit.expire()
-    return redirect(hit.battery.get_absolute_url())
+
+    mturk_permission = check_mturk_access(request)
+    if mturk_permission == True:
+
+        hit = get_hit(hid,request)
+        if check_battery_edit_permission(request,hit.battery):
+            hit.expire()
+        return redirect(hit.battery.get_absolute_url())
+    else:
+        return HttpResponseForbidden()
 
 # Delete a hit
 @login_required
 def delete_hit(request, hid):
-    hit = get_hit(hid,request)
-    if check_battery_edit_permission(request,hit.battery):
-        hit.expire()
-        hit.delete()
-    return redirect(hit.battery.get_absolute_url())
+    mturk_permission = check_mturk_access(request)
+    if mturk_permission == True:
+        hit = get_hit(hid,request)
+        if check_battery_edit_permission(request,hit.battery):
+            hit.expire()
+            hit.delete()
+        return redirect(hit.battery.get_absolute_url())
+    else:
+        return HttpResponseForbidden()
 
 def get_flagged_questions(number=None):
     """get_flagged_questions

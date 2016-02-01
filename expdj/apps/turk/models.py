@@ -484,7 +484,7 @@ class Result(models.Model):
     worker = models.ForeignKey(Worker,null=False,blank=False,related_name='result_worker')
     experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
     battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
-    assignment = models.ForeignKey(Assignment,null=False,blank=False,related_name='assignment')
+    assignment = models.ForeignKey(Assignment,null=False,blank=True,related_name='assignment')
     datetime = models.CharField(max_length=128,null=True,blank=True,help_text="DateTime string returned by browser at last submission of data")
     current_trial = models.PositiveIntegerField(null=True,blank=True,help_text=("The last (current) trial recorded as complete represented in the results."))
     language = models.CharField(max_length=128,null=True,blank=True,help_text="language of the browser associated with the result")

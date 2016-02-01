@@ -1,3 +1,6 @@
+db:
+  image: postgres
+
 data:
   image: cogniteev/echo
   volumes:
@@ -13,6 +16,7 @@ uwsgi:
     - ./static:/var/www/static
   links:
     - redis
+    - db
 
 nginx:
   restart: always
@@ -30,7 +34,7 @@ nginx:
     - data
   links:
     - uwsgi
-
+    - db
 redis:
   restart: always
   image: redis
