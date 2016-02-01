@@ -137,7 +137,7 @@ class Battery(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     maximum_time = models.IntegerField(help_text="Maximum number of minutes for the battery to endure.", null=False, verbose_name="Maxiumum time", blank=False)
-    number_of_experiments = models.IntegerField(help_text="Maximum number of experiments to select per HIT.", null=False, verbose_name="Number of experiments per HIT", blank=False)
+    number_of_experiments = models.IntegerField(help_text="Maximum number of experiments to select per deployment or HIT.", null=False, verbose_name="Number of experiments per deployment or HIT", blank=False)
     active = models.BooleanField(choices=((False, 'Inactive'),
                                           (True, 'Active')),
                                            default=True,verbose_name="Active")

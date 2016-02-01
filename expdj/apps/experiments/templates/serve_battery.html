@@ -54,36 +54,27 @@
 
     // Start experiment when participant pushes button
     $("#start_experiment_button").click(function(){
-       $("#consent_form").hide();
+       $("#instructions_modal").hide();
        {{run | safe}}
     });
+
+    $("#disagree_button").click(function(){
+        document.location = "{% url 'end_assignment' uniqueId %}"
+    })
 
     });
     </script>
 
-    <!-- Consent Form-->
-    {% if consent %}
-    <div id="consent_form" style="margin:100px">
-        <h1>Consent</h1>
-        <script>
-        $(function() {
-          $("#disagree_button").click(function(){
-              document.location = "{% url 'end_assignment' uniqueId %}"
-          })
-       });
-       </script>
-       {{ consent | safe }}<br>
-       <button id="start_experiment_button" type="button" class="btn">Agree</button>
-       <button id="disagree_button" type="button" class="btn">Disagree</button>
-   </div>
-   {% else %}
-   <button id="start_experiment_button" type="button" class="btn hidden"></button>
-   <script>
-   $(function() {
-       $("#start_experiment_button").click();
-   });
-   </script>
-   {% endif %}
+    <button id="start_experiment_button" type="button" class="btn hidden"></button>
+    {% if instruction_forms %}
+        {% include "instructions_modal.html" %}
+    {% else %}
+    <script>
+    $(function() {
+        $("#start_experiment_button").click();
+    });
+    </script>
+    {% endif %}
 
   </body>
 </html>

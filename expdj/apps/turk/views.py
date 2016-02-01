@@ -161,10 +161,11 @@ def end_assignment(request,rid):
     and triggering function to allocate credit for what is completed
     '''
     result = Result.objects.filter(id=rid)[0]
-    assignment = result.assignment
-    assignment.completed = True
-    assignment.save()
-    assign_experiment_credit(result.worker.id)
+    if assignment != None:
+        assignment = result.assignment
+        assignment.completed = True
+        assignment.save()
+        assign_experiment_credit(result.worker.id)
     return render_to_response("worker_sorry.html")
 
 @login_required

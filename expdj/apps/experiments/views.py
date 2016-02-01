@@ -1,21 +1,23 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
  ExperimentVariable, CreditCondition
-from expdj.apps.turk.models import HIT, Result
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
-from expdj.apps.turk.utils import get_worker_experiments
+from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
-from django.forms.models import model_to_dict
-from expfactory.views import embed_experiment
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
+from expfactory.battery import get_load_static, get_experiment_run
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
+from django.forms.models import model_to_dict
+from expdj.apps.turk.models import HIT, Result
+from expfactory.views import embed_experiment
 from expdj.apps.turk.models import get_worker
+from expdj.apps.users.models import User
 from django.shortcuts import render
-from userroles import roles
+import expdj.settings as settings
 import uuid
 import shutil
 import numpy
@@ -30,18 +32,6 @@ media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 ### AUTHENTICATION ####################################################
 
-def owner_or_contrib(request,assessment):
-    if not request.user.is_anonymous():
-        if owner_or_super(request,assessment) or request.user in assessment.contributors.all():
-            return True
-    return False
-
-def owner_or_super(request,assessment):
-    if not request.user.is_anonymous():
-        if assessment.owner == request.user or request.user.is_superuser:
-            return True
-    return False
-
 def check_experiment_edit_permission(request):
     if request.user.is_superuser:
         return True
@@ -50,11 +40,25 @@ def check_experiment_edit_permission(request):
 def check_mturk_access(request):
     if request.user.is_superuser:
         return True
-    elif request.user.role.is_mturk:
-        return True
-    else:
-        return False
 
+    user_roles = User.objects.filter(user=request.user)
+    if len(user_roles) == 0:
+        return False
+    elif user_roles[0].role == "MTURK":
+        return True
+    return False
+
+def check_battery_create_permission(request):
+    if not request.user.is_anonymous():
+        if request.user.is_superuser:
+            return True
+
+    user_roles = User.objects.filter(user=request.user)
+    if len(user_roles) == 0:
+        return False
+    elif user_roles[0].role in ["MTURK","LOCAL"]:
+        return True
+    return False
 
 def check_battery_edit_permission(request,battery):
     if not request.user.is_anonymous():
@@ -162,6 +166,7 @@ def view_battery(request, bid):
     # Determine permissions for edit and deletion
     edit_permission = check_battery_edit_permission(request,battery)
     delete_permission = check_battery_edit_permission(request,battery)
+    mturk_permission = check_mturk_access(request)
 
     # Check if battery has results
     has_results = False
@@ -171,6 +176,7 @@ def view_battery(request, bid):
     context = {'battery': battery,
                'edit_permission':edit_permission,
                'delete_permission':delete_permission,
+               'mturk_permission':mturk_permission,
                'hits':hits,
                'has_results':has_results}
 
@@ -214,7 +220,8 @@ def generate_battery_user(request,bid):
     '''add a new user login url to take a battery'''
 
     battery = get_battery(bid,request)
-    context = {"battery":battery}
+    context = {"battery":battery,
+              "domain":settings.DOMAIN_NAME}
 
     if check_battery_edit_permission(request,battery) == True:
 
@@ -266,7 +273,7 @@ def serve_battery(request,bid,userid=None):
                                                    defaults={"browser":browser,"platform":platform})
         result.save()
 
-        context = {"worker_id": worker_id,
+        context = {"worker_id": worker.id,
                    "uniqueId":result.id}
 
         # If this is the last experiment, the finish button will link to a thank you page.
@@ -276,18 +283,24 @@ def serve_battery(request,bid,userid=None):
             # Or reload the page to get the next experiment
             next_page = "javascript:window.location.reload();"
 
+    # TODO: this needs to be made into a function
     # Consent, instructions, and advertisement
+    instruction_forms = []
+
+    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
     if deployment == "docker-preview":
-        if battery.consent != None: context["consent"] = battery.consent
-        if battery.ad != None: context["ad"] = battery.advertisement
+        if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
+        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
 
     # if the consent has been defined, add it to the context
     elif deployment in ["docker","docker-local"]:
         if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
-            context["consent"] = battery.consent
+            instruction_forms.append({"title":"Consent","html":battery.consent})
 
     # The instructions block is shown for both
-    if battery.instructions != None: context["instructions"] = battery.instructions
+    if battery.instructions != None: context["instructions"] = instruction_forms.append({"title":"Instructions","html":battery.instructions})
+
+    context["instruction_forms"] = instruction_forms
 
     # Get experiment folders
     experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
@@ -295,7 +308,7 @@ def serve_battery(request,bid,userid=None):
 
     # Get code to run the experiment (not in external file)
     runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
-    if deployment == "docker":
+    if deployment in ["docker","docker-local"]:
         runcode = runcode.replace("{{result.id}}",str(result.id))
         runcode = runcode.replace("{{next_page}}",next_page)
     context["run"] = runcode
@@ -579,8 +592,9 @@ def edit_battery(request, bid=None):
 
     # Does the user have mturk permission?
     mturk_permission = check_mturk_access(request)
+    battery_permission = check_battery_create_permission(request)
 
-    if request.user.is_superuser:
+    if battery_permission == True:
         header_text = "Add new battery"
         if bid:
             battery = get_battery(bid,request)

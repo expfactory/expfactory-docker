@@ -38,10 +38,11 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/user$',generate_battery_user,name='generate_battery_user'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'), # preview
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/delete$',delete_battery,name='delete_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'),
+    url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',localsync,name='local'),
     url(r'^local/$',localsync,name='local')) # local sync of data
 
 if settings.DEBUG:

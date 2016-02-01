@@ -20,6 +20,8 @@ matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
+
 ADMINS = (('vsochat', 'vsochat@gmail.com'),('ieisenberg','ieisenbe@stanford.edu'))
 
 MANAGERS = ADMINS
@@ -119,12 +121,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 WSGI_APPLICATION = 'expdj.wsgi.application'
-
-USER_ROLES = (
-    'mturk',
-    'facebook',
-    'local'    
-)
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/

@@ -3,15 +3,14 @@ from functools import wraps
 from django.http.response import (HttpResponseRedirect, JsonResponse)
 from django.shortcuts import (render, get_object_or_404, render_to_response,
                               redirect)
-from django.contrib.auth.models import User
+from .models import User
+from django.contrib.auth.models import User as djUser
 from django.core.urlresolvers import reverse
 from django.contrib import auth
 from .forms import UserEditForm, UserCreateForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from rest_framework import status
-from userroles.models import set_user_role
-from userroles import roles
 
 def to_json_response(response):
     status_code = response.status_code
@@ -56,14 +55,17 @@ def accepts_ajax(ajax_template_name=None):
 @accepts_ajax(ajax_template_name='registration/_signup.html')
 def create_user(request, template_name='registration/signup.html'):
     if request.method == "POST":
-        form = UserCreateForm(request.POST, request.FILES, instance=User())
+        form = UserCreateForm(request.POST, request.FILES, instance=djUser())
         if form.is_valid():
             form.save()
             new_user = auth.authenticate(username=request.POST['username'],
                                          password=request.POST['password1'])
+
+            # We now save the user into the Expfactory User object, with a role
+            expfactory_user,_ = User.objects.update_or_create(user=new_user,
+                                                              role="LOCAL")
+            expfactory_user.save()
             auth.login(request, new_user)
-            set_user_role(new_user, roles.local)
-            new_user.save()
 
             # Do something. Should generally end with a redirect. For example:
             if request.POST['next']:
