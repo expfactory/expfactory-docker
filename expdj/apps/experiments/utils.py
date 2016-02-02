@@ -79,7 +79,7 @@ def install_experiments(experiment_tags=None):
                         else:
                             parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = ExperimentTemplate.objects.update_or_create(exp_id=experiment[0]["exp_id"],
+            new_experiment,_ = ExperimentTemplate.objects.update_or_create(exp_id=experiment[0]["exp_id"],
                                                                          defaults={"name":experiment[0]["name"],
                                                                                    "cognitive_atlas_task":cognitive_atlas_task,
                                                                                    "publish":bool(experiment[0]["publish"]),
@@ -91,7 +91,7 @@ def install_experiments(experiment_tags=None):
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["exp_id"])
             output_folder = "%s/experiments/%s" %(media_dir,experiment[0]["exp_id"])
             if os.path.exists(output_folder):
-                shutil.remove(output_folder)
+                shutil.rmtree(output_folder)
             copy_directory(experiment_folder,output_folder)
         except:
             errored_experiments.append(experiment[0]["exp_id"])
