@@ -2,7 +2,7 @@ from expdj.apps.experiments.views import experiments_view, edit_experiment_templ
 delete_experiment_template, add_experiment_template, save_experiment_template, \
 view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, \
 edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
-add_experiment, edit_experiment, save_experiment, update_experiment_templates, \
+add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, serve_battery, generate_battery_user, localsync
 from expdj import settings
 from django.views.generic.base import TemplateView
@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^experiments$', experiments_view, name="experiments"),
     url(r'^experiments/save$',save_experiment_template,name='save_experiment_template'),
     url(r'^experiments/add$',add_experiment_template,name='add_experiment_template'),
-    url(r'^experiments/update$',update_experiment_templates,name='update_experiment_templates'),
+    url(r'^experiments/(?P<eid>.+?)/update$',update_experiment_template,name='update_experiment_template'),
     url(r'^experiments/(?P<eid>.+?)/edit$',edit_experiment_template,name='edit_experiment_template'),
     url(r'^experiments/(?P<eid>.+?)/$',view_experiment, name='experiment_details'),
     url(r'^experiments/(?P<eid>.+?)/delete$',delete_experiment_template,name='delete_experiment'),

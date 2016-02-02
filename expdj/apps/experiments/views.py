@@ -106,15 +106,12 @@ def get_battery(bid,request,mode=None):
 
 # View a single experiment
 @login_required
-def update_experiment_templates(request,eid=None):
+def update_experiment_template(request,eid):
+    '''This will update static files, along with the config.json parameters'''
+    context = {"experients": ExperimentTemplate.objects.all()}
     if request.user.is_superuser:
-        if eid==None:
-            experiments = ExperimentTemplate.objects.all()
-        else:
-            experiments = [get_experiment_template(request,eid)]
-        current_experiments = [e.exp_id for e in experiments]
-        [delete_experiment_template(request, e, do_redirect=False) for e in current_experiments]
-        errored_experiments = install_experiments(experiment_tags=current_experiments)
+        experiment = get_experiment_template(eid=eid,request=request)
+        errored_experiments = install_experiments(experiment_tags=[experiment.exp_id])
         if len(errored_experiments) > 0:
             message = "The experiments %s did not update successfully." %(",".join(errored_experiments))
         else:
@@ -123,7 +120,6 @@ def update_experiment_templates(request,eid=None):
             context = {"experiments":experiments,
                        "message":message}
     return render(request, "all_experiments.html", context)
-
 
 
 # View a single experiment
@@ -241,6 +237,10 @@ def serve_battery(request,bid,userid=None):
     next_page = None
     uncompleted_experiments=None
     result=None
+
+    # No robots allowed!
+    if request.user_agent.is_bot:
+        return render_to_response("robot_sorry.html")
 
     # Is userid not defined, this is a preview
     if userid == None:

@@ -47,7 +47,7 @@ def parse_experiment_variable(variable):
                                                                                                   description=description,
                                                                                                   variable_options=variable_options)
                     elif variable["datatype"].lower() == "boolean":
-                        experiment_variable,new_flag = ExperimentBooleanVariable.objects.get_or_create(name=name,description=description)
+                        experiment_variable,_ = ExperimentBooleanVariable.objects.update_or_create(name=name,description=description)
                     experiment_variable.save()
         except:
             pass
@@ -69,7 +69,7 @@ def install_experiments(experiment_tags=None):
         try:
             performance_variable = None
             rejection_variable = None
-            if "experiment_variable" in experiment[0]:
+            if "experiment_variables" in experiment[0]:
                 if isinstance(experiment[0]["experiment_variables"],list):
                     for var in experiment[0]["experiment_variables"]:
                         if var["type"].lower().strip() == "bonus":
@@ -79,17 +79,20 @@ def install_experiments(experiment_tags=None):
                         else:
                             parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = ExperimentTemplate(exp_id=experiment[0]["exp_id"],
-                                                name=experiment[0]["name"],
-                                                cognitive_atlas_task=cognitive_atlas_task,
-                                                publish=bool(experiment[0]["publish"]),
-                                                time=experiment[0]["time"],
-                                                reference=experiment[0]["reference"],
-                                                performance_variable=performance_variable,
-                                                rejection_variable=rejection_variable)
+            new_experiment = ExperimentTemplate.objects.update_or_create(exp_id=experiment[0]["exp_id"],
+                                                                         defaults={"name":experiment[0]["name"],
+                                                                                   "cognitive_atlas_task":cognitive_atlas_task,
+                                                                                   "publish":bool(experiment[0]["publish"]),
+                                                                                   "time":experiment[0]["time"],
+                                                                                   "reference":experiment[0]["reference"],
+                                                                                   "performance_variable":performance_variable,
+                                                                                   "rejection_variable":rejection_variable})
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["exp_id"])
-            copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["exp_id"]))
+            output_folder = "%s/experiments/%s" %(media_dir,experiment[0]["exp_id"])
+            if os.path.exists(output_folder):
+                shutil.remove(output_folder)
+            copy_directory(experiment_folder,output_folder)
         except:
             errored_experiments.append(experiment[0]["exp_id"])
 
