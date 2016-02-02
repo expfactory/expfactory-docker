@@ -12,20 +12,28 @@
                 {% if has_results %}
                 <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
                 {% endif %}
-                {% if hits %}
-                    <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                {% if mturk_permission %}
+                    {% if hits %}
+                        <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                    {% endif %}
                 {% endif %}
             {% else %}
+                {% if mturk_permission %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
                 <a href='{% url 'serve_hit' hits.0.id %}' target="_blank">preview</a> it.</div>
+                {% else %}
+                <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
+                <a href='{% url 'serve_battery' battery.id %}' target="_blank">preview</a> it.</div>
+                {% endif %}
             {% endif %}
 
             <div class="float_right">
                 {% if edit_permission %}
-                    {% if battery.experiments.all %}
+                    {% if battery.experiments.all and mturk_permission %}
                         <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
                         <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                     {% endif %}
+                    <a class='button' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a>
                 {% endif %}
                 {% if delete_permission %}
                 <a class='button' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
@@ -41,7 +49,9 @@
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#details" data-toggle="tab">Details</a></li>
                 <li><a href="#experiments" data-toggle="tab">Experiments</a></li>
+                {% if mturk_permission %}
                 <li><a href="#hits" title="A HIT is a deployment of experiments to Amazon Mechanical Turk" data-toggle="tab">HITS</a></li>
+                {% endif %}
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade in active" id="details">
@@ -103,6 +113,7 @@
          {% endif %}
         </div>
 
+        {% if mturk_permission %}
         <!-- Completion/Stats Pane -->
         <div class="tab-pane fade" id="hits">
             <h4>Amazon Mechanical Turk HITS</h4>
@@ -158,6 +169,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
    </div>
 </div>
 {% endblock %}

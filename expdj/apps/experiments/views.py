@@ -1,18 +1,24 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
  ExperimentVariable, CreditCondition
-from expdj.apps.turk.models import HIT, Result
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
+from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
-from django.forms.models import model_to_dict
-from expfactory.views import embed_experiment
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
+from expfactory.battery import get_load_static, get_experiment_run
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
+from django.forms.models import model_to_dict
+from expdj.apps.turk.models import HIT, Result
+from expfactory.views import embed_experiment
+from expdj.apps.turk.models import get_worker
+from expdj.apps.users.models import User
 from django.shortcuts import render
+import expdj.settings as settings
+import uuid
 import shutil
 import numpy
 import pandas
@@ -26,20 +32,31 @@ media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 ### AUTHENTICATION ####################################################
 
-def owner_or_contrib(request,assessment):
-    if not request.user.is_anonymous():
-        if owner_or_super(request,assessment) or request.user in assessment.contributors.all():
-            return True
-    return False
-
-def owner_or_super(request,assessment):
-    if not request.user.is_anonymous():
-        if assessment.owner == request.user or request.user.is_superuser:
-            return True
-    return False
-
 def check_experiment_edit_permission(request):
     if request.user.is_superuser:
+        return True
+    return False
+
+def check_mturk_access(request):
+    if request.user.is_superuser:
+        return True
+
+    user_roles = User.objects.filter(user=request.user)
+    if len(user_roles) == 0:
+        return False
+    elif user_roles[0].role == "MTURK":
+        return True
+    return False
+
+def check_battery_create_permission(request):
+    if not request.user.is_anonymous():
+        if request.user.is_superuser:
+            return True
+
+    user_roles = User.objects.filter(user=request.user)
+    if len(user_roles) == 0:
+        return False
+    elif user_roles[0].role in ["MTURK","LOCAL"]:
         return True
     return False
 
@@ -49,17 +66,6 @@ def check_battery_edit_permission(request,battery):
             return True
         if request.user.is_superuser:
             return True
-    return False
-
-def is_question_editor(request):
-    if not request.user.is_anonymous():
-        if request.user.is_superuser:
-            return True
-    return False
-
-def is_behavior_editor(request):
-    if request.user.is_superuser:
-        return True
     return False
 
 
@@ -100,15 +106,12 @@ def get_battery(bid,request,mode=None):
 
 # View a single experiment
 @login_required
-def update_experiment_templates(request,eid=None):
+def update_experiment_template(request,eid):
+    '''This will update static files, along with the config.json parameters'''
+    context = {"experients": ExperimentTemplate.objects.all()}
     if request.user.is_superuser:
-        if eid==None:
-            experiments = ExperimentTemplate.objects.all()
-        else:
-            experiments = [get_experiment_template(request,eid)]
-        current_experiments = [e.exp_id for e in experiments]
-        [delete_experiment_template(request, e, do_redirect=False) for e in current_experiments]
-        errored_experiments = install_experiments(experiment_tags=current_experiments)
+        experiment = get_experiment_template(eid=eid,request=request)
+        errored_experiments = install_experiments(experiment_tags=[experiment.exp_id])
         if len(errored_experiments) > 0:
             message = "The experiments %s did not update successfully." %(",".join(errored_experiments))
         else:
@@ -117,7 +120,6 @@ def update_experiment_templates(request,eid=None):
             context = {"experiments":experiments,
                        "message":message}
     return render(request, "all_experiments.html", context)
-
 
 
 # View a single experiment
@@ -160,6 +162,7 @@ def view_battery(request, bid):
     # Determine permissions for edit and deletion
     edit_permission = check_battery_edit_permission(request,battery)
     delete_permission = check_battery_edit_permission(request,battery)
+    mturk_permission = check_mturk_access(request)
 
     # Check if battery has results
     has_results = False
@@ -169,6 +172,7 @@ def view_battery(request, bid):
     context = {'battery': battery,
                'edit_permission':edit_permission,
                'delete_permission':delete_permission,
+               'mturk_permission':mturk_permission,
                'hits':hits,
                'has_results':has_results}
 
@@ -197,7 +201,7 @@ def batteries_view(request,uid=None):
     return render(request, 'all_batteries.html', context)
 
 
-# Previews -------------------------------------------------------------
+# Preview and Serving ----------------------------------------------------------
 # Preview experiments - right now just for templates
 @login_required
 def preview_experiment(request,eid):
@@ -206,6 +210,171 @@ def preview_experiment(request,eid):
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response('experiment_preview.html', context)
+
+@login_required
+def generate_battery_user(request,bid):
+    '''add a new user login url to take a battery'''
+
+    battery = get_battery(bid,request)
+    context = {"battery":battery,
+              "domain":settings.DOMAIN_NAME}
+
+    if check_battery_edit_permission(request,battery) == True:
+
+            # Create a user result object
+            userid = uuid.uuid4()
+            worker = get_worker(userid)
+            context["new_user"] = userid
+
+            return render_to_response('generate_battery_user.html', context)
+
+    else:
+            return HttpResponseRedirect(battery.get_absolute_url())
+
+def serve_battery(request,bid,userid=None):
+
+    battery = get_battery(bid,request)
+    next_page = None
+    uncompleted_experiments=None
+    result=None
+
+    # No robots allowed!
+    if request.user_agent.is_bot:
+        return render_to_response("robot_sorry.html")
+
+    # Is userid not defined, this is a preview
+    if userid == None:
+        template = "serve_battery_preview.html"
+        task_list = [battery.experiments.all()[0]]
+        context = dict()
+        deployment = "docker-preview"
+
+    # admin a battery for a new user
+    else:
+        template = "serve_battery.html"
+        worker = get_worker(userid)
+
+        # Try to get some info about browser, language, etc.
+        browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
+        platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
+        deployment = "docker-local"
+
+        # Does the worker have experiments remaining for the hit?
+        uncompleted_experiments = get_worker_experiments(worker,battery)
+        if len(uncompleted_experiments) == 0:
+            # Thank you for your participation - no more experiments!
+            return render_to_response("worker_sorry.html")
+
+        task_list = select_random_n(uncompleted_experiments,1)
+        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+        task_list = battery.experiments.filter(template=experimentTemplate)
+
+        # Generate a new results object for the worker, assignment, experiment
+        result,_ = Result.objects.update_or_create(worker=worker,
+                                                   experiment=experimentTemplate,
+                                                   battery=battery,
+                                                   defaults={"browser":browser,"platform":platform})
+        result.save()
+
+        context = {"worker_id": worker.id,
+                   "uniqueId":result.id}
+
+        # If this is the last experiment, the finish button will link to a thank you page.
+        if len(uncompleted_experiments) == 1:
+            next_page = "/finished"
+
+    return deploy_battery(deployment=deployment,
+                          battery=battery,
+                          context=context,
+                          task_list=task_list,
+                          template=template,
+                          uncompleted_experiments=uncompleted_experiments,
+                          next_page=next_page,
+                          result=result)
+
+def deploy_battery(deployment,battery,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
+    '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
+    :param deployment: the kind of deployment, either "docker-local","docker",or "docker-preview"
+    :param battery: models.Battery object
+    :param context: context, which should already include next_page,
+    :param next_page: the next page to navigate to [optional] default is to reload the page to go to the next experiment
+    :param task_list: list of models.Experiment instances
+    :param template: html template to render
+    :param result: the result object, turk.models.Result
+    :param uncompleted_experiments: list of uncompleted experiments models.Experiment [optional for preview]
+    '''
+    if next_page == None:
+        next_page = "javascript:window.location.reload();"
+
+    instruction_forms = []
+
+    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
+    if deployment == "docker-preview":
+        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
+        if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
+
+    # if the consent has been defined, add it to the context
+    elif deployment in ["docker","docker-local"]:
+        if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
+            instruction_forms.append({"title":"Consent","html":battery.consent})
+
+    # The instructions block is shown for both
+    if battery.instructions != None: context["instructions"] = instruction_forms.append({"title":"Instructions","html":battery.instructions})
+
+    if deployment == "docker-preview":
+        context["instruction_forms"] = instruction_forms
+    elif deployment in ["docker-local","docker"]:
+        # Only add the instructions forms when no experiments are completed
+        if len(uncompleted_experiments) == battery.number_of_experiments:
+            context["instruction_forms"] = instruction_forms
+
+    # Get experiment folders
+    experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
+    context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
+
+    # Get code to run the experiment (not in external file)
+    runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
+    if deployment in ["docker","docker-local"]:
+        runcode = runcode.replace("{{result.id}}",str(result.id))
+        runcode = runcode.replace("{{next_page}}",next_page)
+    context["run"] = runcode
+
+    response = render_to_response(template, context)
+
+    # without this header, the iFrame will not render in Amazon
+    response['x-frame-options'] = 'this_can_be_anything'
+    return response
+
+# These views are to work with backbone.js
+def localsync(request,rid=None):
+    '''localsync
+    view/method for running experiments to get data from the server
+    :param rid: the result object ID, obtained before user sees page
+    '''
+
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+
+        if rid != None:
+        # Update the result, already has worker and assignment ID stored
+            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            battery = result.battery
+            result.taskdata = data["taskdata"]["data"]
+            result.current_trial = data["taskdata"]["currenttrial"]
+            result.save()
+
+            # if the worker finished the current experiment
+            if data["djstatus"] == "FINISHED":
+                # Mark experiment as completed
+                result.completed = True
+                result.save()
+
+            data = json.dumps(data)
+
+    else:
+        data = json.dumps({"message":"received!"})
+    return HttpResponse(data, content_type='application/json')
 
 
 #### EDIT/ADD/DELETE ###################################################
@@ -450,7 +619,12 @@ def add_battery(request):
 
 @login_required
 def edit_battery(request, bid=None):
-    if request.user.is_superuser:
+
+    # Does the user have mturk permission?
+    mturk_permission = check_mturk_access(request)
+    battery_permission = check_battery_create_permission(request)
+
+    if battery_permission == True:
         header_text = "Add new battery"
         if bid:
             battery = get_battery(bid,request)
@@ -485,7 +659,8 @@ def edit_battery(request, bid=None):
 
         context = {"form": form,
                    "is_owner": is_owner,
-                   "header_text":header_text}
+                   "header_text":header_text,
+                   "mturk_permission":mturk_permission}
 
         return render(request, "edit_battery.html", context)
     else:

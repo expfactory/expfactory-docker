@@ -30,7 +30,7 @@ class UserCreateForm(UserCreationForm):
         self.helper.field_class = 'col-lg-8'
         self.helper.layout = Layout()
         tab_holder = TabHolder()
-    
+
 class UserEditForm(UserChangeForm):
     email = forms.EmailField(required=True)
 
@@ -44,7 +44,7 @@ class UserEditForm(UserChangeForm):
         if commit:
             user.save()
         return user
-    
+
     def clean_password(self):
         return ""
 
@@ -58,4 +58,3 @@ class UserEditForm(UserChangeForm):
         self.helper.field_class = 'col-lg-8'
         self.helper.layout = Layout()
         tab_holder = TabHolder()
-

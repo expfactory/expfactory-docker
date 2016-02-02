@@ -14,8 +14,8 @@
                 <li><a href="{% url 'battery_details' battery.id %}" class="sidebar_button button">{{ battery.name }}</a></li>
              {% endfor %}
             </ul>
-        </section>
-        {% endif %}
+    </section>
+    {% endif %}
 
 
     <!-- Experiments -->
@@ -29,8 +29,8 @@
              {% for experiment in experiments %}
                 <li><a href="{% url 'experiment_details' experiment.exp_id %}" class="button sidebar_button">{{ experiment.name }}</a></li>
              {% endfor %}
-             {% if request.user.is_superuser %}
              <a href="{% url 'new_battery' %}" class="button btn-primary sidebar_button">New Battery</a>
+             {% if request.user.is_superuser %}
              <a href="{% url 'add_experiment_template' %}" class="button btn-primary sidebar_button">Add Experiment Templates</a>
              {% endif %}
 

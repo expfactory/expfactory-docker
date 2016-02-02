@@ -47,7 +47,7 @@ def parse_experiment_variable(variable):
                                                                                                   description=description,
                                                                                                   variable_options=variable_options)
                     elif variable["datatype"].lower() == "boolean":
-                        experiment_variable,new_flag = ExperimentBooleanVariable.objects.get_or_create(name=name,description=description)
+                        experiment_variable,_ = ExperimentBooleanVariable.objects.update_or_create(name=name,description=description)
                     experiment_variable.save()
         except:
             pass
@@ -69,7 +69,7 @@ def install_experiments(experiment_tags=None):
         try:
             performance_variable = None
             rejection_variable = None
-            if "experiment_variable" in experiment[0]:
+            if "experiment_variables" in experiment[0]:
                 if isinstance(experiment[0]["experiment_variables"],list):
                     for var in experiment[0]["experiment_variables"]:
                         if var["type"].lower().strip() == "bonus":
@@ -79,17 +79,20 @@ def install_experiments(experiment_tags=None):
                         else:
                             parse_experiment_variable(var) # adds to database
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
-            new_experiment = ExperimentTemplate(tag=experiment[0]["exp_id"],
-                                                name=experiment[0]["name"],
-                                                cognitive_atlas_task=cognitive_atlas_task,
-                                                publish=bool(experiment[0]["publish"]),
-                                                time=experiment[0]["time"],
-                                                reference=experiment[0]["reference"],
-                                                performance_variable=performance_variable,
-                                                rejection_variable=rejection_variable)
+            new_experiment = ExperimentTemplate.objects.update_or_create(exp_id=experiment[0]["exp_id"],
+                                                                         defaults={"name":experiment[0]["name"],
+                                                                                   "cognitive_atlas_task":cognitive_atlas_task,
+                                                                                   "publish":bool(experiment[0]["publish"]),
+                                                                                   "time":experiment[0]["time"],
+                                                                                   "reference":experiment[0]["reference"],
+                                                                                   "performance_variable":performance_variable,
+                                                                                   "rejection_variable":rejection_variable})
             new_experiment.save()
             experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["exp_id"])
-            copy_directory(experiment_folder,"%s/experiments/%s" %(media_dir,experiment[0]["exp_id"]))
+            output_folder = "%s/experiments/%s" %(media_dir,experiment[0]["exp_id"])
+            if os.path.exists(output_folder):
+                shutil.remove(output_folder)
+            copy_directory(experiment_folder,output_folder)
         except:
             errored_experiments.append(experiment[0]["exp_id"])
 
@@ -103,21 +106,24 @@ def make_experiment_lookup(tags,battery=None):
     experiment_lookup = dict()
     for tag in tags:
         experiment = None
-        if battery != None:
-            # First try retrieving from battery
-            experiment = battery.experiments.filter(template__exp_id=tag)[0]
-            if isinstance(experiment,Experiment):
-                tmp = {"include_bonus":experiment.include_bonus,
-                       "include_catch":experiment.include_catch,
-                       "experiment":experiment.template}
-            else:
-               experiment = None
-        if experiment == None:
-            experiment = ExperimentTemplate.objects.filter(exp_id=tag)[0]
-            tmp = {"include_bonus":"Unknown",
-                   "include_catch":"Unknown",
-                   "experiment":experiment}
-        experiment_lookup[tag] = tmp
+        try:
+            if battery != None:
+                # First try retrieving from battery
+                experiment = battery.experiments.filter(template__exp_id=tag)[0]
+                if isinstance(experiment,Experiment):
+                    tmp = {"include_bonus":experiment.include_bonus,
+                           "include_catch":experiment.include_catch,
+                           "experiment":experiment.template}
+                else:
+                    experiment = None
+            if experiment == None:
+                experiment = ExperimentTemplate.objects.filter(exp_id=tag)[0]
+                tmp = {"include_bonus":"Unknown",
+                       "include_catch":"Unknown",
+                       "experiment":experiment}
+            experiment_lookup[tag] = tmp
+        except:
+            pass
     return experiment_lookup
 
 
@@ -154,7 +160,7 @@ def make_results_df(battery,results):
                 for key in trial["trialdata"].keys():
                     df.loc[row_id,key] = trial["trialdata"][key]
                     if key == "exp_id":
-                        exp=lookup[trial["trialdata"][key]]
+                        exp=lookup[trial["trialdata"][key].lower()]
                         df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
 
     # Change all names that don't start with experiment or worker or experiment to be result

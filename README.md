@@ -118,6 +118,12 @@ and replace `ADMINUSER` and `ADMINPASS` with your chosen username and password, 
 
 The last step is probably not necessary, but it's good to be sure.
 
+## Setup for Production
+Log into the production server, and you can run [scripts/prepare_instance.sh](scripts/prepare_instance.sh) to install docker and docker-compose. This script will download the repo and build the image. You can then use the commands specified previously to bring up the image (e.g., `docker-compose up -d`). In the case of using something like AWS, we suggest that before building the image, you create an encrypted (separate) database, and add the credentials to it in your settings.py. There are unfortunately things you will need to do manually to get HTTPS working (see below). You should do the following:
+
+ - set up HTTPS (see instructions below)
+
+
 ### Configuration with Mechanical Turk
 
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but with a battery object. Thus, you will need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.
@@ -125,4 +131,30 @@ Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interf
 ### HTTPS
 The docker container is set up to have a secure connection with https (port 443). There is no easy, programmatic way to set this up on a server, so you must walk through the steps at [https://gethttpsforfree.com/](https://gethttpsforfree.com/). It's basically an exercise in copy pasting, and you should follow the steps to a T to generate the certificates on the server. The docker image will take care of setting up the web server (the nginx.conf file).
 
+### Encrypted database connection
+If your provider (eg aws) provides you with a certificate, you can add it to `/etc/ssl/certs` on the server, and this path is already mapped in the docker-compose for the nginx container. You then need to specify to use SSL in the database connection in your `settings.py` or `local_settings.py`:
+
+
+      DATABASES = {
+          'default': {
+              'ENGINE': 'django.db.backends.postgresql_psycopg2',
+              'NAME': 'dbname',
+              'USER': 'dbuser',
+              'PASSWORD':'dbpassword',
+              'HOST': 'dbhost',
+              'PORT': '5432',
+              'OPTIONS': {
+                      'sslmode': 'require',
+                      'sslrootcert':'/etc/ssl/certs/rds-cert.pem'
+              },
+          }
+      }
+
+
 ### Installing expfactory-battery
+Finally, you will need to install the battery files into `static` in the expfactory-docker folder (which is mapped to /var/www/static) and you can do this by running the script [scripts/download_battery.py](scripts/download_battery.py) from the base folder:
+
+      cd $HOME/expfactory-docker
+      python scripts/download_battery.py
+
+
