@@ -1,0 +1,16 @@
+var uniqueId = "{{ uniqueId }}";
+
+/*Just to store task data as we go*/
+var expfactory = new ExpFactory(uniqueId);
+
+// Start experiment when participant pushes button
+$("#start_experiment_button").click(function(){
+   $("#instructions_modal").hide();
+   {{run | safe}}
+});
+
+{% if uniqueId %}
+$("#disagree_button").click(function(){
+    document.location = "{% url 'end_assignment' uniqueId %}"
+})
+{% endif %}

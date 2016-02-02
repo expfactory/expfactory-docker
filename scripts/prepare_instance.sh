@@ -15,10 +15,14 @@ sudo apt-get purge lxc-docker
 sudo apt-cache policy docker-engine
 sudo apt-get install -y --force-yes docker-engine
 sudo service docker start
+sudo gpasswd -a ubuntu docker
+sudo service docker restart
 
 curl -L https://github.com/docker/compose/releases/download/1.5.2/docker-compose-`uname -s`-`uname -m` > docker-compose
 sudo mv docker-compose /usr/local/bin
 chmod +x /usr/local/bin/docker-compose
+
+# Note that you will need to log in and out for changes to take effect
 
 if [ ! -d $HOME/expfactory-docker ]
 then

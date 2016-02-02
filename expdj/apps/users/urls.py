@@ -4,6 +4,8 @@ from django.contrib import admin
 from .views import view_profile, edit_user, create_user
 from django.contrib.auth import views as auth_views
 
+admin.autodiscover()
+
 urlpatterns = patterns('',
     url(r'^login/$', auth_views.login,
         {'extra_context': {'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None),
