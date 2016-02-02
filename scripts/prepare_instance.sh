@@ -22,6 +22,8 @@ curl -L https://github.com/docker/compose/releases/download/1.5.2/docker-compose
 sudo mv docker-compose /usr/local/bin
 chmod +x /usr/local/bin/docker-compose
 
+# Note that you will need to log in and out for changes to take effect
+
 if [ ! -d $HOME/expfactory-docker ]
 then
   git clone https://github.com/expfactory/expfactory-docker

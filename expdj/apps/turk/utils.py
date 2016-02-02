@@ -193,9 +193,9 @@ def get_worker_experiments(worker,battery,completed=False):
     a worker has/has not completed for a particular battery
     '''
     from expdj.apps.turk.models import Result
-    battery_tags = [x.template.tag for x in battery.experiments.all()]
+    battery_tags = [x.template.exp_id for x in battery.experiments.all()]
     worker_experiments = Result.objects.filter(worker=worker,battery=battery)
-    worker_tags = [x.experiment.tag for x in worker_experiments if x.completed==True]
+    worker_tags = [x.experiment.exp_id for x in worker_experiments if x.completed==True]
 
     if completed==False:
         uncompleted_experiments = [e for e in battery_tags if e not in worker_tags]

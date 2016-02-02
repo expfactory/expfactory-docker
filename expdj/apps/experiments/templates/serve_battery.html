@@ -9,30 +9,19 @@
     <script type="text/javascript" src="{% get_media_prefix %}expdjjs/backbone-min.js"></script>
     <script type="text/javascript" src="{% get_media_prefix %}expdjjs/expfactory.js"></script>
     {{ experiment_load | safe }}
-
 </head>
 <body>
 
-<div id="mturk_preview_message" class="hidden">
- <div class="alert alert-info">You must participate in the experiment to view the content.</div>
-</div>
+{% include "serve_battery_runjs.html" %}
 
-
+{% if instruction_forms %}
     {% include "instructions_modal.html" %}
-
-    <script>
-
-    $(function() {
-
-      {% include "preview_battery_runjs.html" %}
-
-      $("#start_experiment_button").click(function(){
-         $("#instructions_modal").hide()
-         $("#mturk_preview_message").show();
-      });
-
-   });
+{% else %}
+<script>
+$(function() {
+    $("#start_experiment_button").click();
+});
 </script>
-
+{% endif %}
   </body>
 </html>

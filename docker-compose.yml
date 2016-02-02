@@ -1,7 +1,5 @@
 db:
   image: postgres
-#  volumes:
-#    - ./create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
 
 data:
   image: cogniteev/echo
@@ -17,8 +15,8 @@ uwsgi:
     - .:/code
     - ./static:/var/www/static
   links:
-    - db
     - redis
+    - db
 
 nginx:
   restart: always
@@ -36,7 +34,7 @@ nginx:
     - data
   links:
     - uwsgi
-
+    - db
 redis:
   restart: always
   image: redis
@@ -50,5 +48,5 @@ worker:
     - uwsgi
     - data
   links:
-    - db
     - redis
+    - db

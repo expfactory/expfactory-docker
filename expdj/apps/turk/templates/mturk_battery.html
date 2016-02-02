@@ -12,76 +12,23 @@
 </head>
 <body>
 
+{% include "serve_battery_runjs.html" %}
+
+<form action="{{ amazon_host }}" method="POST" id="turkey_form">
+        <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
+        <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
+        <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
+</form>
+
+{% if instruction_forms %}
+    {% include "instructions_modal.html" %}
+{% else %}
 <script>
-
-    $(function() {
-
-      var uniqueId = "{{ uniqueId }}";
-
-       function getCookie(name) {
-        var cookieValue = null;
-        if (document.cookie && document.cookie != '') {
-            var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = jQuery.trim(cookies[i]);
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-        return cookieValue;
-      }
-
-    var csrftoken = getCookie('csrftoken');
-
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
-    });
-
-    /*Just to store task data as we go*/
-    var expfactory = new ExpFactory(uniqueId);
-
-    // Start experiment when participant pushes button
-    $("#start_experiment_button").click(function(){
-       $("#consent_form").hide();
-       {{run | safe}}
-    });
-
-    });
-    </script>
-
-    <form action="{{ amazon_host }}" method="POST" id="turkey_form">
-            <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
-            <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
-            <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
-    </form>
-
-    <!-- Consent Form-->
-    {% if consent %}
-    <div id="consent_form" style="margin:100px">
-        <h1>Consent</h1>
-       {{ consent | safe }}<br>
-       <button id="start_experiment_button" type="button" class="btn">Agree</button>
-       <button href="{% url 'end_assignment' uniqueId %}" type="button" class="btn">Disagree</button>
-   </div>
-   {% else %}
-   <script>
-   $(function() {
-       $("#start_experiment_button").click();
-   });
-   </script>
-   {% endif %}
+$(function() {
+    $("#start_experiment_button").click();
+});
+</script>
+{% endif %}
 
   </body>
 </html>
