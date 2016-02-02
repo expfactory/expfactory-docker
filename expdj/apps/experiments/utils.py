@@ -187,13 +187,14 @@ def get_cognitiveatlas_task(task_id):
         task = get_task(id=task_id).json[0]
         cogatlas_task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"], defaults={"name":task["name"]})
         concept_list = []
-        for concept in task["concepts"]:
-            cogatlas_concept = get_concept(id=concept["concept_id"]).json[0]
-            cogatlas_concept, _ = CognitiveAtlasConcept.objects.update_or_create(cog_atlas_id=cogatlas_concept["id"],
+        if "concepts" in task.keys():
+            for concept in task["concepts"]:
+                cogatlas_concept = get_concept(id=concept["concept_id"]).json[0]
+                cogatlas_concept, _ = CognitiveAtlasConcept.objects.update_or_create(cog_atlas_id=cogatlas_concept["id"],
                                                         defaults={"name":cogatlas_concept["name"]},
                                                         definition=cogatlas_concept["definition_text"])
-            cogatlas_concept.save()
-            concept_list.append(cogatlas_concept)
+                cogatlas_concept.save()
+                concept_list.append(cogatlas_concept)
         cogatlas_task.concepts = concept_list
         cogatlas_task.save()
         return cogatlas_task
