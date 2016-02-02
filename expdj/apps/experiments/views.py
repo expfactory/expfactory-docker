@@ -60,6 +60,14 @@ def check_battery_create_permission(request):
         return True
     return False
 
+def check_battery_delete_permission(request,battery):
+    if not request.user.is_anonymous():
+        if request.user == battery.owner:
+            return True
+        if request.user.is_superuser:
+            return True
+    return False
+
 def check_battery_edit_permission(request,battery):
     if not request.user.is_anonymous():
         if request.user == battery.owner or request.user in battery.contributors.all():
@@ -670,7 +678,10 @@ def edit_battery(request, bid=None):
 @login_required
 def delete_battery(request, bid):
     battery = get_battery(bid,request)
-    if request.user.has_perm('battery.delete_battery', battery):
+    delete_permission = check_battery_delete_permission(request,battery)
+    if delete_permission==True:
+        hits = HIT.objects.filter(battery=battery)
+        [h.delete() for h in hits]
         battery.delete()
     return redirect('batteries')
 

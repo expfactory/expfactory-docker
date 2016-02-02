@@ -78,13 +78,17 @@ def install_experiments(experiment_tags=None):
                             rejection_variable = parse_experiment_variable(var)
                         else:
                             parse_experiment_variable(var) # adds to database
+            if isinstance(experiment[0]["reference"],list):
+                reference = experiment[0]["reference"][0]
+            else:
+                reference = experiment[0]["reference"]
             cognitive_atlas_task = get_cognitiveatlas_task(experiment[0]["cognitive_atlas_task_id"])
             new_experiment,_ = ExperimentTemplate.objects.update_or_create(exp_id=experiment[0]["exp_id"],
                                                                          defaults={"name":experiment[0]["name"],
                                                                                    "cognitive_atlas_task":cognitive_atlas_task,
                                                                                    "publish":bool(experiment[0]["publish"]),
                                                                                    "time":experiment[0]["time"],
-                                                                                   "reference":experiment[0]["reference"],
+                                                                                   "reference":reference,
                                                                                    "performance_variable":performance_variable,
                                                                                    "rejection_variable":rejection_variable})
             new_experiment.save()
