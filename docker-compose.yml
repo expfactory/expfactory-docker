@@ -49,3 +49,4 @@ worker:
     - data
   links:
     - redis
+    - db

@@ -16,8 +16,8 @@
         <div class="row hide" data-step="{{ forloop.counter }}" data-title="{{ instruction_form.title }}">
           <div style="padding:20px;background-color:#F7F7F7">
                 <h1>{{ instruction_form.title }}</h1>
-               {{ html | safe }}<br>
-
+               {{ instruction_form.html | safe }}<br>
+               <br>
                {% if instruction_form.title == "Consent" %}
                    <button id="disagree_button" type="button" class="btn btn-default">Disagree</button>
                {% endif %}
