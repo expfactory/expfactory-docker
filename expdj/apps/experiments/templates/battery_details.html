@@ -19,8 +19,10 @@
                 {% endif %}
             {% else %}
                 {% if mturk_permission %}
+                {% if hits %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
                 <a href='{% url 'serve_hit' hits.0.id %}' target="_blank">preview</a> it.</div>
+                {% endif %}
                 {% else %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
                 <a href='{% url 'serve_battery' battery.id %}' target="_blank">preview</a> it.</div>

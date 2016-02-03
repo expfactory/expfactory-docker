@@ -323,17 +323,17 @@ def deploy_battery(deployment,battery,context,task_list,template,result,uncomple
 
     # if the consent has been defined, add it to the context
     elif deployment in ["docker","docker-local"]:
-        if battery.consent != None and len(uncompleted_experiments) == battery.number_of_experiments:
+        if battery.consent != None and len(uncompleted_experiments) == len(battery.experiments.all()):
             instruction_forms.append({"title":"Consent","html":battery.consent})
 
     # The instructions block is shown for both
-    if battery.instructions != None: context["instructions"] = instruction_forms.append({"title":"Instructions","html":battery.instructions})
+    if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
 
     if deployment == "docker-preview":
         context["instruction_forms"] = instruction_forms
     elif deployment in ["docker-local","docker"]:
         # Only add the instructions forms when no experiments are completed
-        if len(uncompleted_experiments) == battery.number_of_experiments:
+        if len(uncompleted_experiments) == len(battery.experiments.all()):
             context["instruction_forms"] = instruction_forms
 
     # Get experiment folders
@@ -638,11 +638,13 @@ def edit_battery(request, bid=None):
             battery = get_battery(bid,request)
             is_owner = battery.owner == request.user
             header_text = battery.name
-            if not request.user.has_perm('battery.edit_battery', battery):
+            battery_edit_permission = check_battery_edit_permission(request,battery)
+            if battery_edit_permission == False:
                 return HttpResponseForbidden()
         else:
             is_owner = True
             battery = Battery(owner=request.user)
+            battery_edit_permission = True
         if request.method == "POST":
             if is_owner:
                 form = BatteryForm(request.POST,instance=battery)
@@ -668,7 +670,8 @@ def edit_battery(request, bid=None):
         context = {"form": form,
                    "is_owner": is_owner,
                    "header_text":header_text,
-                   "mturk_permission":mturk_permission}
+                   "mturk_permission":mturk_permission,
+                   "battery_edit_permission":battery_edit_permission}
 
         return render(request, "edit_battery.html", context)
     else:
