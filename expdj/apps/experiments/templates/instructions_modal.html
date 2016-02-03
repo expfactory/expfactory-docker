@@ -1,7 +1,7 @@
 
 {% block scripts %}
 <script src="{% static "js/jquery_boostrap_modal_steps.js"%}"></script>
-<link rel="stylesheet" href="{% static "css/bootstrap.css"%}" />
+<link id="bootstrap_css" rel="stylesheet" href="{% static "css/bootstrap.css"%}" />
 {% endblock %}
 
 <!-- Modal -->
@@ -14,7 +14,7 @@
       <div class="modal-body">
         {% for instruction_form in instruction_forms %}
         <div class="row hide" data-step="{{ forloop.counter }}" data-title="{{ instruction_form.title }}">
-          <div style="padding:20px;background-color:#F7F7F7">
+          <div style="padding:20px;background-color:#F7F7F7;font-size:18px;line-height:20px">
                 <h1>{{ instruction_form.title }}</h1>
                {{ instruction_form.html | safe }}<br>
                <br>
@@ -32,7 +32,7 @@
     </div>
   </div>
 </div>
-<button type="button" id="modalToggle" class="btn btn-primary btn-lg hidden" data-toggle="modal" data-target="#instructions_modal"></button>
+<button type="button" id="modalToggle" class="btn btn-primary btn-lg hidden" data-toggle="modal" data-target="#instructions_modal" hidden></button>
 <script>
 $(function() {
     $('#instructions_modal').modalSteps();

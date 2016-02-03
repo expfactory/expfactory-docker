@@ -6,6 +6,7 @@ var expfactory = new ExpFactory(uniqueId);
 // Start experiment when participant pushes button
 $("#start_experiment_button").click(function(){
    $("#instructions_modal").hide();
+   $("#bootstrap_css").remove()
    {{run | safe}}
 });
 
