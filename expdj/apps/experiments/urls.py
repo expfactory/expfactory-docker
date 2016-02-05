@@ -3,7 +3,8 @@ delete_experiment_template, add_experiment_template, save_experiment_template, \
 view_experiment, export_experiment, preview_experiment, batteries_view, add_battery, \
 edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
 add_experiment, edit_experiment, save_experiment, update_experiment_template, \
-remove_condition, serve_battery, generate_battery_user, localsync
+remove_condition, serve_battery, generate_battery_user, localsync, \
+experiment_results_dashboard, battery_results_dashboard
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -26,6 +27,7 @@ urlpatterns = patterns('',
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/add$',add_experiment,name='add_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/save$',save_experiment,name='save_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/customize$',edit_experiment,name='edit_experiment'),
+    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/results$',experiment_results_dashboard,name='experiment_results_dashboard'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/view$',view_experiment, name='experiment_details'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/remove$',remove_experiment,name='remove_experiment'),
     url(r'^conditions/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/(?P<cid>\d+|[A-Z]{8})/remove$',remove_condition,name='remove_condition'),
@@ -37,6 +39,7 @@ urlpatterns = patterns('',
     url(r'^batteries/add$',add_battery,name='add_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/user$',generate_battery_user,name='generate_battery_user'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/results$',battery_results_dashboard,name='battery_results_dashboard'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'), # preview
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),

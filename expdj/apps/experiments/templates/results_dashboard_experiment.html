@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block head %}
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+{% endblock %}
+{% block content %}
+<div class="row">
+
+    <div class="col-md-12">
+
+        <!-- Content -->
+        <article id="content">
+            <header>
+              <h2>View Experiment Results: {{ experiment.name }} <i style="font-size:12" data-toggle="tooltip" title="You can view results on the level of experiments, meaning distributions of experiment variables." class="fa fa-question-circle"></i></h2>
+            </header>
+
+          {% if message %}
+          <div style="padding-top:20px" class="alert alert-info" role="alert">{{ message }}</div>
+          {% else %}
+          <div style="padding-top:20px" class="alert alert-info" role="alert">You should use the results dashboard to explore data, and not for final analyses.</div>
+          {% endif %}
+
+        </article>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script>
+
+results = {{ results | safe }}
+
+$(document).ready(function(){
+   $("#experiment").select2();
+});
+
+</script>
+{% endblock %}

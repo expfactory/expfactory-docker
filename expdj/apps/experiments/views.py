@@ -4,7 +4,7 @@ from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Batter
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df
+  update_credits, make_results_df, get_battery_results
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -174,7 +174,7 @@ def view_battery(request, bid):
 
     # Check if battery has results
     has_results = False
-    if len(Result.objects.filter(assignment__hit__battery=battery)) > 0:
+    if len(Result.objects.filter(battery=battery)) > 0:
         has_results = True
 
     context = {'battery': battery,
@@ -746,3 +746,48 @@ def export_experiments(battery,output_name,experiment_tags=None):
             pass
 
     return response
+
+#### RESULTS VISUALIZATION #####################################################
+@login_required
+def battery_results_dashboard(request,bid):
+    '''battery_results_dashboard will show the user a dashboard to select an experiment
+    to view results for
+    '''
+    context = battery_results_context(request,bid)
+    return render(request, "results_dashboard_battery.html", context)
+
+@login_required
+def battery_results_context(request,bid):
+    '''battery_result_context is a general function used by experiment and battery
+    results dashboard to return context with experiments completed for a battery
+    '''
+    battery = get_battery(bid,request)
+
+    # Check if battery has results
+    results = Result.objects.filter(battery=battery,completed=True)
+    completed_experiments = numpy.unique([r.experiment.exp_id for r in results]).tolist()
+    experiments = ExperimentTemplate.objects.filter(exp_id__in=completed_experiments)
+    context = {'battery': battery,
+               'experiments':experiments,
+               'bid':battery.id}
+    return context
+
+@login_required
+def experiment_results_dashboard(request,bid):
+    '''experiment_results_dashboard will show the user a result for a particular experiment
+    '''
+    if request.method == "POST":
+        battery = get_battery(bid,request)
+        template = get_experiment_template(request.POST["experiment"],request)
+        results = get_battery_results(battery,exp_id=template.exp_id)
+        if len(results) == 0:
+            context = battery_results_context(request,bid)
+            context["message"] = "%s does not have any completed results." %template.name
+            return render(request, "results_dashboard_battery.html", context)
+        context = {'battery': battery,
+                   'results':results.to_dict(),
+                   'experiment':template}
+        return render(request, "results_dashboard_experiment.html", context)
+    else:
+        context = battery_results_context(request,bid)
+        return render(request, "results_dashboard_battery.html", context)

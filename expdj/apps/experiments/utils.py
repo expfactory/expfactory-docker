@@ -131,8 +131,15 @@ def make_experiment_lookup(tags,battery=None):
             pass
     return experiment_lookup
 
-def get_battery_results(battery):
-    results = Result.objects.filter(battery=battery)
+def get_battery_results(battery,exp_id=None):
+    '''get_battery_results filters down to a battery, and optionally, an experiment of interest
+    :param battery: expdj.models.Battery
+    :param expid: an ExperimentTemplate.tag variable, eg "test_task"
+    '''
+    args = {"battery":battery}
+    if exp_id != None:
+        args["experiment__exp_id"] = exp_id
+    results = Result.objects.filter(**args)
     return make_results_df(battery,results)
 
 def make_results_df(battery,results):
