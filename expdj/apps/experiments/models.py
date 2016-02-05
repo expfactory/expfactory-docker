@@ -81,6 +81,9 @@ class ExperimentTemplate(models.Model):
     time = models.IntegerField()
     reference = models.CharField(max_length=500,help_text="reference or paper associated with the experiment",unique=False)
 
+    def __meta__(self):
+        ordering = ["name"]
+
     def __str__(self):
         return self.exp_id
 
@@ -154,6 +157,7 @@ class Battery(models.Model):
         assign_perm('edit_battery', self.owner, self)
 
     class Meta:
+        ordering = ["name"]
         app_label = 'experiments'
         permissions = (
             ('del_battery', 'Delete battery'),

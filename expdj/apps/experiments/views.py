@@ -569,7 +569,14 @@ def add_experiment(request,bid,eid=None):
             newexperimentjson["rejection_variable"] = model_to_dict(newexperiment.rejection_variable)
         experimentsbytag[newexperimentjson["exp_id"]] = newexperimentjson
 
-    context = {"newexperiments": newexperiments,
+    # Present in abc order
+    experiment_tags = [x.exp_id for x in newexperiments]
+    experiment_tags.sort()
+    experiments_sorted = []
+    for experiment_tag in experiment_tags:
+        experiments_sorted.append(experimentsbytag[experiment_tag])
+
+    context = {"newexperiments": experiments_sorted,
                "newexperimentsjson":json.dumps(experimentsbytag),
                "bid":battery.id}
     return render(request, "add_experiment.html", context)
