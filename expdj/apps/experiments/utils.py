@@ -155,9 +155,15 @@ def get_battery_results(battery,exp_id=None,clean=False):
                                                  "result_internal_node_id",
                                                  "result_trial_index",
                                                  "result_trial_type",
-                                                 "result_stimulus"]
+                                                 "result_stimulus",
+                                                 "experiment_reference",
+                                                 "experiment_cognitive_atlas_task_id",
+                                                 "result_dateTime",
+                                                 "result_exp_id",
+                                                 "result_page_num"]
         df.drop(columns_to_remove,axis=1,inplace=True,errors="ignore")
         df.columns = [x.replace("result_","") for x in df.columns.tolist()]
+    df.index = range(0,df.shape[0])
     return df
 
 def make_results_df(battery,results):

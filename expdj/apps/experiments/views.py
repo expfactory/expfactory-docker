@@ -787,7 +787,7 @@ def experiment_results_dashboard(request,bid):
 
         # If we have results, save updated file for shiny server
         shiny_input = os.path.abspath("expfactory-explorer/data/%s_data.tsv" %template.exp_id)
-        results.to_csv(shiny_input,sep="\t")
+        results.to_csv(shiny_input,sep="\t",encoding="utf-8")
 
         return HttpResponseRedirect('%s:3838' %settings.DOMAIN_NAME_HTTP)
     else:
