@@ -15,6 +15,7 @@ import random
 import pandas
 import json
 import os
+import re
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
@@ -131,16 +132,33 @@ def make_experiment_lookup(tags,battery=None):
             pass
     return experiment_lookup
 
-def get_battery_results(battery,exp_id=None):
+def get_battery_results(battery,exp_id=None,clean=False):
     '''get_battery_results filters down to a battery, and optionally, an experiment of interest
     :param battery: expdj.models.Battery
     :param expid: an ExperimentTemplate.tag variable, eg "test_task"
+    :param clean: remove battery info, subject info, and identifying information
     '''
     args = {"battery":battery}
     if exp_id != None:
         args["experiment__exp_id"] = exp_id
     results = Result.objects.filter(**args)
-    return make_results_df(battery,results)
+    df = make_results_df(battery,results)
+    if clean == True:
+        columns_to_remove = [x for x in df.columns.tolist() if re.search("worker_|^battery_",x)]
+        columns_to_remove = columns_to_remove + ["experiment_include_bonus",
+                                                 "experiment_include_catch",
+                                                 "result_id",
+                                                 "result_view_history",
+                                                 "result_time_elapsed",
+                                                 "result_timing_post_trial",
+                                                 "result_stim_duration",
+                                                 "result_internal_node_id",
+                                                 "result_trial_index",
+                                                 "result_trial_type",
+                                                 "result_stimulus"]
+        df.drop(columns_to_remove,axis=1,inplace=True,errors="ignore")
+        df.columns = [x.replace("result_","") for x in df.columns.tolist()]
+    return df
 
 def make_results_df(battery,results):
 

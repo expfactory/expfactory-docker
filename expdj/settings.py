@@ -21,6 +21,7 @@ matplotlib.use('Agg')
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
+DOMAIN_NAME_HTTP = "http://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
 
 ADMINS = (('vsochat', 'vsochat@gmail.com'),('ieisenberg','ieisenbe@stanford.edu'))
 

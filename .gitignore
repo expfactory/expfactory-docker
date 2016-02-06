@@ -6,6 +6,7 @@
 
 # Static #
 ##########
+/expfactory-explorer
 /assets
 /static/css
 /static/images

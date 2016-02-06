@@ -779,15 +779,17 @@ def experiment_results_dashboard(request,bid):
     if request.method == "POST":
         battery = get_battery(bid,request)
         template = get_experiment_template(request.POST["experiment"],request)
-        results = get_battery_results(battery,exp_id=template.exp_id)
+        results = get_battery_results(battery,exp_id=template.exp_id,clean=True)
         if len(results) == 0:
             context = battery_results_context(request,bid)
             context["message"] = "%s does not have any completed results." %template.name
             return render(request, "results_dashboard_battery.html", context)
-        context = {'battery': battery,
-                   'results':results.to_dict(),
-                   'experiment':template}
-        return render(request, "results_dashboard_experiment.html", context)
+
+        # If we have results, save updated file for shiny server
+        shiny_input = os.path.abspath("expfactory-explorer/data/%s_data.tsv" %template.exp_id)
+        results.to_csv(shiny_input,sep="\t")
+
+        return HttpResponseRedirect('%s:3838' %settings.DOMAIN_NAME_HTTP)
     else:
         context = battery_results_context(request,bid)
         return render(request, "results_dashboard_battery.html", context)
