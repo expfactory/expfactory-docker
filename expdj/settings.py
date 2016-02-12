@@ -68,7 +68,8 @@ INSTALLED_APPS = (
     'guardian',
     'dbbackup',
     'djrill',
-    'djcelery'
+    'djcelery',
+    'rest_framework'
 )
 
 
@@ -108,16 +109,23 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'expdj.urls'
 
-TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.contrib.auth.context_processors.auth",
-    "django.core.context_processors.debug",
-    "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
-    "django.core.context_processors.static",
-    "django.core.context_processors.tz",
-    "django.contrib.messages.context_processors.messages",
-    'django.core.context_processors.request',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': (),
+        'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
+                                            "django.core.context_processors.debug",
+                                            "django.core.context_processors.i18n",
+                                            "django.core.context_processors.media",
+                                            "django.core.context_processors.static",
+                                            "django.core.context_processors.tz",
+                                            "django.contrib.messages.context_processors.messages",
+                                            'django.core.context_processors.request'),
+                    'loaders': ('django.template.loaders.filesystem.Loader',
+                                'django.template.loaders.app_directories.Loader',
+                                )}
+    }
+]
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
@@ -155,8 +163,6 @@ STATICFILES_FINDERS = (
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'hamlpy.template.loaders.HamlPyFilesystemLoader',
-    'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
@@ -200,6 +206,14 @@ CELERY_IMPORTS = ('expdj.apps.turk.tasks', )
 
 CELERY_TIMEZONE = 'Europe/Berlin'
 
+# REST FRAMEWORK
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
 
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False

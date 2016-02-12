@@ -1,4 +1,4 @@
-Django>=1.7.1,<1.8
+Django==1.8.8
 psycopg2
 markdown
 matplotlib
@@ -7,7 +7,6 @@ django-guardian
 django-crispy-forms
 django-extensions
 djangorestframework
-hamlpy
 django-filter
 django-taggit
 django-taggit-templatetags
@@ -25,11 +24,9 @@ dropbox==1.6
 kombu
 opbeat
 djrill
-pyyaml
 ua-parser
 user-agents
 django-user-agents
-South
 django-dirtyfields
 cython
 h5py
