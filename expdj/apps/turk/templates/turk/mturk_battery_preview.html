@@ -1,5 +1,5 @@
 <html>
-{% load static %}
+{% from staticfiles load static %}
   <head>
     <title>The Experiment Factory</title>
     <meta charset="utf-8" />
@@ -18,13 +18,13 @@
 </div>
 
 
-    {% include "instructions_modal.html" %}
+    {% include "experiments/instructions_modal.html" %}
 
     <script>
 
     $(function() {
 
-      {% include "preview_battery_runjs.html" %}
+      {% include "experiments/preview_battery_runjs.html" %}
 
       $("#start_experiment_button").click(function(){
          $("#instructions_modal").hide()

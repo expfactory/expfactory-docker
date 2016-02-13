@@ -51,9 +51,16 @@ class Worker(models.Model):
 
 
 
-def get_worker(worker_id):
+def get_worker(worker_id,create=True):
+    '''get a worker
+    :param create: update or create
+    :param worker_id: the unique identifier for the worker
+    '''
     # (<Worker: WORKER_ID: experiments[0]>, True)
-    worker,_ = Worker.objects.update_or_create(id=worker_id)
+    if create == True:
+        worker,_ = Worker.objects.update_or_create(id=worker_id)
+    else:
+        worker = Worker.objects.filter(id=worker_id)
     return worker
 
 class HIT(models.Model):

@@ -116,7 +116,7 @@ class CreditCondition(models.Model):
 
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
-    credit_conditions = models.ManyToManyField(CreditCondition,related_name="conditions",help_text="functions over performance and rejection variables to allocate payments and credit.",null=True,blank=True)
+    credit_conditions = models.ManyToManyField(CreditCondition,related_name="conditions",help_text="functions over performance and rejection variables to allocate payments and credit.",blank=True)
     include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
                                                 (True, 'includes bonus')),
                                                 default=False,verbose_name="Bonus")

@@ -12,10 +12,16 @@
 </head>
 <body>
 
-{% include "serve_battery_runjs.html" %}
+{% include "experiments/serve_battery_runjs.html" %}
+
+<form action="{{ amazon_host }}" method="POST" id="turkey_form">
+        <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
+        <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
+        <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
+</form>
 
 {% if instruction_forms %}
-    {% include "instructions_modal.html" %}
+    {% include "experiments/instructions_modal.html" %}
 {% else %}
 <script>
 $(function() {
@@ -23,5 +29,6 @@ $(function() {
 });
 </script>
 {% endif %}
+
   </body>
 </html>

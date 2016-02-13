@@ -12,16 +12,14 @@ RUN pip install -v scipy
 RUN pip install numpy
 RUN pip install scikit-learn pandas h5py matplotlib
 RUN pip install uwsgi
-RUN pip install 'Django>=1.7.1,<1.8'
+RUN pip install 'Django==1.8.8'
 RUN pip install 'python-social-auth==0.2.7'
 RUN pip install djangorestframework
 RUN pip install markdown
 RUN pip install django-filter
 RUN pip install django-taggit
 RUN pip install django-form-utils
-RUN pip install hamlpy
 RUN pip install django-crispy-forms
-RUN pip install South
 RUN pip install django-taggit-templatetags
 RUN pip install django-dirtyfields
 RUN pip install 'dropbox==1.6'
