@@ -233,6 +233,7 @@ def generate_battery_user(request,bid):
             userid = uuid.uuid4()
             worker = get_worker(userid)
             context["new_user"] = userid
+            worker.save()
 
             return render_to_response('generate_battery_user.html', context)
 
@@ -260,7 +261,11 @@ def serve_battery(request,bid,userid=None):
     # admin a battery for a new user
     else:
         template = "serve_battery.html"
-        worker = get_worker(userid)
+        worker = get_worker(userid,create=False)
+        if len(worker) == 0:
+            return render_to_response("invalid_id_sorry.html")
+        else:
+            worker = worker[0]
 
         # Try to get some info about browser, language, etc.
         browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)

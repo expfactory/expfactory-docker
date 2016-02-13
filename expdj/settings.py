@@ -161,13 +161,6 @@ STATICFILES_FINDERS = (
 #    ('site', os.path.join(BASE_DIR,'static')), #store site-specific media here.
 #)
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 SENDFILE_BACKEND = 'sendfile.backends.development'
