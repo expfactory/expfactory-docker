@@ -685,7 +685,7 @@ def edit_battery(request, bid=None):
                    "mturk_permission":mturk_permission,
                    "battery_edit_permission":battery_edit_permission}
 
-        return render(request, "edit_battery.html", context)
+        return render(request, "experiments/edit_battery.html", context)
     else:
         return redirect("batteries")
 
