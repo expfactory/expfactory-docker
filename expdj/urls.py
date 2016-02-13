@@ -9,6 +9,7 @@ from expdj.apps.turk import urls as turk_urls
 from expdj.apps.users import urls as users_urls
 from expdj.apps.experiments import urls as experiment_urls
 from django.contrib import admin
+from django.conf.urls.static import static
 from django.conf import settings
 import os
 
@@ -36,7 +37,7 @@ urlpatterns = [ url(r'^', include(main_urls)),
                 url(r'^', include(router.urls)),
                 url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
                 url(r'^admin/', include(admin.site.urls))
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 if settings.DEBUG:
