@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "main/base.html" %}
 {% block head %}
 {% endblock %}
 {% block hero %}
@@ -10,7 +10,7 @@
     </header>
     <p>Designed and built by <strong><a href="http://poldracklab.stanford.edu">Poldracklab</a></strong>.</p>
     <ul class="actions">
-        {% if request.user.is_authenticated %}                    
+        {% if request.user.is_authenticated %}
         <li><a href="{% url 'experiments' %}" class="button">View Experiments</a></li>
         {% else %}
         <li><a href="{% url 'login' %}" class="button">Experimenter Login</a></li>

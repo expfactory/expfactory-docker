@@ -127,7 +127,7 @@ def update_experiment_template(request,eid):
             experiments = ExperimentTemplate.objects.all()
             context = {"experiments":experiments,
                        "message":message}
-    return render(request, "all_experiments.html", context)
+    return render(request, "experiments/all_experiments.html", context)
 
 
 # View a single experiment
@@ -144,12 +144,12 @@ def view_experiment(request, eid, bid=None):
         battery = get_battery(bid,request)
         edit_permission = check_battery_edit_permission(request,battery)
         delete_permission = edit_permission
-        template = 'experiment_details.html'
+        template = 'experiments/experiment_details.html'
 
     # An experiment template
     else:
         experiment = get_experiment_template(eid,request)
-        template = 'experiment_template_details.html'
+        template = 'experiments/experiment_template_details.html'
         battery = None
 
     context = {'experiment': experiment,
@@ -184,7 +184,7 @@ def view_battery(request, bid):
                'hits':hits,
                'has_results':has_results}
 
-    return render(request,'battery_details.html', context)
+    return render(request,'experiments/battery_details.html', context)
 
 
 # All experiments
@@ -194,7 +194,7 @@ def experiments_view(request):
     delete_permission = check_experiment_edit_permission(request)
     context = {'experiments': experiments,
                'delete_permission':delete_permission}
-    return render(request, 'all_experiments.html', context)
+    return render(request, 'experiments/all_experiments.html', context)
 
 
 # All batteries
@@ -206,7 +206,7 @@ def batteries_view(request,uid=None):
         batteries = Battery.objects.filter(owner_id=uid)
     generate_battery_permission = False
     context = {'batteries': batteries}
-    return render(request, 'all_batteries.html', context)
+    return render(request, 'experiments/all_batteries.html', context)
 
 
 # Preview and Serving ----------------------------------------------------------
@@ -217,7 +217,7 @@ def preview_experiment(request,eid):
     experiment_folder = os.path.join(media_dir,"experiments",experiment.exp_id)
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
-    return render_to_response('experiment_preview.html', context)
+    return render_to_response('experiments/experiment_preview.html', context)
 
 @login_required
 def generate_battery_user(request,bid):
@@ -235,7 +235,7 @@ def generate_battery_user(request,bid):
             context["new_user"] = userid
             worker.save()
 
-            return render_to_response('generate_battery_user.html', context)
+            return render_to_response('experiments/generate_battery_user.html', context)
 
     else:
             return HttpResponseRedirect(battery.get_absolute_url())
@@ -249,21 +249,21 @@ def serve_battery(request,bid,userid=None):
 
     # No robots allowed!
     if request.user_agent.is_bot:
-        return render_to_response("robot_sorry.html")
+        return render_to_response("turk/robot_sorry.html")
 
     # Is userid not defined, this is a preview
     if userid == None:
-        template = "serve_battery_preview.html"
+        template = "experiments/serve_battery_preview.html"
         task_list = [battery.experiments.all()[0]]
         context = dict()
         deployment = "docker-preview"
 
     # admin a battery for a new user
     else:
-        template = "serve_battery.html"
+        template = "experiments/serve_battery.html"
         worker = get_worker(userid,create=False)
         if len(worker) == 0:
-            return render_to_response("invalid_id_sorry.html")
+            return render_to_response("turk/invalid_id_sorry.html")
         else:
             worker = worker[0]
 
@@ -276,7 +276,7 @@ def serve_battery(request,bid,userid=None):
         uncompleted_experiments = get_worker_experiments(worker,battery)
         if len(uncompleted_experiments) == 0:
             # Thank you for your participation - no more experiments!
-            return render_to_response("worker_sorry.html")
+            return render_to_response("turk/worker_sorry.html")
 
         task_list = select_random_n(uncompleted_experiments,1)
         experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
@@ -405,7 +405,7 @@ def add_experiment_template(request):
     newexperiments = [e for e in experiment_selection if e["exp_id"] not in tags]
     context = {"newexperiments": newexperiments,
                "experiments": current_experiments}
-    return render(request, "add_experiment_template.html", context)
+    return render(request, "experiments/add_experiment_template.html", context)
 
 @login_required
 def save_experiment_template(request):
@@ -423,7 +423,7 @@ def save_experiment_template(request):
     experiments = ExperimentTemplate.objects.all()
     context = {"experiments":experiments,
                "message":message}
-    return render(request, "all_experiments.html", context)
+    return render(request, "experiments/all_experiments.html", context)
 
 @login_required
 def edit_experiment_template(request,eid=None):
@@ -452,7 +452,7 @@ def edit_experiment_template(request,eid=None):
 
     context = {"form": form,
                "experiment":experiment}
-    return render(request, "edit_experiment_template.html", context)
+    return render(request, "experiments/edit_experiment_template.html", context)
 
 # Delete an experiment
 @login_required
@@ -503,7 +503,7 @@ def edit_experiment(request,bid,eid):
     context = {"form": form,
                "experiment":experiment,
                "battery":battery}
-    return render(request, "edit_experiment.html", context)
+    return render(request, "experiments/edit_experiment.html", context)
 
 @login_required
 def save_experiment(request,bid):
@@ -584,7 +584,7 @@ def add_experiment(request,bid,eid=None):
     context = {"newexperiments": experiments_sorted,
                "newexperimentsjson":json.dumps(experimentsbytag),
                "bid":battery.id}
-    return render(request, "add_experiment.html", context)
+    return render(request, "experiments/add_experiment.html", context)
 
 @login_required
 def remove_experiment(request,bid,eid):
@@ -625,7 +625,7 @@ def remove_condition(request,bid,eid,cid):
     context = {"form": form,
                "experiment":experiment,
                "battery":battery}
-    return render(request, "edit_experiment.html", context)
+    return render(request, "experiments/edit_experiment.html", context)
 
 
 # Battery --------------------------------------------------------------
@@ -759,7 +759,7 @@ def battery_results_dashboard(request,bid):
     to view results for
     '''
     context = battery_results_context(request,bid)
-    return render(request, "results_dashboard_battery.html", context)
+    return render(request, "experiments/results_dashboard_battery.html", context)
 
 @login_required
 def battery_results_context(request,bid):
@@ -788,7 +788,7 @@ def experiment_results_dashboard(request,bid):
         if len(results) == 0:
             context = battery_results_context(request,bid)
             context["message"] = "%s does not have any completed results." %template.name
-            return render(request, "results_dashboard_battery.html", context)
+            return render(request, "experiments/results_dashboard_battery.html", context)
 
         # If we have results, save updated file for shiny server
         shiny_input = os.path.abspath("expfactory-explorer/data/%s_data.tsv" %template.exp_id)
@@ -797,4 +797,4 @@ def experiment_results_dashboard(request,bid):
         return HttpResponseRedirect('%s:3838' %settings.DOMAIN_NAME_HTTP)
     else:
         context = battery_results_context(request,bid)
-        return render(request, "results_dashboard_battery.html", context)
+        return render(request, "experiments/results_dashboard_battery.html", context)

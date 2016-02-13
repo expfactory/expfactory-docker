@@ -42,7 +42,7 @@ def serve_hit(request,hid):
 
     # No robots allowed!
     if request.user_agent.is_bot:
-        return render_to_response("robot_sorry.html")
+        return render_to_response("turk/robot_sorry.html")
 
     if request.user_agent.is_pc:
 
@@ -57,20 +57,20 @@ def serve_hit(request,hid):
 
         # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
-            template = "mturk_battery_preview.html"
+            template = "turk/mturk_battery_preview.html"
             task_list = [battery.experiments.all()[0]]
             context = dict()
             deployment = "docker-preview"
 
         # worker has accepted the task
         else:
-            template = "mturk_battery.html"
+            template = "turk/mturk_battery.html"
             worker_id = request.GET.get("workerId","")
             hit_id = request.GET.get("hitId","")
             turk_submit_to = request.GET.get("turkSubmitTo","")
 
             if "" in [worker_id,hit_id]:
-                return render_to_response("error_sorry.html")
+                return render_to_response("turk/error_sorry.html")
 
             # Get Experiment Factory objects for each
             worker = get_worker(worker_id)
@@ -92,7 +92,7 @@ def serve_hit(request,hid):
             uncompleted_experiments = get_worker_experiments(worker,hit.battery)
             if len(uncompleted_experiments) == 0:
                 # Thank you for your participation - no more experiments!
-                return render_to_response("worker_sorry.html")
+                return render_to_response("turk/worker_sorry.html")
 
             task_list = select_random_n(uncompleted_experiments,1)
             experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
@@ -128,12 +128,12 @@ def serve_hit(request,hid):
                               result=result)
 
     else:
-        return render_to_response("pc_sorry.html")
+        return render_to_response("turk/pc_sorry.html")
 
 def finished_view(request):
     '''finished_view thanks worker for participation, and gives submit button
     '''
-    return render_to_response("worker_sorry.html")
+    return render_to_response("turk/worker_sorry.html")
 
 
 def end_assignment(request,rid):
@@ -147,7 +147,7 @@ def end_assignment(request,rid):
         assignment.completed = True
         assignment.save()
         assign_experiment_credit(result.worker.id)
-    return render_to_response("worker_sorry.html")
+    return render_to_response("turk/worker_sorry.html")
 
 @login_required
 def multiple_new_hit(request, bid):
@@ -178,7 +178,7 @@ def multiple_new_hit(request, bid):
                       "battery":battery,
                       "mturk_permission":mturk_permission}
 
-        return render(request, "multiple_new_hit.html", context)
+        return render(request, "turk/multiple_new_hit.html", context)
     else:
         return HttpResponseForbidden()
 
@@ -218,7 +218,7 @@ def edit_hit(request, bid, hid=None):
                    "is_owner": is_owner,
                    "header_text":header_text}
 
-        return render(request, "new_hit.html", context)
+        return render(request, "turk/new_hit.html", context)
     else:
         return HttpResponseForbidden()
 
