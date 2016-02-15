@@ -107,7 +107,8 @@
           </tbody>
           </table>
           {% if edit_permission %}
-          <a style="padding-top:20px" class='button btn-primary' href='{% url 'add_experiment' battery.id %}'>Add or Edit Experiments</a>
+          <a style="position:absolute;left:20px;margin-top:50px" class='button btn-primary' href='{% url 'add_experiment' battery.id %}'>Add Experiments</a>
+          <a style="left:0px;;margin-top:50px" class='button btn-primary' href='{% url 'modify_experiment' battery.id %}'>Edit Experiments</a>
           {% endif %}
          {% else %}
              {% if edit_permission %}

@@ -4,7 +4,7 @@ view_experiment, export_experiment, preview_experiment, batteries_view, add_batt
 edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
 add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, serve_battery, generate_battery_user, localsync, \
-experiment_results_dashboard, battery_results_dashboard
+experiment_results_dashboard, battery_results_dashboard, modify_experiment
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -25,6 +25,7 @@ urlpatterns = patterns('',
 
     # Experiments in Batteries
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/add$',add_experiment,name='add_experiment'),
+    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/modify$',modify_experiment,name='modify_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/save$',save_experiment,name='save_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/customize$',edit_experiment,name='edit_experiment'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/results$',experiment_results_dashboard,name='experiment_results_dashboard'),

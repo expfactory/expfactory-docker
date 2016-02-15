@@ -12,7 +12,7 @@
         <!-- Content -->
         <article id="content">
             <header>
-                <h2>Add or Edit Experiment <i style="font-size:12" data-toggle="tooltip" title="Specifying an experiment already in the battery will remove current bonus and rejection criteria and replace with specifications here." class="fa fa-question-circle"></i></h2>
+                <h2>{{ change_type }} Experiment <i style="font-size:12" data-toggle="tooltip" title="Specifying an experiment already in the battery will remove current bonus and rejection criteria and replace with specifications here." class="fa fa-question-circle"></i></h2>
             </header>
 
             <form action="{% url 'save_experiment' bid %}" method="post">
@@ -22,8 +22,12 @@
                 <label for="experiment">Select Experiment:</label>
                 <select class="form-control" id="experiment" name="experiment">
                   <option>--</option>
-                  {% for experiment in newexperiments %}
-                  <option value="{{ experiment.exp_id }}">{{ experiment.name }}</option>
+                  {% for experiment in allexperiments %}
+                      {% if experiment in newexperiments %}
+                      <option value="{{ experiment.exp_id }}"><div class="new_experiment">{{ experiment.name }}</div></option>
+                      {% else %}
+                      <option value="{{ experiment.exp_id }}">{{ experiment.name }}</option>
+                      {% endif %}
                   {% endfor %}
                 </select>
               </div>
@@ -81,7 +85,7 @@ function delete_row(divid){
   $(divid).closest("tr").remove();
 }
 
-newexperimentsjson = {{ newexperimentsjson | safe }}
+allexperimentsjson = {{ allexperimentsjson | safe }}
 
 $(document).ready(function() {
 
@@ -89,7 +93,7 @@ $(document).ready(function() {
     $("#experiment").change(function(){
 
       var selected_experiment = $("#experiment").find(":selected").val();
-      var experiment = newexperimentsjson[selected_experiment]
+      var experiment = allexperimentsjson[selected_experiment]
       clear_table();
       i = 1
 
@@ -119,7 +123,7 @@ $(document).ready(function() {
     $("#add_row").click(function(){
 
         var selected_experiment = $("#experiment").find(":selected").val();
-        var experiment = newexperimentsjson[selected_experiment]
+        var experiment = allexperimentsjson[selected_experiment]
         var selected_variable = parseInt($("#variable_selection").find(":selected").val());
         if (selected_variable == experiment.performance_variable.id){
             var selection = experiment.performance_variable

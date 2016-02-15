@@ -556,35 +556,61 @@ def save_experiment(request,bid):
     return HttpResponseRedirect(battery.get_absolute_url())
 
 @login_required
-def add_experiment(request,bid,eid=None):
-    '''add_experiment
-    View for presenting available experiments to user to install to battery
+def prepare_change_experiment(request,battery,experiments,change_type="Edit"):
+    '''prepare_change_experiment returns view of either new experiments
+    (not in battery) or experiments in battery to edit (depending on calling
+    function)
+    :param battery: expdj.apps.experiments.models.Battery
+    :param experiments: expdj.apps.experiments.models.ExperimentTemplate
+    :param change_type: The string to display to the user to indicate how
+    changing experiment, eg, "Edit" or "Add New" [Experiment]
     '''
-    battery = get_battery(bid,request)
-    newexperiments = [x for x in ExperimentTemplate.objects.all() if x not in battery.experiments.all()]
 
     # Capture the performance and rejection variables appropriately
-    # We should be able to look up by exp_id
     experimentsbytag = dict()
-    for newexperiment in newexperiments:
-        newexperimentjson = model_to_dict(newexperiment)
-        if newexperiment.performance_variable:
-            newexperimentjson["performance_variable"] = model_to_dict(newexperiment.performance_variable)
-        if newexperiment.rejection_variable:
-            newexperimentjson["rejection_variable"] = model_to_dict(newexperiment.rejection_variable)
-        experimentsbytag[newexperimentjson["exp_id"]] = newexperimentjson
+    for exp in experiments:
+        experimentjson = model_to_dict(exp)
+        if exp.performance_variable:
+            experimentjson["performance_variable"] = model_to_dict(exp.performance_variable)
+        if exp.rejection_variable:
+            experimentjson["rejection_variable"] = model_to_dict(exp.rejection_variable)
+        experimentsbytag[experimentjson["exp_id"]] = experimentjson
 
-    # Present in abc order
-    experiment_tags = [x.exp_id for x in newexperiments]
+    # Present in abc order, color by new/old experiments
+    experiment_tags = [x.exp_id for x in experiments]
+
     experiment_tags.sort()
     experiments_sorted = []
     for experiment_tag in experiment_tags:
         experiments_sorted.append(experimentsbytag[experiment_tag])
 
-    context = {"newexperiments": experiments_sorted,
-               "newexperimentsjson":json.dumps(experimentsbytag),
-               "bid":battery.id}
+    context = {"allexperiments": experiments_sorted,
+               "allexperimentsjson":json.dumps(experimentsbytag),
+               "bid":battery.id,
+               "change_type":change_type}
+
     return render(request, "experiments/add_experiment.html", context)
+
+@login_required
+def modify_experiment(request,bid):
+    '''modify_experiment
+    View for presenting already installed experiments (to modify) in a battery
+    '''
+    battery = get_battery(bid,request)
+    current_experiments = [x.template.exp_id for x in battery.experiments.all()]
+    oldexperiments = [x for x in ExperimentTemplate.objects.all() if x.exp_id in current_experiments]
+    return prepare_change_experiment(request,battery,oldexperiments)
+
+
+@login_required
+def add_experiment(request,bid):
+    '''add_experiment
+    View for presenting available experiments to user to install to battery
+    '''
+    battery = get_battery(bid,request)
+    current_experiments = [x.template.exp_id for x in battery.experiments.all()]
+    newexperiments = [x for x in ExperimentTemplate.objects.all() if x.exp_id not in current_experiments]
+    return prepare_change_experiment(request,battery,newexperiments,"Add New")
 
 @login_required
 def remove_experiment(request,bid,eid):
