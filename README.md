@@ -1,6 +1,6 @@
 ### Docker and The Experiment Factory
 
-![home](scripts/img/expfactory.png)
+![home](http://expfactory.github.io/static/images/expfactoryticketgray.png)
 
    >> Don't forget what happened to the researcher who suddenly got everything he wanted.
 
