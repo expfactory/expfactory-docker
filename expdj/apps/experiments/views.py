@@ -749,7 +749,7 @@ def export_experiment(request,eid):
 def export_experiments(battery,output_name,experiment_tags=None):
 
     # Get all results associated with Battery
-    results = Result.objects.filter(assignment__hit__battery=battery)
+    results = Result.objects.filter(battery=battery)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="%s"' %(output_name)
     writer = csv.writer(response,delimiter='\t')
