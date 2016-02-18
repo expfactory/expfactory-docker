@@ -3,7 +3,8 @@ from rest_framework import routers, serializers, viewsets
 from django.conf.urls import include, url, patterns
 from django.http import Http404, HttpResponse
 from django.conf.urls.static import static
-from expdj.apps.turk.models import Result
+from expdj.apps.turk.models import Result, Worker
+from expdj.apps.experiments.models import Battery, ExperimentTemplate, CognitiveAtlasTask
 from expdj.apps.main import urls as main_urls
 from expdj.apps.turk import urls as turk_urls
 from expdj.apps.users import urls as users_urls
@@ -13,11 +14,36 @@ from django.conf.urls.static import static
 from django.conf import settings
 import os
 
-# Serializers define the API representation.
+# Seriailizers define the API representation
+class BatterySerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Battery
+        fields = ('name', 'description')
+
+class CognitiveAtlasTaskSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = CognitiveAtlasTask
+        fields = ('name','cog_atlas_id')
+
+class ExperimentTemplateSerializer(serializers.HyperlinkedModelSerializer):
+    cognitive_atlas_task = CognitiveAtlasTaskSerializer()
+    class Meta:
+        model = ExperimentTemplate
+        fields = ('exp_id', 'name', 'cognitive_atlas_task', 'reference')
+
+class WorkerSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Worker
+        fields = ["id"]   
+
 class ResultSerializer(serializers.HyperlinkedModelSerializer):
+    experiment = ExperimentTemplateSerializer()
+    battery = BatterySerializer()
+    worker = WorkerSerializer()
     class Meta:
         model = Result
         fields = ('taskdata', 'experiment', 'battery', 'worker','language','browser','platform','completed','datetime')
+
 
 # ViewSets define the view behavior.
 class ResultViewSet(viewsets.ModelViewSet):
