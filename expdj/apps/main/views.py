@@ -6,3 +6,9 @@ def index_view(request):
     context = {'appname': appname,
                'active':'home'}
     return render(request, 'main/index.html', context)
+
+def signup_view(request):
+    appname = "Cognitive Atlas Phenotype"
+    context = {'appname': appname,
+               'active':'home'}
+    return render(request, 'main/signup.html', context)

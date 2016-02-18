@@ -1,0 +1,56 @@
+{% extends "main/base.html" %}
+{% block head %}
+<style>
+#mc_embed_signup{background:#fff; clear:left; font:14px Helvetica,Arial,sans-serif; }
+</style>
+{% endblock %}
+{% block hero %}
+<section id="hero" class="container">
+    <header>
+        <h2>Sign <a href="http://expfactory.github.io">Up</a>
+        </h2>
+    </header>
+    <p>Sign up to express interest and be notified when we offer experiment deployment from expfactory.org to the research community.</p>
+    <ul class="actions">
+        {% if request.user.is_authenticated %}
+        <li><a href="{% url 'experiments' %}" class="button">View Experiments</a></li>
+        {% else %}
+
+        <!-- Begin MailChimp Signup Form -->
+        <link href="//cdn-images.mailchimp.com/embedcode/classic-10_7.css" rel="stylesheet" type="text/css">
+        <div id="mc_embed_signup">
+           <form action="//expfactory.us12.list-manage.com/subscribe/post?u=2e25528903dfc7346d1d11d37&amp;id=b18dbf9398" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+                <div id="mc_embed_signup_scroll">
+                    <div class="indicates-required"><span class="asterisk">*</span> indicates required</div>
+                        <div class="mc-field-group">
+	                    <label for="mce-EMAIL">Email Address  <span class="asterisk">*</span></label>
+	                    <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL">
+                        </div>
+                        <div class="mc-field-group">
+	                    <label for="mce-FNAME">First Name </label>
+	                    <input type="text" value="" name="FNAME" class="" id="mce-FNAME">
+                        </div>
+                        <div class="mc-field-group">
+	                    <label for="mce-LNAME">Last Name </label>
+	                    <input type="text" value="" name="LNAME" class="" id="mce-LNAME">
+                        </div>
+	                <div id="mce-responses" class="clear">
+		            <div class="response" id="mce-error-response" style="display:none"></div>
+		            <div class="response" id="mce-success-response" style="display:none"></div>
+	               </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+                       <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_2e25528903dfc7346d1d11d37_b18dbf9398" tabindex="-1" value=""></div>
+                       <div class="clear"><input type="submit" value="Sign up" name="subscribe" id="mc-embedded-subscribe" class="button"></div>
+                 </div>
+             </form>
+          </div>
+
+        {% endif %}
+    </ul>
+
+</section>
+</div>
+{% endblock %}
+{% block content %}
+
+
+{% endblock %}
