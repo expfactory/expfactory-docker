@@ -12,3 +12,9 @@ def signup_view(request):
     context = {'appname': appname,
                'active':'home'}
     return render(request, 'main/signup.html', context)
+
+def about_view(request):
+    appname = "Cognitive Atlas Phenotype"
+    context = {'appname': appname,
+               'active':'home'}
+    return render(request, 'main/about.html', context)

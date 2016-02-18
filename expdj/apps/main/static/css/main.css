@@ -2033,7 +2033,6 @@
 	#footer-wrapper {
 		-webkit-transform: translate3d(0, 0, 0);
 		position: relative;
-		border-top: solid 1px #c2c7cc;
 		padding: 6em 0 6em 0;
 		background-size: 128px 128px,				100% 100%;
 	}

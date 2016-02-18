@@ -1,0 +1,153 @@
+{% extends "main/base.html" %}
+{% load staticfiles %}
+{% block head %}
+<link href="{% static "css/animate.min.css"%}" rel="stylesheet">
+<link href="{% static "css/about.css"%}" rel="stylesheet">
+<link href="{% static "css/responsive.css"%}" rel="stylesheet">
+{% endblock %}
+{% block hero %}
+<section id="hero" class="container">
+   <header>
+      <h2>About the <span style="color:#1756E8;">Experiment Factory</span></h2>
+   </header>
+</section>
+</div>
+{% endblock %}
+{% block content %}
+
+<section id="services">
+<div class="container">
+<div class="row">
+    <div class="col-sm-4 text-center padding wow fadeIn" data-wow-duration="1000ms" data-wow-delay="300ms">
+        <div class="single-service">
+            <div class="wow scaleIn" data-wow-duration="500ms" data-wow-delay="300ms">
+                <img src="http://placehold.it/600x600/1756E8/ffffff?text=E" alt="">
+            </div>
+            <h2>Experiments</h2>
+            <p>We offer a collection of open source, web-based experiments.</p>
+        </div>
+    </div>
+    <div class="col-sm-4 text-center padding wow fadeIn" data-wow-duration="1000ms" data-wow-delay="600ms">
+        <div class="single-service">
+            <div class="wow scaleIn" data-wow-duration="500ms" data-wow-delay="600ms">
+                <img src="http://placehold.it/600x600/A52A2A/ffffff?text=D" alt="">
+            </div>
+            <h2>Deployments</h2>
+            <p>Experiments can be deployed locally, either individually or via a psiturk battery to Amazon Mechanical Turk</p>
+        </div>
+    </div>
+    <div class="col-sm-4 text-center padding wow fadeIn" data-wow-duration="1000ms" data-wow-delay="900ms">
+        <div class="single-service">
+            <div class="wow scaleIn" data-wow-duration="500ms" data-wow-delay="900ms">
+                <img src="http://placehold.it/600x600/E9AB17/ffffff?text=O" alt="">
+            </div>
+            <h2>Open Source</h2>
+            <p>All of our experiments, deployments, and controllers for the two are publicly available, and we welcome contributions.</p>
+        </div>
+    </div>
+</div>
+</div>
+</section>
+<!--/#services-->
+
+
+<section id="hero" class="container">
+  <header>
+      <h2>FAQ</h2>
+  </header>
+</section>
+<div class="row">
+    <div class="col-sm-12 overflow">
+        <div class="social-icons pull-right">
+            <ul class="nav nav-pills">
+                <li><a href="http://www.twitter.com/expfactoryorg" target="_blank"><i class="fa fa-twitter"></i></a></li>
+                <li><a href="mailto:expfactoryorg@gmail.com" target="_blank"><i class="fa fa-envelope"></i></a></li>
+            </ul>
+        </div>
+    </div>
+ </div>
+<section id="page-breadcrumb">
+<div class="vertical-center sun">
+ <div class="container">
+    <div class="row">
+        <div class="action">
+            <div class="col-sm-12">
+                <h1 style="color:#999">What is the experiment factory?</h1>
+                <p>We provide open source behavioral experiments for reproducible science. We are currently in beta, and you can <a href="{% url 'signup' %}">sign up</a> to be notified when we offer deployment of experiments from expfactory.org, or <a href="http://expfactory.readthedocs.org/en/latest/getting-started.html" target="_blank">use our experiments</a> for your research.</p>
+            </div>
+         </div>
+    </div>
+</div>
+</div>
+</section>
+<!--/#page-breadcrumb-->
+
+<section id="page-breadcrumb">
+<div class="vertical-center sun">
+ <div class="container">
+    <div class="row">
+        <div class="action">
+            <div class="col-sm-12">
+                <h1 style="color:#999">What deployments do you provide?</h1>
+                <p>Our experiments can be deployed locally, or to psiturk as a collection "battery" of experiments either from a local server or via a virtual machine. We recommend you read our <a href="http://expfactory.readthedocs.org/en/latest/getting-started.html#getting-started" target="_blank"> getting started </a> guide to determine the best option for you.</p>
+            </div>
+         </div>
+    </div>
+</div>
+</div>
+</section>
+<!--/#page-breadcrumb-->
+
+<section id="page-breadcrumb">
+<div class="vertical-center sun">
+ <div class="container">
+    <div class="row">
+        <div class="action">
+            <div class="col-sm-12">
+                <h1 style="color:#999">Where can I preview the experiments?</h1>
+                <p>You can preview current experiments at <a href="http://expfactory.github.io/" target="_blank">http://expfactory.github.io/</a></p>
+            </div>
+         </div>
+    </div>
+</div>
+</div>
+</section>
+<!--/#page-breadcrumb-->
+
+<section id="page-breadcrumb">
+<div class="vertical-center sun">
+ <div class="container">
+    <div class="row">
+        <div class="action">
+            <div class="col-sm-12">
+                <h1 style="color:#999">How can I contribute?</h1>
+                <p>The Experiment Factory is entirely open source, and you can <a href="http://www.github.com/expfactory" target="_blank">contribute to any component of the infrastructure on Github</a> with pull requests. You can <a href="http://expfactory.readthedocs.org/en/latest/development.html" target="_blank">read more</a> about different ways to contribute, including to code, experiments, and our documentation.</p>
+            </div>
+         </div>
+    </div>
+</div>
+</div>
+</section>
+<!--/#page-breadcrumb-->
+
+<section id="company-information" class="padding wow fadeIn" data-wow-duration="1000ms" data-wow-delay="300ms">
+<div class="container">
+<div class="row">
+    <div class="col-sm-5">
+        <img width="400px" src="http://placehold.it/600x600/1756E8/ffffff?text=ABOUT+US" class="img-responsive" alt="">
+    </div>
+    <div class="col-sm-6 padding-top">
+        <p>We are a team of researchers in the <a href="http://poldracklab.stanford.edu" target="_blank">Poldrack Lab</a> at Stanford University. We like to build tools, and have a vision for reproducible science.</p>
+    </div>
+</div>
+</div>
+</section>
+<section id="hero" class="container" style="padding-top:10px;margin-top:0px">
+  <a href="http://expfactory.readthedocs.org/en/latest/getting-started.html#getting-started" class="button">Getting Started</a>
+</section>
+
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript" src="{% static "js/wow.min.js"%}"></script>
+<script type="text/javascript" src="{% static "js/about.js"%}"></script>
+{% endblock %}
