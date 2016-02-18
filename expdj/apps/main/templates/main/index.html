@@ -13,7 +13,7 @@
         {% if request.user.is_authenticated %}
         <li><a href="{% url 'experiments' %}" class="button">View Experiments</a></li>
         {% else %}
-        <li><a href="#" class="button">Learn More</a></li>
+        <li><a href="{% url 'about' %}" class="button">Learn More</a></li>
         <li><a href="{% url 'signup' %}" class="button">Sign up</a></li>
         {% endif %}
     </ul>

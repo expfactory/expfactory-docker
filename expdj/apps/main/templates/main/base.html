@@ -30,9 +30,17 @@
                         <!-- Nav -->
                         <nav id="nav">
                             <ul>
+                                {% if request.user.is_authenticated %}
                                 <li><a href="{% url 'experiments' %}">Experiments</a>
+                                {% else %}
+                                <li><a href="http://expfactory.github.io/table.html">Experiments</li>
+                                {% endif %}
                                 <ul>
+                                    {% if request.user.is_authenticated %}
                                     <li><a href="{% url 'experiments' %}">Available Experiments</a></li>
+                                    {% else %}
+                                    <li><a href="http://expfactory.github.io/table.html">Available Experiments</a></li>
+                                    {% endif %}
                                     {% if request.user.is_superuser %}
                                         <li><a href="{% url 'add_experiment_template' %}">Add Experiment Templates</a></li>
                                     {% endif %}
@@ -44,10 +52,13 @@
                                         <b class="caret"></b>
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="https://expfactory.github.io" target="_blank">Documentation</a></li>
+                                        <li><a href="{% url 'about' %}">About</a></li>
+                                        <li><a href="http://expfactory.readthedocs.org/en/latest/getting-started.html" target="_blank">Getting Started</a></li>
+                                        <li><a href="https://expfactory.github.io" target="_blank">Experiment Portal</a></li>
                                         <li><a href="http://poldracklab.stanford.edu" target="_blank">Contact Us</a></li>
                                     </ul>
                                 </li>
+                                {% if request.user.is_authenticated %}
                                 <li class="break"><a href="{% url 'batteries' %}">Batteries</a>
                                     <ul>
                                         <li><a href="{% url 'batteries' %}">View Batteries</a></li>
@@ -57,6 +68,9 @@
                                         {% endif %}
                                     </ul>
                                 </li>
+                                {% else %}
+                                <li class="break"><a href="{% url 'about' %}">About</a>
+                                {% endif %}
                                 {% if request.user.is_authenticated %}
      	                        <li class="dropdown">
 	                            <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
