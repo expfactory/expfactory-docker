@@ -52,9 +52,9 @@ worker:
     - redis
     - db
 
-explorer:
-  image: vanessa/shiny
-  volumes:
-    - ./expfactory-explorer/:/srv/shiny-server/
-  ports:
-    - "3838:3838"
+#explorer:
+#  image: vanessa/shiny
+#  volumes:
+#    - ./expfactory-explorer/:/srv/shiny-server/
+#  ports:
+#    - "3838:3838"
