@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from rest_framework import routers, serializers, viewsets
 from django.conf.urls import include, url, patterns
