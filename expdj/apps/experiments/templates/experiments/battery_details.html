@@ -6,15 +6,14 @@
 
 <div class="row" style="margin-top:0px">
     <div class="col-lg-12">
-        <div>
             {% if edit_permission %}
-                <a class='button' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
+                <a class='btn-default btn-lg' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
                 {% if has_results %}
-                <a class='button' href='{% url 'export_battery' battery.id %}'>Export Results</a>
+                <a class='btn-default btn-lg' href='{% url 'export_battery' battery.id %}'>Export Results</a>
                 {% endif %}
                 {% if mturk_permission %}
                     {% if hits %}
-                        <a class='button' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                        <a class='btn-default btn-lg' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
                     {% endif %}
                 {% endif %}
             {% else %}
@@ -32,16 +31,15 @@
             <div class="float_right">
                 {% if edit_permission %}
                     {% if battery.experiments.all and mturk_permission %}
-                        <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
-                        <a class='button' href='{% url 'new_hit' battery.id %}'> New HIT</a>
+                        <a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
+                        <a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                     {% endif %}
-                    <a class='button' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a>
+                    <a class='btn-default btn-lg' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a>
                 {% endif %}
                 {% if delete_permission %}
-                <a class='button' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
+                <a class='btn-danger btn-lg' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
                 {% endif %}
             </div>
-      </div>
 </div>
 
 
