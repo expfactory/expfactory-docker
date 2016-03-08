@@ -1,12 +1,13 @@
 {% extends "main/base.html" %}
 {% block head %}
+
 {% endblock %}
 {% block content %}
-<div class="row 150%">
+<div class="row">
 
     {% include "experiments/sidebar.html" %}
 
-    <div class="8u 12u(narrower) important(narrower)">
+    <div class="col-md-8">
 
         <!-- Content -->
         <article id="content">
@@ -20,14 +21,12 @@
                 {% endif %}
             </header>
             {% if experiments %}
-            <table class="hover" cellspacing="0" width="100%" id="experiments_table">
+            <table id="experiments_table" class="display compact" cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Cognitive Atlas Task</th>
-                    {% if delete_permission %}
                     <th></th>
-                    {% endif %}
                </tr>
            </thead>
            <tbody>
@@ -62,6 +61,14 @@ $(document).ready(function() {
 
   $('#update_experiment').click(function(e) {
     return confirm("Are you sure you want to update this experiment? This will override all old settings in the config.json, and all experiment static files.");
+  });
+
+  $('#experiments_table').dataTable({
+    "columns": [
+      { "width": "40%" },
+      { "width": "40%" },
+      { "width": "20%" },
+     ]
   });
 
 });
