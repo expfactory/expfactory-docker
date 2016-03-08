@@ -723,6 +723,8 @@ def delete_battery(request, bid):
     if delete_permission==True:
         hits = HIT.objects.filter(battery=battery)
         [h.delete() for h in hits]
+        results = Result.objects.filter(battery=battery)
+        [r.delete() for r in results]
         battery.delete()
     return redirect('batteries')
 
