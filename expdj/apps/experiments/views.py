@@ -463,7 +463,11 @@ def delete_experiment_template(request, eid, do_redirect=True):
         # Static Files
         [e.delete() for e in experiment_instances]
         static_files_dir = os.path.join(media_dir,"experiments",experiment.exp_id)
-        shutil.rmtree(static_files_dir)
+        if os.path.exists(static_files_dir):
+            shutil.rmtree(static_files_dir)
+        # delete associated results
+        results = Result.objects.filter(experiment=experiment)
+        [r.delete() for r in results]
         # Cognitive Atlas Task
         task = experiment.cognitive_atlas_task
         try:
