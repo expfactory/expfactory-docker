@@ -6,6 +6,9 @@
 
 <div class="row" style="margin-top:0px">
     <div class="col-md-12">
+    {% if message %}
+        <div class="alert alert-info" role="alert">{{ message }}</div>
+    {% endif %}
             {% if edit_permission %}
                 <a class='btn-default btn-lg' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
                 {% if has_results %}

@@ -230,9 +230,14 @@ def expire_hit(request, hid):
     if mturk_permission == True:
 
         hit = get_hit(hid,request)
+        battery = hit.battery
         if check_battery_edit_permission(request,hit.battery):
-            hit.expire()
-        return redirect(hit.battery.get_absolute_url())
+            # Remove expired/deleted hits from interface
+            try:
+                hit.expire()
+            except:
+                hit.delete()
+        return redirect(battery.get_absolute_url())
     else:
         return HttpResponseForbidden()
 
@@ -243,7 +248,11 @@ def delete_hit(request, hid):
     if mturk_permission == True:
         hit = get_hit(hid,request)
         if check_battery_edit_permission(request,hit.battery):
-            hit.expire()
+            # A hit deleted in Amazon cannot be expired
+            try:
+                hit.expire()
+            except:
+                pass
             hit.delete()
         return redirect(hit.battery.get_absolute_url())
     else:

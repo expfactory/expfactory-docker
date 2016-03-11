@@ -130,29 +130,6 @@ class HIT(models.Model):
 
     def disable(self):
         """Disable/Destroy HIT that is no longer needed
-
-        Remove a HIT from the Mechanical Turk marketplace, approves all
-        submitted assignments that have not already been approved or
-        rejected, and disposes of the HIT and all assignment data.
-
-        Assignments for the HIT that have already been submitted, but
-        not yet approved or rejected, will be automatically approved.
-        Assignments in progress at the time of this method call  will be
-        approved once the assignments are submitted. You will be charged
-        for approval of these assignments. This method completely
-        disposes of the HIT and all submitted assignment data.
-
-        Assignment results data available at the time of this method
-        call are saved in the Django models. However, additional
-        Assignment results data cannot be retrieved for a HIT that has
-        been disposed.
-
-        It is not possible to re-enable a HIT once it has been disabled.
-        To make the work from a disabled HIT available again, create a
-        new HIT.
-
-        This is a wrapper around the Boto API. Also see:
-        http://boto.cloudhackers.com/en/latest/ref/mturk.html
         """
         # Check for new results and cache a copy in Django model
         self.update(do_update_assignments=True)
