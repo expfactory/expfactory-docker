@@ -13,8 +13,8 @@
 </head>
 <body>
 
-<div id="mturk_preview_message" class="hidden">
- <div class="alert alert-info">You must participate in the experiment to view the content.</div>
+<div id="mturk_preview_message">
+ <div class="alert alert-info" style="font-size:26px; height:200px; padding-top:75px; padding-left:300px">You must participate in the experiment to view the content.</div>
 </div>
 
 
@@ -27,8 +27,7 @@
       {% include "experiments/preview_battery_runjs.html" %}
 
       $("#start_experiment_button").click(function(){
-         $("#instructions_modal").hide()
-         $("#mturk_preview_message").show();
+         $("#instructions_modal").hide();
       });
 
    });
