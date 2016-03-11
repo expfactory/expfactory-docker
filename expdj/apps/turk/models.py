@@ -264,7 +264,6 @@ class HIT(models.Model):
         # Get the aws access id from the credentials file
         AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery=self.battery)
         self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
-        self.save()
 
     def has_connection(self):
         if "turk.HIT.connection" in [x.__str__() for x in self._meta.fields]:
