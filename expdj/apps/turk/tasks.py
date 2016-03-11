@@ -87,10 +87,7 @@ def get_unique_experiments(results):
     experiments = []
     for result in results:
         if result.completed == True:
-            for trial in result.taskdata:
-                if "exp_id" in trial["trialdata"]:
-                    if trial["trialdata"]["exp_id"] not in experiments:
-                        experiments.append(trial["trialdata"]["exp_id"])
+           experiments.append(result.experiment.exp_id) 
     return numpy.unique(experiments).tolist()
 
 

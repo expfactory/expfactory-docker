@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from expdj.settings import DOMAIN_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID
-from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection
+from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection, \
+get_credentials
 from django.contrib.contenttypes.models import ContentType
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.question import ExternalQuestion
+from expdj.settings import DOMAIN_NAME, BASE_DIR
 from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
@@ -23,6 +24,7 @@ def init_connection_callback(sender, **signal_args):
     """
     sender.args = sender
     object_args = signal_args['kwargs']
+    AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery=sender.battery)
     sender.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
 
 
@@ -259,6 +261,8 @@ class HIT(models.Model):
         self.update()
 
     def generate_connection(self):
+        # Get the aws access id from the credentials file
+        AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery=self.battery)
         self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
         self.save()
 

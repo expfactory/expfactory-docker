@@ -34,8 +34,14 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    $('#assessments-table').dataTable({
-      responsive: true
+
+    // Limit user to installing 5 experiments at once
+    var max = 5;
+    var checkboxes = $('input[type="checkbox"]');
+
+    checkboxes.change(function(){
+        var current = checkboxes.filter(':checked').length;
+        checkboxes.filter(':not(:checked)').prop('disabled', current >= max);
     });
 } );
 </script>

@@ -1,6 +1,7 @@
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.price import Price
+from expdj.settings import BASE_DIR
 from numpy.random import choice
 import ConfigParser
 import datetime
@@ -94,6 +95,15 @@ def get_worker_url():
     else:
         return PRODUCTION_WORKER_URL
 
+
+def get_credentials(battery):
+    """Load credentials from a credentials file"""
+    credentials = "%s/auth/%s" %(BASE_DIR,battery.credentials)
+    credentials = open(credentials,"rb").readlines()
+    credentials = pandas.read_csv(credentials,sep="=",index_col=0,header=None)
+    AWS_ACCESS_KEY_ID=credentials.loc["AWS_ACCESS_KEY_ID"][1]
+    AWS_SECRET_ACCESS_KEY_ID=credentials.loc["AWS_SECRET_ACCESS_KEY_ID"][1]
+    return AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID
 
 def get_connection(aws_access_key_id,aws_secret_access_key):
     """Create connection based upon settings/configuration parameters

@@ -177,7 +177,7 @@ def make_results_df(battery,results):
               'battery_name',
               'battery_owner',
               'battery_owner_email',
-              'battery_completed',
+              'experiment_completed',
               'experiment_include_bonus',
               'experiment_include_catch',
               'experiment_exp_id',
@@ -191,17 +191,22 @@ def make_results_df(battery,results):
             if result.completed == True:
                 worker_id = result.worker_id
                 for t in range(len(result.taskdata)):
-                    row_id = "%s_%s" %(worker_id,t)
+                    row_id = "%s_%s_%s" %(result.experiment.exp_id,worker_id,t)
                     trial = result.taskdata[t]
-                    df.loc[row_id,["worker_id","worker_platform","worker_browser","battery_name","battery_owner","battery_owner_email","battery_completed"]] = [worker_id,result.platform,result.browser,battery.name,battery.owner.username,battery.owner.email,result.completed]
+
+                    # Add worker and battery information
+                    df.loc[row_id,["worker_id","worker_platform","worker_browser","battery_name","battery_owner","battery_owner_email"]] = [worker_id,result.platform,result.browser,battery.name,battery.owner.username,battery.owner.email]
+
+                    # Look up the experiment
+                    exp=lookup[result.experiment.exp_id]
+                    df.loc[row_id,["experiment_completed","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [result.completed,exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
+                    
+                    # Parse data
                     for key in trial.keys():
                         if key != "trialdata":
                             df.loc[row_id,key] = trial[key]
                     for key in trial["trialdata"].keys():
                         df.loc[row_id,key] = trial["trialdata"][key]
-                        if key == "exp_id":
-                            exp=lookup[trial["trialdata"][key].lower()]
-                            df.loc[row_id,["exp_id","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [trial["trialdata"][key],exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
         except:
             pass
 

@@ -6,7 +6,8 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.helper import FormHelper
 from django.forms import ModelForm
 from django import forms
-
+from glob import glob
+from expdj.settings import BASE_DIR
 
 class ExperimentTemplateForm(ModelForm):
 
@@ -65,6 +66,11 @@ class BatteryForm(ModelForm):
     def __init__(self, *args, **kwargs):
 
         super(BatteryForm, self).__init__(*args, **kwargs)
+
+        # Dynamically add available credential files
+        credential_files = glob("%s/auth/*.cred" %BASE_DIR)
+        self.fields['credentials'] = forms.ChoiceField(choices=credential_files)
+
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-lg-2'
@@ -72,6 +78,7 @@ class BatteryForm(ModelForm):
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         self.helper.add_input(Submit("submit", "Save"))
+
 
 class CreditConditionForm(ModelForm):
 
