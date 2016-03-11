@@ -98,7 +98,7 @@ def get_worker_url():
 
 def get_credentials(battery):
     """Load credentials from a credentials file"""
-    credentials = "%s/auth/%s" %(BASE_DIR,battery.credentials)
+    credentials = "%s/expdj/auth/%s" %(BASE_DIR,battery.credentials)
     credentials = open(credentials,"rb").readlines()
     credentials = pandas.read_csv(credentials,sep="=",index_col=0,header=None)
     AWS_ACCESS_KEY_ID=credentials.loc["AWS_ACCESS_KEY_ID"][1]

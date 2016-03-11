@@ -1953,6 +1953,7 @@
                 .sidebar_button {
                     width:325px;
                     text-align:center;
+                    overflow:hidden;
                 }
 
 /* Icons */
