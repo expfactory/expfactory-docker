@@ -70,7 +70,7 @@ class BatteryForm(ModelForm):
 
         # Dynamically add available credential files
         credential_files = [(os.path.basename(x),os.path.basename(x)) for x in glob("%s/expdj/auth/*.cred" %BASE_DIR)]
-        self.fields['credentials'].choices = credential_files
+        self.fields['credentials'] = forms.ChoiceField(choices=credential_files)
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'

@@ -5,6 +5,7 @@ from expdj.settings import BASE_DIR
 from numpy.random import choice
 import ConfigParser
 import datetime
+import pandas
 import os
 
 from django.conf import settings
@@ -99,7 +100,6 @@ def get_worker_url():
 def get_credentials(battery):
     """Load credentials from a credentials file"""
     credentials = "%s/expdj/auth/%s" %(BASE_DIR,battery.credentials)
-    credentials = open(credentials,"rb").readlines()
     credentials = pandas.read_csv(credentials,sep="=",index_col=0,header=None)
     AWS_ACCESS_KEY_ID=credentials.loc["AWS_ACCESS_KEY_ID"][1]
     AWS_SECRET_ACCESS_KEY_ID=credentials.loc["AWS_SECRET_ACCESS_KEY_ID"][1]

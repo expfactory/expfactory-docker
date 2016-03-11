@@ -131,7 +131,7 @@ class Battery(models.Model):
     '''A battery is a collection of experiment templates'''
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
     description = models.TextField(blank=True, null=True)
-    credentials = models.CharField(max_length=200, unique = False, null=False, verbose_name="AWS MTurk credentials specification",choices=(("None","None"),))
+    credentials = models.CharField(max_length=200, unique = False, null=False, verbose_name="mturk credentials")
     consent = models.TextField(blank=True, null=True,help_text="Use HTML syntax to give your consent formatting.")
     advertisement = models.TextField(blank=True, null=True,help_text="Use HTML syntax to give your mturk advertisement formatting.")
     instructions = models.TextField(blank=True, null=True,help_text="Use HTML syntax to give your instructions formatting.")
