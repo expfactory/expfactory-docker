@@ -41,12 +41,14 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/user$',generate_battery_user,name='generate_battery_user'),
     #url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/results$',battery_results_dashboard,name='battery_results_dashboard'),
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'), # preview
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',serve_battery,name='serve_battery'),
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/delete$',delete_battery,name='delete_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'),
+
+    # Deployment
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve$',serve_battery,name='serve_battery'), # preview
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',serve_battery,name='serve_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',localsync,name='local'),
     url(r'^local/$',localsync,name='local')) # local sync of data
 

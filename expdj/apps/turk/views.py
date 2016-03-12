@@ -33,12 +33,94 @@ def get_hit(hid,request,mode=None):
 
 #### VIEWS ############################################################
 
+def get_battery_intro(battery,show_advertisement=True):
 
-def serve_hit(request,hid):
+    instruction_forms = []
+
+    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
+    if show_advertisement == True:
+        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
+    if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
+    if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
+    return instruction_forms
+
+
+def run_hit(request,hit_id,worker_id,aid):
+    '''run_hit runs the experiment for a hit
+    :param hid: the hit id
+    :param wid: the worker id
+    :param aid: the assignment id
+    '''
 
     next_page=None
     uncompleted_experiments = None
     result = None
+
+    if "" in [worker_id,hit_id]:
+        return render_to_response("turk/error_sorry.html")
+
+    if request.user_agent.is_bot:
+        return render_to_response("turk/robot_sorry.html")
+    
+    if request.user_agent.is_pc:
+ 
+        # Get Experiment Factory objects for each
+        worker = get_worker(worker_id)
+
+        # Try to get some info about browser, language, etc.
+        browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
+        platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
+        deployment = "docker"
+
+        # Initialize Assignment object, obtained from Amazon, and Result
+        assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
+
+        # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
+        if already_created == False:
+            assign_experiment_credit.apply_async(countdown=hit.assignment_duration_in_seconds)
+        assignment.save()
+
+        # Does the worker have experiments remaining for the hit?
+        uncompleted_experiments = get_worker_experiments(worker,hit.battery)
+        if len(uncompleted_experiments) == 0:
+            # Thank you for your participation - no more experiments!
+            return render_to_response("turk/worker_sorry.html")
+
+        task_list = select_random_n(uncompleted_experiments,1)
+        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+        task_list = battery.experiments.filter(template=experimentTemplate)
+
+        # Generate a new results object for the worker, assignment, experiment
+        result,_ = Result.objects.update_or_create(worker=worker,
+                                                   experiment=experimentTemplate,
+                                                   assignment=assignment, # assignment has record of HIT
+                                                   battery=hit.battery,
+                                                   defaults={"browser":browser,"platform":platform})
+        result.save()
+
+        context = {"worker_id": worker_id,
+                   "assignment_id": assignment_id,
+                   "amazon_host": host,
+                   "hit_id": hit_id,
+                   "uniqueId":result.id}
+
+        # If this is the last experiment, the finish button will link to a thank you page.
+        if len(uncompleted_experiments) == 1:
+            next_page = "/finished"
+
+        return deploy_battery(deployment=deployment,
+                              battery=battery,
+                              context=context,
+                              task_list=task_list,
+                              template=template,
+                              uncompleted_experiments=uncompleted_experiments,
+                              next_page=next_page,
+                              result=result)
+
+    else:
+        return render_to_response("turk/robot_sorry.html")
+
+def serve_hit(request,hid):
 
     # No robots allowed!
     if request.user_agent.is_bot:
@@ -54,87 +136,39 @@ def serve_hit(request,hid):
 
         # An assignmentID means that the worker has accepted the task
         assignment_id = request.GET.get("assignmentId","")
+        worker_id = request.GET.get("workerId","")
+        hit_id = request.GET.get("hitId","")
+        turk_submit_to = request.GET.get("turkSubmitTo","")
 
         # worker has not accepted the task
         if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
-            template = "turk/mturk_battery_preview.html"
-            task_list = [battery.experiments.all()[0]]
-            context = dict()
-            deployment = "docker-preview"
+            assignment_id = None
 
-        # worker has accepted the task
-        else:
-            template = "turk/mturk_battery.html"
-            worker_id = request.GET.get("workerId","")
-            hit_id = request.GET.get("hitId","")
-            turk_submit_to = request.GET.get("turkSubmitTo","")
+        instruction_forms = get_battery_intro(battery)
 
-            if "" in [worker_id,hit_id]:
-                return render_to_response("turk/error_sorry.html")
+        context = {"worker_id": worker_id,
+                   "assignment_id": assignment_id,
+                   "amazon_host": host,
+                   "hit_id": hit_id,
+                   "turk_submit_to":turk_submit_to,
+                   "instruction_forms":instruction_forms}
 
-            # Get Experiment Factory objects for each
-            worker = get_worker(worker_id)
+        response = render_to_response("turk/serve_battery_intro.html", context)
 
-            # Try to get some info about browser, language, etc.
-            browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
-            platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
-            deployment = "docker"
+        # without this header, the iFrame will not render in Amazon
+        response['x-frame-options'] = 'nobody_ever_goes_in_nobody_ever_goes_out'
+        return response
 
-            # Initialize Assignment object, obtained from Amazon, and Result
-            assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
-
-            # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
-            if already_created == False:
-                assign_experiment_credit.apply_async(countdown=hit.assignment_duration_in_seconds)
-            assignment.save()
-
-            # Does the worker have experiments remaining for the hit?
-            uncompleted_experiments = get_worker_experiments(worker,hit.battery)
-            if len(uncompleted_experiments) == 0:
-                # Thank you for your participation - no more experiments!
-                return render_to_response("turk/worker_sorry.html")
-
-            task_list = select_random_n(uncompleted_experiments,1)
-            experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
-            task_list = battery.experiments.filter(template=experimentTemplate)
-
-            # Generate a new results object for the worker, assignment, experiment
-            result,_ = Result.objects.update_or_create(worker=worker,
-                                                       experiment=experimentTemplate,
-                                                       assignment=assignment, # assignment has record of HIT
-                                                       battery=hit.battery,
-                                                       defaults={"browser":browser,"platform":platform})
-            result.save()
-
-            context = {
-                "worker_id": worker_id,
-                "assignment_id": assignment_id,
-                "amazon_host": host,
-                "hit_id": hit_id,
-                "uniqueId":result.id
-            }
-
-            # If this is the last experiment, the finish button will link to a thank you page.
-            if len(uncompleted_experiments) == 1:
-                next_page = "/finished"
-
-        return deploy_battery(deployment=deployment,
-                              battery=battery,
-                              context=context,
-                              task_list=task_list,
-                              template=template,
-                              uncompleted_experiments=uncompleted_experiments,
-                              next_page=next_page,
-                              result=result)
-
-    else:
-        return render_to_response("turk/pc_sorry.html")
 
 def finished_view(request):
     '''finished_view thanks worker for participation, and gives submit button
     '''
     return render_to_response("turk/worker_sorry.html")
 
+
+def not_consent_view(request):
+    '''The worker has previewed the experiment, clicked Start Experiment, but not consented'''
+    return render_to_response("turk/mturk_battery_preview.html")
 
 def end_assignment(request,rid):
     '''end_assignment will change completed variable to True, preventing

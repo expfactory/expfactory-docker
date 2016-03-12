@@ -245,6 +245,7 @@ def generate_battery_user(request,bid):
     else:
             return HttpResponseRedirect(battery.get_absolute_url())
 
+
 def serve_battery_anon(request,bid,keyid):
     '''serve an anonymous local battery, userid is generated upon going to link'''
     # Check if the keyid is correct
@@ -257,7 +258,9 @@ def serve_battery_anon(request,bid,keyid):
     else:
         return render_to_response("turk/robot_sorry.html")
 
+
 def serve_battery(request,bid,userid=None):
+    '''prepare for local serve of battery'''
 
     battery = get_battery(bid,request)
     next_page = None
