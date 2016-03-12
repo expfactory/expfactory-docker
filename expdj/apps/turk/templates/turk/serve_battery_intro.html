@@ -1,0 +1,37 @@
+<html>
+{% load static from staticfiles %}
+  <head>
+    <title>The Experiment Factory</title>
+    <meta charset="utf-8" />
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
+</head>
+<body>
+
+{% include "experiments/instructions_modal.html" %}
+
+<button id="start_experiment" hidden></button>
+
+<script>
+$(document).ready(function(){
+
+    var complete = "1";
+    $("#next_button").click(function() {
+
+        console.log(complete)
+        if (complete == "complete"){
+
+            {% if assignment_id %}
+                window.open("/turk/{{ hit_uid }}?assignmentId={{ assignment_id }}&workerId={{ worker_id }}&turkSubmitTo={{ turk_submit_to }}&hitId={{ hit_id }}")
+            {% else %}
+                window.open("{% url 'not_consent_view' %}",fullscreen=1)
+            {% endif %}
+        }
+        complete = $("#next_button").attr("data-step")
+    });
+
+});
+</script>
+
+</body>
+</html>

@@ -46,7 +46,7 @@ def get_battery_intro(battery,show_advertisement=True):
 
 
 def run_hit(request,hit_id,worker_id,aid):
-    '''run_hit runs the experiment for a hit
+    '''run_hit runs the experiment for a hit, after the instructions, consent, and ad
     :param hid: the hit id
     :param wid: the worker id
     :param aid: the assignment id
@@ -61,9 +61,9 @@ def run_hit(request,hit_id,worker_id,aid):
 
     if request.user_agent.is_bot:
         return render_to_response("turk/robot_sorry.html")
-    
+
     if request.user_agent.is_pc:
- 
+
         # Get Experiment Factory objects for each
         worker = get_worker(worker_id)
 
@@ -150,6 +150,7 @@ def serve_hit(request,hid):
                    "assignment_id": assignment_id,
                    "amazon_host": host,
                    "hit_id": hit_id,
+                   "hit_uid":hid,
                    "turk_submit_to":turk_submit_to,
                    "instruction_forms":instruction_forms}
 
