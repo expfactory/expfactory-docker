@@ -1,4 +1,5 @@
-from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, deploy_battery
+from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
+get_battery_intro, deploy_battery
 from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
 select_random_n
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
@@ -32,17 +33,6 @@ def get_hit(hid,request,mode=None):
         return hit
 
 #### VIEWS ############################################################
-
-def get_battery_intro(battery,show_advertisement=True):
-
-    instruction_forms = []
-
-    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
-    if show_advertisement == True:
-        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
-    if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
-    if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
-    return instruction_forms
 
 def get_amazon_variables(request):
     '''get_amazon_variables gets the "GET" variables from the URL,
@@ -159,6 +149,11 @@ def preview_hit(request,hid):
         context = get_amazon_variables(request)
         context["instruction_forms"] = get_battery_intro(battery)
         context["hit_uid"] = hid
+        context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" %(hid,
+                                                                                                    context["assignment_id"],
+                                                                                                    context["worker_id"],
+                                                                                                    context["turk_submit_to"],
+                                                                                                    context["hit_id"])
 
         response = render_to_response("turk/serve_battery_intro.html", context)
 
@@ -352,3 +347,4 @@ def sync(request,rid=None):
     else:
         data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')
+

@@ -21,7 +21,7 @@ $(document).ready(function(){
         if (complete == "complete"){
 
             {% if assignment_id %}
-                window.open("/accept/{{ hit_uid }}/accept?assignmentId={{ assignment_id }}&workerId={{ worker_id }}&turkSubmitTo={{ turk_submit_to }}&hitId={{ hit_id }}")
+                window.open("{{ start_url }}")
             {% else %}
                 window.open("{% url 'not_consent_view' %}",fullscreen=1)
             {% endif %}

@@ -14,14 +14,11 @@
 
 {% include "experiments/serve_battery_runjs.html" %}
 
-{% if instruction_forms %}
-    {% include "experiments/instructions_modal.html" %}
-{% else %}
 <script>
-$(function() {
-    $("#start_experiment_button").click();
+$(document).ready(function(){
+   $("#start_experiment_button").click();
 });
 </script>
-{% endif %}
-  </body>
+
+</body>
 </html>

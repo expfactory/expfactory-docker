@@ -101,7 +101,7 @@ def get_experiment(eid,request,mode=None):
         return experiment
 
 # get battery with experiments
-def get_battery(bid,request,mode=None):
+def get_battery(bid,request):
     keyargs = {'pk':bid}
     try:
         battery = Battery.objects.get(**keyargs)
@@ -245,6 +245,17 @@ def generate_battery_user(request,bid):
     else:
             return HttpResponseRedirect(battery.get_absolute_url())
 
+def get_battery_intro(battery,show_advertisement=True):
+
+    instruction_forms = []
+
+    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
+    if show_advertisement == True:
+        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
+    if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
+    if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
+    return instruction_forms
+
 
 def serve_battery_anon(request,bid,keyid):
     '''serve an anonymous local battery, userid is generated upon going to link'''
@@ -254,73 +265,81 @@ def serve_battery_anon(request,bid,keyid):
     if uid==keyid:
         userid = uuid.uuid4()
         worker = get_worker(userid,create=True)
-        return redirect("serve_battery",bid=bid,userid=userid)
+        return redirect("preview_battery",bid=bid,userid=userid)
     else:
         return render_to_response("turk/robot_sorry.html")
 
 
-def serve_battery(request,bid,userid=None):
-    '''prepare for local serve of battery'''
-
-    battery = get_battery(bid,request)
-    next_page = None
-    uncompleted_experiments=None
-    result=None
+def preview_battery(request,bid,userid=None):
 
     # No robots allowed!
     if request.user_agent.is_bot:
         return render_to_response("turk/robot_sorry.html")
 
-    # Is userid not defined, this is a preview
+    if request.user_agent.is_pc:
+
+        battery = get_battery(bid,request)
+        context = {"instruction_forms":get_battery_intro(battery),
+                   "start_url":"/batteries/%s/%s/accept" %(bid,userid),
+                   "assignment_id":"assenav tahcos"}
+
+        return render(request, "turk/serve_battery_intro.html", context)
+
+
+def serve_battery(request,bid,userid=None):
+    '''prepare for local serve of battery'''
+
+    next_page = None
+    battery = get_battery(bid,request)
+
+    # No robots allowed!
+    if request.user_agent.is_bot:
+        return render_to_response("turk/robot_sorry.html")
+
+    # Is userid not defined, redirect them to preview
     if userid == None:
-        template = "experiments/serve_battery_preview.html"
-        task_list = [battery.experiments.all()[0]]
-        context = dict()
-        deployment = "docker-preview"
+        return preview_battery(request,bid)
 
-    # admin a battery for a new user
+    worker = get_worker(userid,create=False)
+    if len(worker) == 0:
+        return render_to_response("turk/invalid_id_sorry.html")
     else:
-        template = "experiments/serve_battery.html"
-        worker = get_worker(userid,create=False)
-        if len(worker) == 0:
-            return render_to_response("turk/invalid_id_sorry.html")
-        else:
-            worker = worker[0]
+        worker = worker[0]
 
-        # Try to get some info about browser, language, etc.
-        browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
-        platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
-        deployment = "docker-local"
+    # Try to get some info about browser, language, etc.
+    browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
+    platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
+    deployment = "docker-local"
 
-        # Does the worker have experiments remaining for the hit?
-        uncompleted_experiments = get_worker_experiments(worker,battery)
-        if len(uncompleted_experiments) == 0:
-            # Thank you for your participation - no more experiments!
-            return render_to_response("turk/worker_sorry.html")
+    # Does the worker have experiments remaining?
+    uncompleted_experiments = get_worker_experiments(worker,battery)
+    if len(uncompleted_experiments) == 0:
+        # Thank you for your participation - no more experiments!
+        return render_to_response("turk/worker_sorry.html")
 
-        task_list = select_random_n(uncompleted_experiments,1)
-        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
-        task_list = battery.experiments.filter(template=experimentTemplate)
+    task_list = select_random_n(uncompleted_experiments,1)
+    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    task_list = battery.experiments.filter(template=experimentTemplate)
 
-        # Generate a new results object for the worker, assignment, experiment
-        result,_ = Result.objects.update_or_create(worker=worker,
-                                                   experiment=experimentTemplate,
-                                                   battery=battery,
-                                                   defaults={"browser":browser,"platform":platform})
-        result.save()
+    # Generate a new results object for the worker, assignment, experiment
+    result,_ = Result.objects.update_or_create(worker=worker,
+                                               experiment=experimentTemplate,
+                                               battery=battery,
+                                               defaults={"browser":browser,"platform":platform})
+    result.save()
 
-        context = {"worker_id": worker.id,
-                   "uniqueId":result.id}
+    context = {"worker_id": worker.id,
+               "uniqueId":result.id}
 
-        # If this is the last experiment, the finish button will link to a thank you page.
-        if len(uncompleted_experiments) == 1:
-            next_page = "/finished"
+    # If this is the last experiment, the finish button will link to a thank you page.
+    if len(uncompleted_experiments) == 1:
+        next_page = "/finished"
 
-    return deploy_battery(deployment=deployment,
+    return deploy_battery(deployment="docker-local",
                           battery=battery,
                           context=context,
                           task_list=task_list,
-                          template=template,
+                          template="experiments/serve_battery.html",
                           uncompleted_experiments=uncompleted_experiments,
                           next_page=next_page,
                           result=result)
@@ -826,3 +845,4 @@ def experiment_results_dashboard(request,bid):
     else:
         context = battery_results_context(request,bid)
         return render(request, "experiments/results_dashboard_battery.html", context)
+
