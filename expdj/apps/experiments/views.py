@@ -5,7 +5,7 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
 from expfactory.battery import get_load_static, get_experiment_run
@@ -20,6 +20,7 @@ from django.shortcuts import render
 import expdj.settings as settings
 import uuid
 import shutil
+import hashlib
 import numpy
 import pandas
 import uuid
@@ -167,6 +168,9 @@ def view_battery(request, bid):
     # Get associated HITS
     hits = HIT.objects.filter(battery=battery)
 
+    # Generate anonymous link
+    anon_link = "%s/batteries/%s/%s/anon" %(DOMAIN_NAME,bid,hashlib.md5(battery.name).hexdigest())
+
     # Determine permissions for edit and deletion
     edit_permission = check_battery_edit_permission(request,battery)
     delete_permission = check_battery_edit_permission(request,battery)
@@ -182,7 +186,8 @@ def view_battery(request, bid):
                'delete_permission':delete_permission,
                'mturk_permission':mturk_permission,
                'hits':hits,
-               'has_results':has_results}
+               'has_results':has_results,
+               'anon_link':anon_link}
 
     return render(request,'experiments/battery_details.html', context)
 
@@ -239,6 +244,18 @@ def generate_battery_user(request,bid):
 
     else:
             return HttpResponseRedirect(battery.get_absolute_url())
+
+def serve_battery_anon(request,bid,keyid):
+    '''serve an anonymous local battery, userid is generated upon going to link'''
+    # Check if the keyid is correct
+    battery = get_battery(bid,request)
+    uid=hashlib.md5(battery.name).hexdigest()
+    if uid==keyid:
+        userid = uuid.uuid4()
+        worker = get_worker(userid,create=True)
+        return redirect("serve_battery",bid=bid,userid=userid)
+    else:
+        return render_to_response("turk/robot_sorry.html")
 
 def serve_battery(request,bid,userid=None):
 

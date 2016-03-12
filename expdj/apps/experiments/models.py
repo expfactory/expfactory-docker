@@ -129,6 +129,7 @@ class Experiment(models.Model):
 
 class Battery(models.Model):
     '''A battery is a collection of experiment templates'''
+    # Name must be unique because anonymous link is generated from hash
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
     description = models.TextField(blank=True, null=True)
     credentials = models.CharField(max_length=200, unique = False, null=False, verbose_name="mturk credentials")

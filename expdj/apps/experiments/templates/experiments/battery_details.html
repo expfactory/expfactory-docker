@@ -38,6 +38,7 @@
                         <a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                     {% endif %}
                     {% if battery.experiments.all %}
+                    <a href="#" id="anon_link" class='btn-default btn-lg'>Get Anonymous Link</button>
                     <a class='btn-default btn-lg' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a>
                     {% endif %}
                 {% endif %}
@@ -178,6 +179,26 @@
         </div>
         {% endif %}
    </div>
+
+<!-- Modal to show anon link-->
+<div id="anon_modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Anonymous Battery Link</h4>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+            <a href='{{ anon_link }}' target="_blank">{{ anon_link }}</a></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 </div>
 {% endblock %}
 {% block scripts %}
@@ -194,6 +215,9 @@ $(document).ready(function() {
     });
     $('#delete_experiment').click(function(e) {
       return confirm("This will remove the experiment from the battery, and not delete it from the application. Are you sure you want to do this?");
+    });
+    $("#anon_link").click(function(e){
+      $("#anon_modal").modal("show");
     });
     $('#delete_battery').click(function(e) {
       return confirm("Are you sure you want to delete the battery? This will remove all associated results!");
