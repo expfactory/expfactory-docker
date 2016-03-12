@@ -14,27 +14,16 @@
 
 {% include "experiments/serve_battery_runjs.html" %}
 
-<!-- This should have an if..-->
-<div id="mturk_preview_message">
- <div class="alert alert-info" style="font-size:26px; height:200px; padding-top:75px; padding-left:300px">You must participate in the experiment to view the content.</div>
-</div>
-
-
 <form action="{{ amazon_host }}" method="POST" id="turkey_form">
         <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
         <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
         <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
 </form>
 
-{% if instruction_forms %}
-    {% include "experiments/instructions_modal.html" %}
-{% else %}
 <script>
-$(function() {
-    $("#start_experiment_button").click();
+$(document).ready(function(){
+   $("#start_experiment_button").click();
 });
 </script>
-{% endif %}
-
   </body>
 </html>

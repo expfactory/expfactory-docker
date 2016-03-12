@@ -1,5 +1,5 @@
-from expdj.apps.turk.views import edit_hit, delete_hit, expire_hit, serve_hit, \
- multiple_new_hit, sync, end_assignment, finished_view, not_consent_view
+from expdj.apps.turk.views import edit_hit, delete_hit, expire_hit, preview_hit, \
+serve_hit, multiple_new_hit, sync, end_assignment, finished_view, not_consent_view
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
 
@@ -12,7 +12,8 @@ urlpatterns = patterns('',
     url(r'^hits/(?P<hid>\d+|[A-Z]{8})/expire$',expire_hit,name='expire_hit'),
 
     # Turk Deployments
-    url(r'^turk/(?P<hid>\d+|[A-Z]{8})',serve_hit,name='serve_hit'),
+    url(r'^accept/(?P<hid>\d+|[A-Z]{8})',serve_hit,name='serve_hit'),
+    url(r'^turk/(?P<hid>\d+|[A-Z]{8})',preview_hit,name='preview_hit'),
     url(r'^turk/preview',not_consent_view,name='not_consent_view'),
     url(r'^turk/end/(?P<rid>\d+|[A-Z]{8})',end_assignment,name='end_assignment'),
     url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),

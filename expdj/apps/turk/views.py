@@ -44,36 +44,63 @@ def get_battery_intro(battery,show_advertisement=True):
     if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
     return instruction_forms
 
+def get_amazon_variables(request):
+    '''get_amazon_variables gets the "GET" variables from the URL,
+       returned in a context that can be used across different experiment
+       serving functions (local or mturk)
+    '''
 
-def run_hit(request,hit_id,worker_id,aid):
-    '''run_hit runs the experiment for a hit, after the instructions, consent, and ad
+    # An assignmentID means that the worker has accepted the task
+    assignment_id = request.GET.get("assignmentId","")
+    worker_id = request.GET.get("workerId","")
+    hit_id = request.GET.get("hitId","")
+    turk_submit_to = request.GET.get("turkSubmitTo","")
+
+    # worker has not accepted the task
+    if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
+        assignment_id = None
+
+    return {"worker_id": worker_id,
+            "assignment_id": assignment_id,
+            "hit_id": hit_id,
+            "turk_submit_to":turk_submit_to}
+
+
+def serve_hit(request,hid):
+    '''serve_hit runs the experiment after accepting a hit
     :param hid: the hit id
     :param wid: the worker id
     :param aid: the assignment id
     '''
 
-    next_page=None
-    uncompleted_experiments = None
-    result = None
-
-    if "" in [worker_id,hit_id]:
-        return render_to_response("turk/error_sorry.html")
-
+    # No robots allowed!
     if request.user_agent.is_bot:
         return render_to_response("turk/robot_sorry.html")
 
+    # Not allowed on tablet or phone
     if request.user_agent.is_pc:
 
+        hit =  get_hit(hid,request)
+        battery = hit.battery
+        aws = get_amazon_variables(request)
+
+        if "" in [aws["worker_id"],aws["hit_id"]]:
+            return render_to_response("turk/error_sorry.html")
+
         # Get Experiment Factory objects for each
-        worker = get_worker(worker_id)
+        worker = get_worker(aws["worker_id"])
+
+        # This is the submit URL, either external or sandbox
+        host = get_host()
 
         # Try to get some info about browser, language, etc.
         browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
         platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
-        deployment = "docker"
 
         # Initialize Assignment object, obtained from Amazon, and Result
-        assignment,already_created = Assignment.objects.get_or_create(mturk_id=assignment_id,hit=hit,worker=worker)
+        assignment,already_created = Assignment.objects.get_or_create(mturk_id=aws["assignment_id"],
+                                                                      worker=worker,
+                                                                      hit=hit)
 
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
         if already_created == False:
@@ -98,29 +125,28 @@ def run_hit(request,hit_id,worker_id,aid):
                                                    defaults={"browser":browser,"platform":platform})
         result.save()
 
-        context = {"worker_id": worker_id,
-                   "assignment_id": assignment_id,
-                   "amazon_host": host,
-                   "hit_id": hit_id,
-                   "uniqueId":result.id}
+        # Add variables to the context
+        aws["amazon_host"] = host
+        aws["uniqueId"] = result.id
 
         # If this is the last experiment, the finish button will link to a thank you page.
         if len(uncompleted_experiments) == 1:
             next_page = "/finished"
 
-        return deploy_battery(deployment=deployment,
+        return deploy_battery(deployment="docker-mturk",
                               battery=battery,
-                              context=context,
+                              context=aws,
                               task_list=task_list,
-                              template=template,
+                              template="turk/mturk_battery.html",
                               uncompleted_experiments=uncompleted_experiments,
-                              next_page=next_page,
+                              next_page=None,
                               result=result)
 
     else:
         return render_to_response("turk/robot_sorry.html")
 
-def serve_hit(request,hid):
+def preview_hit(request,hid):
+    '''preview_hit is the view for when a worker has not accepted the task'''
 
     # No robots allowed!
     if request.user_agent.is_bot:
@@ -130,29 +156,9 @@ def serve_hit(request,hid):
 
         hit =  get_hit(hid,request)
         battery = hit.battery
-
-        # This is the submit URL, either external or sandbox
-        host = get_host()
-
-        # An assignmentID means that the worker has accepted the task
-        assignment_id = request.GET.get("assignmentId","")
-        worker_id = request.GET.get("workerId","")
-        hit_id = request.GET.get("hitId","")
-        turk_submit_to = request.GET.get("turkSubmitTo","")
-
-        # worker has not accepted the task
-        if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
-            assignment_id = None
-
-        instruction_forms = get_battery_intro(battery)
-
-        context = {"worker_id": worker_id,
-                   "assignment_id": assignment_id,
-                   "amazon_host": host,
-                   "hit_id": hit_id,
-                   "hit_uid":hid,
-                   "turk_submit_to":turk_submit_to,
-                   "instruction_forms":instruction_forms}
+        context = get_amazon_variables(request)
+        context["instruction_forms"] = get_battery_intro(battery)
+        context["hit_uid"] = hid
 
         response = render_to_response("turk/serve_battery_intro.html", context)
 

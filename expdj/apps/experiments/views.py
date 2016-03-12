@@ -327,7 +327,7 @@ def serve_battery(request,bid,userid=None):
 
 def deploy_battery(deployment,battery,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
-    :param deployment: the kind of deployment, either "docker-local","docker",or "docker-preview"
+    :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
     :param context: context, which should already include next_page,
     :param next_page: the next page to navigate to [optional] default is to reload the page to go to the next experiment
@@ -339,39 +339,15 @@ def deploy_battery(deployment,battery,context,task_list,template,result,uncomple
     if next_page == None:
         next_page = "javascript:window.location.reload();"
 
-    instruction_forms = []
-
-    # !Important: title for consent instructions must be "Consent" - see instructions_modal.html if you change
-    if deployment == "docker-preview":
-        if battery.advertisement != None: instruction_forms.append({"title":"Advertisement","html":battery.advertisement})
-        if battery.consent != None: instruction_forms.append({"title":"Consent","html":battery.consent})
-
-    # if the consent has been defined, add it to the context
-    elif deployment in ["docker","docker-local"]:
-        if battery.consent != None and len(uncompleted_experiments) == len(battery.experiments.all()):
-            instruction_forms.append({"title":"Consent","html":battery.consent})
-
-    # The instructions block is shown for both
-    if battery.instructions != None: instruction_forms.append({"title":"Instructions","html":battery.instructions})
-
-    if deployment == "docker-preview":
-        context["instruction_forms"] = instruction_forms
-    elif deployment in ["docker-local","docker"]:
-        # Only add the instructions forms when no experiments are completed
-        if len(uncompleted_experiments) == len(battery.experiments.all()):
-            context["instruction_forms"] = instruction_forms
-
     # Get experiment folders
     experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
     context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
 
     # Get code to run the experiment (not in external file)
     runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
-    if deployment in ["docker","docker-local"]:
-        runcode = runcode.replace("{{result.id}}",str(result.id))
-        runcode = runcode.replace("{{next_page}}",next_page)
+    runcode = runcode.replace("{{result.id}}",str(result.id))
+    runcode = runcode.replace("{{next_page}}",next_page)
     context["run"] = runcode
-
     response = render_to_response(template, context)
 
     # without this header, the iFrame will not render in Amazon

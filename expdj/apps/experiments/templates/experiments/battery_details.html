@@ -34,7 +34,7 @@
             <div class="float_right">
                 {% if edit_permission %}
                     {% if battery.experiments.all and mturk_permission %}
-                        <a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
+                        <!--<a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>-->
                         <a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                     {% endif %}
                     {% if battery.experiments.all %}
