@@ -265,12 +265,28 @@ def serve_battery_anon(request,bid,keyid):
     if uid==keyid:
         userid = uuid.uuid4()
         worker = get_worker(userid,create=True)
-        return redirect("preview_battery",bid=bid,userid=userid)
+        return redirect("intro_battery",bid=bid,userid=userid)
     else:
         return render_to_response("turk/robot_sorry.html")
 
 
-def preview_battery(request,bid,userid=None):
+def preview_battery(request,bid):
+
+    # No robots allowed!
+    if request.user_agent.is_bot:
+        return render_to_response("turk/robot_sorry.html")
+
+    if request.user_agent.is_pc:
+
+        battery = get_battery(bid,request)
+        context = {"instruction_forms":get_battery_intro(battery),
+                   "start_url":"/batteries/%s/dummy" %(bid),
+                   "assignment_id":"assenav tahcos"}
+
+        return render(request, "turk/serve_battery_intro.html", context)
+
+
+def intro_battery(request,bid,userid=None):
 
     # No robots allowed!
     if request.user_agent.is_bot:
@@ -284,6 +300,30 @@ def preview_battery(request,bid,userid=None):
                    "assignment_id":"assenav tahcos"}
 
         return render(request, "turk/serve_battery_intro.html", context)
+
+@login_required
+def dummy_battery(request,bid):
+    '''dummy_battery lets the user run a faux battery (preview)'''
+    
+    battery = get_battery(bid,request)
+    deployment = "docker-local"
+
+    # Does the worker have experiments remaining?
+    uncompleted_experiments = [e.template.exp_id for e in battery.experiments.all()] # must be exp_id
+    task_list = select_random_n(uncompleted_experiments,1)
+    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    task_list = battery.experiments.filter(template=experimentTemplate)
+    result = None
+    context = {"worker_id": "Dummy Worker"}
+
+    return deploy_battery(deployment="docker-preview",
+                          battery=battery,
+                          context=context,
+                          task_list=task_list,
+                          template="experiments/serve_battery.html",
+                          uncompleted_experiments=uncompleted_experiments,
+                          result=result)
+
 
 
 def serve_battery(request,bid,userid=None):
@@ -364,7 +404,8 @@ def deploy_battery(deployment,battery,context,task_list,template,result,uncomple
 
     # Get code to run the experiment (not in external file)
     runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
-    runcode = runcode.replace("{{result.id}}",str(result.id))
+    if result != None:
+        runcode = runcode.replace("{{result.id}}",str(result.id))
     runcode = runcode.replace("{{next_page}}",next_page)
     context["run"] = runcode
     response = render_to_response(template, context)

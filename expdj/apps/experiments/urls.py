@@ -5,7 +5,7 @@ edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
 add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, preview_battery, serve_battery, serve_battery_anon, \
 generate_battery_user, localsync, experiment_results_dashboard, \
-battery_results_dashboard, modify_experiment
+battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -47,8 +47,9 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/export$',export_battery,name='export_battery'),
 
     # Deployment
-    #url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve$',preview_battery,name='preview_battery'), # preview without subid
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',preview_battery,name='preview_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/preview$',preview_battery,name='preview_battery'), # intro preview without subid
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/dummy$',dummy_battery,name='dummy_battery'),       # running without subid
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',intro_battery,name='intro_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/accept$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',localsync,name='local'),
