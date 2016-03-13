@@ -20,15 +20,10 @@
         <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>
 </form>
 
-{% if instruction_forms %}
-    {% include "experiments/instructions_modal.html" %}
-{% else %}
 <script>
-$(function() {
-    $("#start_experiment_button").click();
+$(document).ready(function(){
+   $("#start_experiment_button").click();
 });
 </script>
-{% endif %}
-
   </body>
 </html>

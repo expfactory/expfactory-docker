@@ -16,25 +16,25 @@
                 {% endif %}
                 {% if mturk_permission %}
                     {% if hits %}
-                        <a class='btn-default btn-lg' target="_blank" href='{% url 'serve_hit' hits.0.id %}'>Preview</a>
+                        <a class='btn-default btn-lg' target="_blank" href='{% url 'preview_battery' battery.id %}'>Preview</a>
                     {% endif %}
                 {% endif %}
             {% else %}
                 {% if mturk_permission %}
                 {% if hits %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
-                <a href='{% url 'serve_hit' hits.0.id %}' target="_blank">preview</a> it.</div>
+                <a href='{% url 'preview_battery' battery.id %}' target="_blank">preview</a> it.</div>
                 {% endif %}
                 {% else %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
-                <a href='{% url 'serve_battery' battery.id %}' target="_blank">preview</a> it.</div>
+                <a href='{% url 'preview_battery' battery.id %}' target="_blank">preview</a> it.</div>
                 {% endif %}
             {% endif %}
 
             <div class="float_right">
                 {% if edit_permission %}
                     {% if battery.experiments.all and mturk_permission %}
-                        <a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>
+                        <!--<a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>-->
                         <a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a>
                     {% endif %}
                     {% if battery.experiments.all %}

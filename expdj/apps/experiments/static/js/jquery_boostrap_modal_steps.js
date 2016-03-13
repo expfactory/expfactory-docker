@@ -13,7 +13,9 @@
             completeCallback: function(){
               $("#start_experiment_button").click();
             },
-            callbacks: {}
+            callbacks: function(){
+              $("#start_experiment").click();
+            }
         }, options);
 
 
