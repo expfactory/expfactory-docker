@@ -35,7 +35,7 @@ def assign_experiment_credit(worker_id):
             # Get all experiments
             battery_experiments = result.assignment.hit.battery.experiments.all()
             experiment_ids = get_unique_experiments([result])
-            experiments = ExperimentTemplate.objects.filter(tag__in=experiment_ids)
+            experiments = ExperimentTemplate.objects.filter(exp_id__in=experiment_ids)
 
             for template in experiments:
                 experiment = [b for b in battery_experiments if b.template == template]
@@ -46,7 +46,7 @@ def assign_experiment_credit(worker_id):
                     do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
                     for credit_condition in experiment.credit_conditions.all():
                         variable_name = credit_condition.variable.name
-                        variables = get_variables(result.taskdata,template.tag,variable_name)
+                        variables = get_variables(result.taskdata,template.exp_id,variable_name)
                         func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
                         # Needs to be tested for non numeric types
                         for variable in variables:
