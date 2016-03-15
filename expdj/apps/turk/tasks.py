@@ -25,12 +25,30 @@ def assign_experiment_credit(worker_id):
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
 
+    assignments_seen = []
+    for result in results:
+        if result.completed == True and result.assignment.id not in assignments_seen:
+            # Update HIT assignments - all results point to the same hit, so use the last one
+            assignments_seen.append(result.assignment.id)
+            result.assignment.update()
+            if result.assignment.status == "S":
+                result.assignment.approve()
+            result.assignment.update()
+            result.save()
+
+
+def assign_reward(worker_id):
+
+    # Look up all result objects for worker
+    worker = get_worker(worker_id)
+    results = Result.objects.filter(worker=worker)
+
     # rejection criteria
     additional_dollars = 0.0
     rejection = False
 
     for result in results:
-        if result.completed == True and result.credit_granted == False:
+        if result.completed == True:
             # Get all experiments
             battery_experiments = result.assignment.hit.battery.experiments.all()
             experiment_ids = get_unique_experiments([result])
@@ -67,17 +85,6 @@ def assign_experiment_credit(worker_id):
         result.assignment.hit.update_assignments()
         assignment = Assignment.objects.filter(id=result.assignment.id)[0]
 
-        # Allocate bonus, if any
-        if rejection == False:
-            if additional_dollars != 0:
-                assignment.bonus(value=additional_dollars)
-            if assignment.status == "S":
-                assignment.approve()
-        # We currently don't reject off the bat - we show user in pending tab.
-        #else:
-            #assignment.reject()
-        assignment.save()
-        assignment.update() # We may only want to call one of these
 
 # EXPERIMENT RESULT PARSING helper functions
 def get_unique_experiments(results):
