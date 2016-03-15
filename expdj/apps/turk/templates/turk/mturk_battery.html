@@ -14,7 +14,12 @@
 
 {% include "experiments/serve_battery_runjs.html" %}
 
-<form action="{{ turk_submit_to }}" method="POST" id="turkey_form">
+<!--<form action="{{ turk_submit_to }}" method="POST" id="turkey_form">-->
+{% if amazon_host == "mechanicalturk.amazonaws.com" %}
+<form action="https://mturk.com/mturk/externalSubmit" method="POST" id="turkey_form">
+{% else %}
+<form action="https://workersandbox.mturk.com/mturk/externalSubmit" method="POST" id="turkey_form">
+{% endif %}
         <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
         <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
         <input type="hidden" id="hitId" value="{{ hit_id }}" name="hitId"/>

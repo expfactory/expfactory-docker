@@ -340,11 +340,10 @@ def sync(request,rid=None):
                 if len(completed_experiments) == battery.experiments.count():
                     assignment = Assignment.objects.filter(id=result.assignment_id)[0]
                     assignment.update()
-                    assign_experiment_credit.apply_async(args=[result.worker.id])
+                    assign_experiment_credit(result.worker.id)
 
             data = json.dumps(data)
 
     else:
         data = json.dumps({"message":"received!"})
     return HttpResponse(data, content_type='application/json')
-

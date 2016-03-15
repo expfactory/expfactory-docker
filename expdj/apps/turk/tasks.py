@@ -30,13 +30,11 @@ def assign_experiment_credit(worker_id):
     rejection = False
 
     for result in results:
-
         if result.completed == True and result.credit_granted == False:
             # Get all experiments
             battery_experiments = result.assignment.hit.battery.experiments.all()
             experiment_ids = get_unique_experiments([result])
             experiments = ExperimentTemplate.objects.filter(exp_id__in=experiment_ids)
-
             for template in experiments:
                 experiment = [b for b in battery_experiments if b.template == template]
                 # If an experiment is deleted from battery, we have no way to know to reject/bonus
@@ -60,7 +58,6 @@ def assign_experiment_credit(worker_id):
                                     additional_dollars = additional_dollars + credit_condition.amount
                                 if credit_condition.variable == template.rejection_variable and do_catch:
                                     rejection = True
-
             # We remember granting credit on the level of results
             result.credit_granted = True
             result.save()
@@ -71,10 +68,10 @@ def assign_experiment_credit(worker_id):
         assignment = Assignment.objects.filter(id=result.assignment.id)[0]
 
         # Allocate bonus, if any
-        if not rejection:
+        if rejection == False:
             if additional_dollars != 0:
                 assignment.bonus(value=additional_dollars)
-            if assignment.status == "SUBMITTED" and TURK["debug"] != 1:
+            if assignment.status == "S":
                 assignment.approve()
         # We currently don't reject off the bat - we show user in pending tab.
         #else:
@@ -87,7 +84,7 @@ def get_unique_experiments(results):
     experiments = []
     for result in results:
         if result.completed == True:
-           experiments.append(result.experiment.exp_id) 
+           experiments.append(result.experiment.exp_id)
     return numpy.unique(experiments).tolist()
 
 
