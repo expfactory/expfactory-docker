@@ -13,7 +13,8 @@ class HITForm(ModelForm):
         model = HIT
         fields = ("title","description","keywords","reward","lifetime_in_seconds",
                   "assignment_duration_in_seconds","max_assignments",
-                  "auto_approval_delay_in_seconds")
+                  "auto_approval_delay_in_seconds","qualification_number_hits_approved",
+                  "qualification_percent_assignments_approved","qualification_adult")
 
     def clean(self):
         cleaned_data = super(HITForm, self).clean()

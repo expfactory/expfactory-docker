@@ -14,6 +14,7 @@ from django.core.management.base import BaseCommand
 from expdj.apps.turk.forms import HITForm
 from optparse import make_option
 from numpy.random import choice
+import requests
 import json
 import os
 
@@ -336,11 +337,11 @@ def sync(request,rid=None):
                 result.save()
 
                 # if the worker has completed all tasks, give final credit
+                data["finished_battery"] = "NOTFINISHED"
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
                 if len(completed_experiments) == battery.experiments.count():
-                    assignment = Assignment.objects.filter(id=result.assignment_id)[0]
-                    assignment.update()
-                    assign_experiment_credit(result.worker.id)
+                    assign_experiment_credit.apply_async([result.worker.id],countdown=60)
+                    data["finished_battery"] = "FINISHED"
 
             data = json.dumps(data)
 

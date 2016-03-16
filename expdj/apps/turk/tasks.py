@@ -24,17 +24,8 @@ def assign_experiment_credit(worker_id):
     # Look up all result objects for worker
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
-
-    assignments_seen = []
-    for result in results:
-        if result.completed == True and result.assignment.id not in assignments_seen:
-            # Update HIT assignments - all results point to the same hit, so use the last one
-            assignments_seen.append(result.assignment.id)
-            result.assignment.update()
-            if result.assignment.status == "S":
-                result.assignment.approve()
-            result.assignment.update()
-            result.save()
+    if len(results)>0:
+        results[0].assignment.approve()
 
 
 def assign_reward(worker_id):

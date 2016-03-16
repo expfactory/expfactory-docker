@@ -14,7 +14,6 @@
 
 {% include "experiments/serve_battery_runjs.html" %}
 
-<!--<form action="{{ turk_submit_to }}" method="POST" id="turkey_form">-->
 {% if amazon_host == "mechanicalturk.amazonaws.com" %}
 <form action="https://www.mturk.com/mturk/externalSubmit" method="POST" id="turkey_form">
 {% else %}

@@ -3,6 +3,11 @@ var uniqueId = "{{ uniqueId }}";
 /*Just to store task data as we go*/
 var expfactory = new ExpFactory(uniqueId);
 
+/* These variables will be filled in given it's an mturk expermient */
+expfactory.amazon_url="{{ amazon_host }}"
+expfactory.assignmentId="{{ assignment_id }}"
+expfactory.hitId="{{ hit_id }}"
+
 // Start experiment when participant pushes button
 $("#start_experiment_button").click(function(){
    $("#instructions_modal").hide();
