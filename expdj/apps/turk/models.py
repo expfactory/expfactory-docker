@@ -5,7 +5,7 @@ get_credentials
 from django.core.validators import MaxValueValidator, MinValueValidator
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.qualification import AdultRequirement, NumberHitsApprovedRequirement, \
- PercentAssignmentsApprovedRequirement, Qualifications
+ LocaleRequirement, PercentAssignmentsApprovedRequirement, Qualifications
 from boto.mturk.question import ExternalQuestion
 from expdj.settings import DOMAIN_NAME, BASE_DIR
 from django.db.models.signals import pre_init
@@ -104,6 +104,11 @@ class HIT(models.Model):
             (REVIEWED_INAPPROPRIATE, _REVIEWED_INAPPROPRIATE)
     )
 
+    LOCALE_CHOICES = (('US', 'USA'),
+                     ('None', 'No Restriction'),
+                     ('CA', 'Canada'),
+                     ('IN', 'India'))
+
     # Convenience lookup dictionaries for the above lists
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
     reverse_review_lookup = dict((v, k) for k, v in REVIEW_CHOICES)
@@ -129,11 +134,16 @@ class HIT(models.Model):
     number_of_assignments_pending = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that have been accepted by Workers, but have not yet been submitted, returned, abandoned."))
     number_of_assignments_available = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that are available for Workers to accept"))
     number_of_assignments_completed = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of assignments for this HIT that have been approved or rejected."))
+
+    # Worker Qualification Variables
     qualification_number_hits_approved = models.PositiveIntegerField(null=True,blank=True,help_text=("Worker Qualification: number of hits approved."),verbose_name="worker hits approved")
     qualification_percent_assignments_approved = models.PositiveIntegerField(null=True,blank=True,help_text=("Worker Qualification: percent assignments approved."),verbose_name="worker percent assignments approved",validators=[MinValueValidator(0),MaxValueValidator(100)])
     qualification_adult = models.BooleanField(choices=((False, 'Not Adult'),
                                                        (True, 'Adult')),
-                                                        default=True,verbose_name="Worker Qualification: Adult or Under 18")
+                                                        default=True,help_text="Worker Qualification: Adult or Under 18",verbose_name="worker qualification adult")
+    qualification_locale = models.CharField(max_length=255,choices=LOCALE_CHOICES,default='None',help_text="Worker Qualification: location requirement",verbose_name="worker qualification locale")
+
+
 
     def disable(self):
         """Disable/Destroy HIT that is no longer needed
@@ -268,6 +278,8 @@ class HIT(models.Model):
         if self.qualification_percent_assignments_approved != None:
             qual_perc_approved = PercentAssignmentsApprovedRequirement("GreaterThan",self.qualification_percent_assignments_approved)
             qualifications.add(qual_perc_approved)
+        if self.qualification_locale != 'None':
+            qualifications.add(LocaleRequirement("EqualTo",self.qualification_locale))
 
         # Domain name must be https
         url = "%s/turk/%s" %(DOMAIN_NAME,self.id)
