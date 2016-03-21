@@ -11,6 +11,7 @@ from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
+from django.views.decorators.csrf import ensure_csrf_cookie
 from expdj.apps.turk.forms import HITForm
 from optparse import make_option
 from numpy.random import choice
@@ -324,7 +325,7 @@ def sync(request,rid=None):
 
         if rid != None:
         # Update the result, already has worker and assignment ID stored
-            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            result,_ = Result.objects.get_or_create(id=rid)
             battery = result.battery
             result.taskdata = data["taskdata"]["data"]
             result.current_trial = data["taskdata"]["currenttrial"]

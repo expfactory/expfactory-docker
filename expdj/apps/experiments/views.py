@@ -3,6 +3,7 @@ from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Batter
  ExperimentVariable, CreditCondition
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
+from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
@@ -10,6 +11,7 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Ht
 from django.core.exceptions import PermissionDenied, ValidationError
 from expfactory.battery import get_load_static, get_experiment_run
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import HttpResponse, JsonResponse
 from django.forms.models import model_to_dict
 from expdj.apps.turk.models import HIT, Result
@@ -325,7 +327,7 @@ def dummy_battery(request,bid):
                           result=result)
 
 
-
+@ensure_csrf_cookie
 def serve_battery(request,bid,userid=None):
     '''prepare for local serve of battery'''
 
@@ -427,7 +429,7 @@ def localsync(request,rid=None):
 
         if rid != None:
         # Update the result, already has worker and assignment ID stored
-            result,_ = Result.objects.get_or_create(id=data["taskdata"]["uniqueId"])
+            result,_ = Result.objects.get_or_create(id=rid)
             battery = result.battery
             result.taskdata = data["taskdata"]["data"]
             result.current_trial = data["taskdata"]["currenttrial"]
@@ -438,6 +440,12 @@ def localsync(request,rid=None):
                 # Mark experiment as completed
                 result.completed = True
                 result.save()
+
+                data["finished_battery"] = "NOTFINISHED"
+                completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
+                if len(completed_experiments) == battery.experiments.count():
+                    assign_experiment_credit.apply_async([result.worker.id],countdown=60)
+                    data["finished_battery"] = "FINISHED"
 
             data = json.dumps(data)
 
