@@ -96,7 +96,7 @@ def serve_hit(request,hid):
 
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
         if already_created == False:
-            assign_experiment_credit.apply_async(countdown=hit.assignment_duration_in_seconds-300)
+            assign_experiment_credit.apply_async([worker.id],countdown=hit.assignment_duration_in_seconds-60)
         assignment.save()
 
         # Does the worker have experiments remaining for the hit?
@@ -313,6 +313,7 @@ def get_flagged_questions(number=None):
 #### DATA #############################################################
 
 # These views are to work with backbone.js
+@ensure_csrf_cookie
 def sync(request,rid=None):
     '''sync
     view/method for running experiments to get data from the server
@@ -338,6 +339,7 @@ def sync(request,rid=None):
                 result.save()
 
                 # if the worker has completed all tasks, give final credit
+                data = dict()
                 data["finished_battery"] = "NOTFINISHED"
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
                 if len(completed_experiments) == battery.experiments.count():

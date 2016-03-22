@@ -306,7 +306,7 @@ def intro_battery(request,bid,userid=None):
 @login_required
 def dummy_battery(request,bid):
     '''dummy_battery lets the user run a faux battery (preview)'''
-    
+
     battery = get_battery(bid,request)
     deployment = "docker-local"
 
@@ -417,6 +417,7 @@ def deploy_battery(deployment,battery,context,task_list,template,result,uncomple
     return response
 
 # These views are to work with backbone.js
+@ensure_csrf_cookie
 def localsync(request,rid=None):
     '''localsync
     view/method for running experiments to get data from the server
@@ -436,6 +437,7 @@ def localsync(request,rid=None):
             result.save()
 
             # if the worker finished the current experiment
+            data = dict()
             if data["djstatus"] == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
@@ -894,4 +896,3 @@ def experiment_results_dashboard(request,bid):
     else:
         context = battery_results_context(request,bid)
         return render(request, "experiments/results_dashboard_battery.html", context)
-
