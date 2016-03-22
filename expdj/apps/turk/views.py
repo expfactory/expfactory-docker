@@ -16,6 +16,7 @@ from expdj.apps.turk.forms import HITForm
 from optparse import make_option
 from numpy.random import choice
 import requests
+import datetime
 import json
 import os
 
@@ -336,6 +337,7 @@ def sync(request,rid=None):
             if data["djstatus"] == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
+                result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 result.save()
 
                 # if the worker has completed all tasks, give final credit
