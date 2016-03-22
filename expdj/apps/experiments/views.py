@@ -441,6 +441,7 @@ def localsync(request,rid=None):
             if data["djstatus"] == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
+                result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 result.save()
 
                 data["finished_battery"] = "NOTFINISHED"
