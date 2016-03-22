@@ -5,7 +5,7 @@ get_credentials
 from django.core.validators import MaxValueValidator, MinValueValidator
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.qualification import AdultRequirement, NumberHitsApprovedRequirement, \
- LocaleRequirement, PercentAssignmentsApprovedRequirement, Qualifications
+ LocaleRequirement, PercentAssignmentsApprovedRequirement, Qualifications, Requirement
 from boto.mturk.question import ExternalQuestion
 from expdj.settings import DOMAIN_NAME, BASE_DIR
 from django.db.models.signals import pre_init
@@ -15,6 +15,7 @@ from boto.mturk.price import Price
 from jsonfield import JSONField
 from django.db import models
 import collections
+import datetime
 import boto
 
 def init_connection_callback(sender, **signal_args):
@@ -124,8 +125,8 @@ class HIT(models.Model):
     keywords = models.TextField("Keywords",null=True,blank=True,help_text=("One or more words or phrases that describe the HIT, separated by commas."))
     status = models.CharField("HIT Status",max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the HIT and its assignments")
     reward = models.DecimalField(max_digits=5,decimal_places=3,null=False,blank=False,help_text=("The amount of money the requester will pay a worker for successfully completing the HIT"))
-    lifetime_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in seconds, after which the HIT is no longer available for users to accept."))
-    assignment_duration_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The length of time, in seconds, that a worker has to complete the HIT after accepting it."))
+    lifetime_in_hours = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in hours, after which the HIT is no longer available for users to accept."))
+    assignment_duration_in_hours = models.PositiveIntegerField(null=True,blank=True,help_text=("The length of time, in hours, that a worker has to complete the HIT after accepting it."))
     max_assignments = models.PositiveIntegerField(null=True,blank=True,default=1,help_text=("The number of times the HIT can be accepted and  completed before the HIT becomes unavailable."))
     auto_approval_delay_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in seconds after the worker submits an assignment for the HIT that the results are automatically approved by the requester."))
     requester_annotation = models.TextField(null=True,blank=True,help_text=("An arbitrary data field the Requester who created the HIT can use. This field is visible only to the creator of the HIT."))
@@ -142,6 +143,7 @@ class HIT(models.Model):
                                                        (True, 'Adult')),
                                                         default=True,help_text="Worker Qualification: Adult or Under 18",verbose_name="worker qualification adult")
     qualification_locale = models.CharField(max_length=255,choices=LOCALE_CHOICES,default='None',help_text="Worker Qualification: location requirement",verbose_name="worker qualification locale")
+    qualification_custom = models.CharField(max_length=255,default=None,help_text="Worker Qualification: custom qualification ID",verbose_name="worker qualification custom",null=True,blank=True)
 
 
 
@@ -272,6 +274,8 @@ class HIT(models.Model):
             qualifications.add(AdultRequirement("EqualTo", 1))
         else:
             qualifications.add(AdultRequirement("EqualTo",0))
+        if self.qualification_custom != None:
+            qualifications.add(Requirement(self.qualification_custom, "EqualTo",1))
         if self.qualification_number_hits_approved != None:
             qual_number_hits = NumberHitsApprovedRequirement("GreaterThan",self.qualification_number_hits_approved)
             qualifications.add(qual_number_hits)
@@ -290,12 +294,15 @@ class HIT(models.Model):
                 title=self.title,
                 description=self.description,
                 keywords=self.keywords,
+                duration=datetime.timedelta(self.assignment_duration_in_hours/24.0),
+                lifetime=datetime.timedelta(self.lifetime_in_hours/24.0),
                 max_assignments=self.max_assignments,
                 question=questionform,
                 qualifications=qualifications,
                 reward=Price(amount=self.reward),
                 response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
         )[0]
+
         # Update our hit object with the aws HIT
         self.mturk_id = result.HITId
 
