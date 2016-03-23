@@ -154,8 +154,12 @@
                                 </table>
                                </div>
                                {% if edit_permission %}
-                               <a class='button' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
-                               <a class='button btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
+                               <a class='btn btn-default' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
+                               {% if hit.status = "D" %}
+                               <button class='btn btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>
+                               {% else %}
+                               <button class='btn btn-danger disabled' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>
+                               {% endif %}
                                <i data-toggle="tooltip" title="EXPIRING a HIT means it will no longer appear on the Mechanical Turk web site, and no new Workers will be allowed to accept the HIT. The record will remain here. DELETING a hit means expiring it and removing the link to it from the Experiment Factory." style="padding-left:10px;padding-top:5px" class="fa fa-2x fa-question-circle"></i>
                                {% endif %}
                           </div><!--tabpanel-->
