@@ -126,17 +126,13 @@
         <div class="tab-pane fade" id="hits">
             <h4>Amazon Mechanical Turk HITS</h4>
                 {% if hits %}
-                {% for hit in hits %}
                 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-                    <div class="panel panel-default">
+                      {% for hit in hits %}
+                        <div class="panel panel-default">
                         <div class="panel-heading" role="tab" id="heading{{ hit.id }}" style="height:50px">
                             <h4 class="panel-title">
                                 <a role="button" data-toggle="collapse" data-parent="#accordion" href="#hitdetails{{ hit.id }}" aria-expanded="true" aria-controls="collection">
-                                    <div class="row">
-                                        <div class="col-md-10">
-                                            {{ hit.title }}
-                                        </div>
-                                    </div>
+                                      {{ hit.title }}
                                 </a>
                             </h4>
                         </div>
@@ -162,10 +158,11 @@
                                <a class='button btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</a>
                                <i data-toggle="tooltip" title="EXPIRING a HIT means it will no longer appear on the Mechanical Turk web site, and no new Workers will be allowed to accept the HIT. The record will remain here. DELETING a hit means expiring it and removing the link to it from the Experiment Factory." style="padding-left:10px;padding-top:5px" class="fa fa-2x fa-question-circle"></i>
                                {% endif %}
-                        </div><!--end tab thing-->
+                          </div><!--tabpanel-->
                       </div><!-- panel-->
-                   </div><!--group-->
                    {% endfor %}
+                 </div><!--group-->
+                 </div><!--end tab thing-->
                    {% else %}
                        {% if battery.experiments.all %}
                        <a class='button' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>

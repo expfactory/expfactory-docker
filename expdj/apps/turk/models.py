@@ -175,7 +175,6 @@ class HIT(models.Model):
 
         # Verify HIT is reviewable
         if self.status != self.REVIEWABLE:
-            #TODO: Excercise line
             raise DisposeException(
                     "Can't dispose of HIT (%s) that is still in %s status." % (
                         self.mturk_id,

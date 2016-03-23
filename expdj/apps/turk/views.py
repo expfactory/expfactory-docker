@@ -97,7 +97,7 @@ def serve_hit(request,hid):
 
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
         if already_created == False:
-            assign_experiment_credit.apply_async([worker.id],countdown=hit.assignment_duration_in_seconds-60)
+            assign_experiment_credit.apply_async([worker.id],countdown=hit.assignment_duration_in_hours-60)
         assignment.save()
 
         # Does the worker have experiments remaining for the hit?
@@ -290,6 +290,7 @@ def delete_hit(request, hid):
             # A hit deleted in Amazon cannot be expired
             try:
                 hit.expire()
+                hit.dispose()
             except:
                 pass
             hit.delete()
