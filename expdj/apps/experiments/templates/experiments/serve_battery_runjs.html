@@ -26,12 +26,18 @@
         return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
     }
 
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
-        }
+    //$.ajaxSetup({
+    //    beforeSend: function(xhr, settings) {
+    //        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+    //            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    //        }
+    //    }
+    //})i;
+
+    $(document).ajaxSend(function(event, xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !settings.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+           }
     });
 
     {% include "experiments/preview_battery_runjs.html" %}
