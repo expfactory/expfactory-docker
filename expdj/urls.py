@@ -13,6 +13,7 @@ from expdj.apps.experiments import urls as experiment_urls
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf import settings
+from expdj.apps.turk.utils import to_dict
 import os
 
 # Seriailizers define the API representation
@@ -41,9 +42,14 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
     experiment = ExperimentTemplateSerializer()
     battery = BatterySerializer()
     worker = WorkerSerializer()
+    data = serializers.SerializerMethodField('get_taskdata')
+
+    def get_taskdata(self,result):
+        return to_dict(result.taskdata)
+
     class Meta:
         model = Result
-        fields = ('taskdata', 'experiment', 'battery', 'worker','language','browser','platform','completed','datetime')
+        fields = ('data', 'experiment', 'battery', 'worker','language','browser','platform','completed','datetime')
 
 
 # ViewSets define the view behavior.

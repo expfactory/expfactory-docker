@@ -6,9 +6,19 @@ from numpy.random import choice
 import ConfigParser
 import datetime
 import pandas
+import json
 import os
 
 from django.conf import settings
+
+
+# RESULTS UTILS
+def to_dict(input_ordered_dict):
+    '''to_dict converts an input ordered dict into a standard dict
+    :param input_ordered_dict: the ordered dict
+    '''
+    return json.loads(json.dumps(input_ordered_dict))
+
 
 PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
 SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'

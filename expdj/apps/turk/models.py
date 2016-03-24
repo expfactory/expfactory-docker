@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection, \
-get_credentials
+get_credentials, to_dict
 from django.core.validators import MaxValueValidator, MinValueValidator
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.qualification import AdultRequirement, NumberHitsApprovedRequirement, \
@@ -507,6 +507,7 @@ class Assignment(models.Model):
 class Result(models.Model):
     '''A result holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
     taskdata = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    #data = models.Field(source='get_taskdata')
     worker = models.ForeignKey(Worker,null=False,blank=False,related_name='result_worker')
     experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
     battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
@@ -534,6 +535,8 @@ class Result(models.Model):
     def __unicode__(self):
         return u"Result: id[%s],worker[%s],battery[%s],experiment[%s]" %(self.id,self.worker,self.battery,self.experiment)
 
+    def get_taskdata(self):
+        return to_dict(self.taskdata)
 
 class KeyValue(models.Model):
     """Answer/Key Value Pairs"""
