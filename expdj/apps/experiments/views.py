@@ -5,7 +5,7 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results
+  update_credits, make_results_df, get_battery_results, get_survey_selection
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -464,7 +464,7 @@ def localsync(request,rid=None):
 @login_required
 def add_experiment_template(request):
     '''add_experiment_template
-    View for presenting available experiments to user (from expfactory-experiements repo)
+    View for presenting available experiments to user (from expfactory-experiments repo)
     '''
     experiment_selection = get_experiment_selection()
     current_experiments = ExperimentTemplate.objects.all()
@@ -548,6 +548,37 @@ def delete_experiment_template(request, eid, do_redirect=True):
     if do_redirect == True:
         return redirect('experiments')
 
+# Surveys --------------------------------------------------------------
+@login_required
+def add_survey_template(request):
+    '''add_survey_template
+    View for presenting available survey experiments to user (from expfactory-surveys repo)
+    '''
+    surveys_selection = get_survey_selection()
+    current_experiments = ExperimentTemplate.objects.all()
+    tags = [e.exp_id for e in current_experiments]
+    newsurveys = [e for e in surveys_selection if e["exp_id"] not in tags]
+    context = {"newsurveys": newsurveys,
+               "experiments": current_experiments}
+    return render(request, "surveys/add_survey_template.html", context)
+
+@login_required
+def save_survey_template(request):
+    '''save_survey_template
+    view for actually adding new surveys (files, etc) to application and database
+    '''
+    newsurveys = request.POST.keys()
+    surveys_selection = get_survey_selection()
+    selected_experiments = [e["exp_id"] for e in surveys_selection if e["exp_id"] in newsurveys]
+    errored_surveys = install_experiments(experiment_tags=selected_experiments,repo_type="surveys")
+    if len(errored_surveys) > 0:
+        message = "The surveys %s did not install successfully." %(",".join(errored_surveys))
+    else:
+        message = "Surveys installed successfully."
+    experiments = ExperimentTemplate.objects.all()
+    context = {"experiments":experiments,
+               "message":message}
+    return render(request, "experiments/all_experiments.html", context)
 
 # Experiments ----------------------------------------------------------
 

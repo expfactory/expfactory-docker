@@ -28,6 +28,13 @@ def get_experiment_selection():
     shutil.rmtree(tmpdir)
     return experiments
 
+def get_survey_selection():
+    tmpdir = custom_battery_download(repos=["surveys"])
+    surveys = get_experiments("%s/surveys" %tmpdir,load=True,warning=False,repo_type="surveys")
+    surveys = [x[0] for x in surveys]
+    shutil.rmtree(tmpdir)
+    return surveys
+
 
 def parse_experiment_variable(variable):
     experiment_variable = None
@@ -56,13 +63,13 @@ def parse_experiment_variable(variable):
     return experiment_variable
 
 
-def install_experiments(experiment_tags=None):
+def install_experiments(experiment_tags=None,repo_type="experiments"):
 
     # We will return list of experiments that did not install successfully
     errored_experiments = []
 
-    tmpdir = custom_battery_download(repos=["experiments","battery"])
-    experiments = get_experiments("%s/experiments" %tmpdir,load=True,warning=False)
+    tmpdir = custom_battery_download(repos=[repo_type,"battery"])
+    experiments = get_experiments("%s/%s" %(tmpdir,repo_type),load=True,warning=False)
     if experiment_tags != None:
         experiments = [e for e in experiments if e[0]["exp_id"] in experiment_tags]
 
@@ -94,8 +101,8 @@ def install_experiments(experiment_tags=None):
                                                                                    "performance_variable":performance_variable,
                                                                                    "rejection_variable":rejection_variable})
             new_experiment.save()
-            experiment_folder = "%s/experiments/%s" %(tmpdir,experiment[0]["exp_id"])
-            output_folder = "%s/experiments/%s" %(media_dir,experiment[0]["exp_id"])
+            experiment_folder = "%s/%s/%s" %(tmpdir,repo_type,experiment[0]["exp_id"])
+            output_folder = "%s/%s/%s" %(media_dir,repo_type,experiment[0]["exp_id"])
             if os.path.exists(output_folder):
                 shutil.rmtree(output_folder)
             copy_directory(experiment_folder,output_folder)
@@ -200,7 +207,7 @@ def make_results_df(battery,results):
                     # Look up the experiment
                     exp=lookup[result.experiment.exp_id]
                     df.loc[row_id,["experiment_completed","experiment_include_bonus","experiment_include_catch","experiment_exp_id","experiment_name","experiment_reference","experiment_cognitive_atlas_task_id"]] = [result.completed,exp["include_bonus"],exp["include_catch"],exp["experiment"].exp_id,exp["experiment"].name,exp["experiment"].reference,exp["experiment"].cognitive_atlas_task_id]
-                    
+
                     # Parse data
                     for key in trial.keys():
                         if key != "trialdata":
