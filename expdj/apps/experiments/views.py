@@ -5,7 +5,8 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_survey_selection
+  update_credits, make_results_df, get_battery_results, get_survey_selection, \
+  get_experiment_type
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -221,15 +222,9 @@ def batteries_view(request,uid=None):
 @login_required
 def preview_experiment(request,eid):
     experiment = get_experiment_template(eid,request)
-    if experiment.template in ["jspsych"]:
-        experiment_folder = os.path.join(media_dir,"experiments",experiment.exp_id)
-        template = 'experiments/experiment_preview.html'
-    elif experiment.template in ["survey"]:
-        experiment_folder = os.path.join(media_dir,"surveys",experiment.exp_id)
-        template = 'surveys/survey_preview.html'
-    elif experiment.template in ["phaser"]:
-        experiment_folder = os.path.join(media_dir,"games",experiment.exp_id)
-        template = 'games/phaser_preview.html'
+    experiment_type = get_experiment_type(experiment)
+    experiment_folder = os.path.join(media_dir,experiment_type,experiment.exp_id)
+    template = '%s/%s_preview.html' %(experiment_type,experiment_type[:-1])
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response(template, context)
@@ -534,10 +529,11 @@ def edit_experiment_template(request,eid=None):
 def delete_experiment_template(request, eid, do_redirect=True):
     experiment = get_experiment_template(eid,request)
     experiment_instances = Experiment.objects.filter(template=experiment)
+    experiment_type = get_experiment_type(experiment)
     if check_experiment_edit_permission(request):
         # Static Files
         [e.delete() for e in experiment_instances]
-        static_files_dir = os.path.join(media_dir,"experiments",experiment.exp_id)
+        static_files_dir = os.path.join(media_dir,experiment_type,experiment.exp_id)
         if os.path.exists(static_files_dir):
             shutil.rmtree(static_files_dir)
         # delete associated results

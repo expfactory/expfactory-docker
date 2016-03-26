@@ -35,6 +35,17 @@ def get_survey_selection():
     shutil.rmtree(tmpdir)
     return surveys
 
+def get_experiment_type(experiment):
+    '''get_experiment_type returns the installation folder (eg, games, surveys, experiments) based on the template specified in the config.json
+    :param experiment: the ExperimentTemplate object
+    '''
+    if experiment.template in ["jspsych"]:
+        return "experiments"
+    elif experiment.template in ["survey"]:
+        return "surveys"
+    elif experiment.template in ["phaser"]:
+        return "games"
+
 
 def parse_experiment_variable(variable):
     experiment_variable = None
