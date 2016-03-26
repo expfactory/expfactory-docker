@@ -80,6 +80,7 @@ class ExperimentTemplate(models.Model):
                                            default=True,verbose_name="Publish")
     time = models.IntegerField()
     reference = models.CharField(max_length=500,help_text="reference or paper associated with the experiment",unique=False)
+    template = models.CharField(max_length=100,null=True,blank=False)
 
     def __meta__(self):
         ordering = ["name"]

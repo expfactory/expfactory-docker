@@ -98,6 +98,7 @@ def install_experiments(experiment_tags=None,repo_type="experiments"):
                                                                                    "publish":bool(experiment[0]["publish"]),
                                                                                    "time":experiment[0]["time"],
                                                                                    "reference":reference,
+                                                                                   "template":experiment[0]["template"],
                                                                                    "performance_variable":performance_variable,
                                                                                    "rejection_variable":rejection_variable})
             new_experiment.save()

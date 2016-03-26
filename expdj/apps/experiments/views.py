@@ -221,10 +221,18 @@ def batteries_view(request,uid=None):
 @login_required
 def preview_experiment(request,eid):
     experiment = get_experiment_template(eid,request)
-    experiment_folder = os.path.join(media_dir,"experiments",experiment.exp_id)
+    if experiment.template in ["jspsych"]:
+        experiment_folder = os.path.join(media_dir,"experiments",experiment.exp_id)
+        template = 'experiments/experiment_preview.html'
+    elif experiment.template in ["survey"]:
+        experiment_folder = os.path.join(media_dir,"surveys",experiment.exp_id)
+        template = 'surveys/survey_preview.html'
+    elif experiment.template in ["phaser"]:
+        experiment_folder = os.path.join(media_dir,"games",experiment.exp_id)
+        template = 'games/phaser_preview.html'
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
-    return render_to_response('experiments/experiment_preview.html', context)
+    return render_to_response(template, context)
 
 @login_required
 def generate_battery_user(request,bid):
