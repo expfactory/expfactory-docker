@@ -86,8 +86,6 @@ TURK = {
     'debug': 1
 }
 DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
-AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY_ID_HERE"
-AWS_SECRET_ACCESS_KEY_ID="YOUR_SECRET_ACCESS_KEY_HERE"
 
 You should change the keys, the domain name and application URL, and set debug to 0. The Domain Name MUST be HTTPS.
 
@@ -129,13 +127,23 @@ Log into the production server, and you can run [scripts/prepare_instance.sh](sc
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but in a (more) secure file on the server. Thus, use the template in "[auth](auth/dummy.cred)" to specify your credentials. Any files of this format that you add to this folder will be available for users to select from. You will also need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.
 
 ### HTTPS
-The docker container is set up to have a secure connection with https (port 443). There is no easy, programmatic way to set this up on a server, so you must walk through the steps at [https://gethttpsforfree.com/](https://gethttpsforfree.com/). Note that when you run the python server to verify owning the domain, you may need to stop the local nginx (which is also using port 80):
+The docker container is set up to have a secure connection with https (port 443). You can set this up manually, or use a cron job to generate a new certificate (steps detailed below). 
+
+#### Manual Setup
+To do it manually, you must walk through the steps at [https://gethttpsforfree.com/](https://gethttpsforfree.com/), and note that this would need to be done every three months. Note that when you run the python server to verify owning the domain, you may need to stop the local nginx (which is also using port 80):
 
       sudo service nginx stop
 
 I installed this in [scripts/prepare_instance.sh](scripts/prepare_instance.sh) because it's nice to have a local nginx (outside of the docker container) if you ever want to debug with `python manage.py runserver 0.0.0.0:8000` outside of the container.
 
 Back to setting up HTTPS - it's basically an exercise in copy pasting, and you should follow the steps to a T to generate the certificates on the server. The docker image will take care of setting up the web server (the nginx.conf file).
+
+#### Setup via cron job
+
+Make the following directory:
+
+      /var/www/.well-known/acme-challenge/
+
 
 ### Encrypted database connection
 If your provider (eg aws) provides you with a certificate, you can add it to `/etc/ssl/certs` on the server, and this path is already mapped in the docker-compose for the nginx container. You then need to specify to use SSL in the database connection in your `settings.py` or `local_settings.py`:
