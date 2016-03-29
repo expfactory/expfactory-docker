@@ -6,17 +6,17 @@ DOMAIN=expfactory.org
 cd /etc/ssl/certs
 
 # backup old key and cert
-cp domain.key{,.bak.$(date +%s)}
+cp /etc/ssl/private/domain.key{,.bak.$(date +%s)}
 cp chained.pem{,.bak.$(date +%s)}
 
 # Generate a private key
 openssl genrsa 4096 > account.key
 
 # Generate a domain private key (if you haven't already)
-openssl genrsa 4096 > domain.key
+openssl genrsa 4096 > /etc/ssl/private/domain.key
 
 # Create a CSR for $DOMAIN
-openssl req -new -sha256 -key domain.key -subj "/CN=$DOMAIN" > domain.csr
+openssl req -new -sha256 -key /etc/ssl/private/domain.key -subj "/CN=$DOMAIN" > domain.csr
 
 # Create the challenge folder in the webroot
 mkdir -p /var/www/.well-known/acme-challenge/
