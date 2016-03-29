@@ -24,41 +24,42 @@ These appear before the directive that redirects all requests to port 443. Full 
  
 The "well-known" directory does not exist by default so it needed to be created for the nginx container in docker-compose.yml as a volume. We also needed the host server to be able to write to it. So a mounted volume like this was added:
 
-- /var/www/.well-known/acme-challenge/:/var/www/.well-known/acme-challenge/:ro
+      /var/www/.well-known/acme-challenge/:/var/www/.well-known/acme-challenge/:ro
 
 Of course /var/www/.well-known/acme-challenge/ will need to exist on the host as well.
 
 Requirements for all this to work. On the host we will need to have acme tiny installed. The current get_cert.sh script expects it to live in /opt/acme-tiny/. The following would install it to that directory:
 
-git clone https://github.com/diafygi/acme-tiny.git /opt/acme-tiny
+      git clone https://github.com/diafygi/acme-tiny.git /opt/acme-tiny
 
 This was added to the script [run_uwsgi.sh](run_uwsgi.sh)
 
 The get_cert.sh script also needs the following to be installed on the host:
   
-python
-openssl
-wget
+      python
+      openssl
+      wget
 
 On to getting get_cert.sh to run as a cron job. If you run the following as root you can edit root's crontab file:
-crontab -e
+
+      crontab -e
 
 From there you can insert the following line to get the script to run every month on the 4th at 1am, change 04 to whatever day you want it to run:
 
-00 01 04 * * /bin/bash /<Full path to where you put script>/get_cert.sh
+      00 01 04 * * /bin/bash /<Full path to where you put script>/get_cert.sh
 
 The current configuration is at 4pm:
 
-00 23 04 * * /bin/bash /<Full path to where you put script>/get_cert.sh
+      00 23 04 * * /bin/bash /<Full path to where you put script>/get_cert.sh
 
 
 If you can't run crontab -e then the cron file lives here:
 
-/var/spool/cron/crontabs/root 
+      /var/spool/cron/crontabs/root 
 
 I think the cron service may need to be restarted if this is updated:
 
-service cron restart
+      service cron restart
 
 Right now the cron job needs to be run as root because it generates files in /etc/ssl/certs and /var/www/.well-known/acme-challenge. If these were moved to be in the project directory on the host it could be run as the normal unprivileged user on the server.
 
@@ -66,14 +67,14 @@ For security people recommend that you create a new user on the server and set t
 
 Ok checklist to make sure I have everything. Heres what needs to be run to run the script by itself:
 
-get get_cert.sh
-update get_cert.sh output key and certificate to match filenames listed in nginx.conf
-update get_cert.sh output locations to match where the certs are currently stored
-update get_cert.sh to change directories to where docker application lives and restart nginx once certs are generated
-Update nginx.conf to serve files from .well-known/acme-challenge on port 80.
-Make sure .well-known/acme-challenge directory exists on host and container, and that the two directories are linked as docker volumes.
-install acme-tiny to /opt/
-install get_cert.sh dependencies python, openssl, wget if not already present.
-And then adding it to cron on the host is the last step to making it automagic. 
+- get get_cert.sh
+- update get_cert.sh output key and certificate to match filenames listed in nginx.conf
+- update get_cert.sh output locations to match where the certs are currently stored
+- update get_cert.sh to change directories to where docker application lives and restart nginx once certs are generated
+- Update nginx.conf to serve files from .well-known/acme-challenge on port 80.
+- Make sure .well-known/acme-challenge directory exists on host and container, and that the two directories are linked as docker volumes.
+- install acme-tiny to /opt/
+- install get_cert.sh dependencies python, openssl, wget if not already present.
+- And then adding it to cron on the host is the last step to making it automagic. 
 
 You will want to run the script by itself before adding to cron to make sure it works before relying on cron to do it. LetsEncrypt rate limits the number of times you can get certs every day to a pretty low number, so if something goes wrong be careful not to try/run it too much or the servers IP could get blocked.
