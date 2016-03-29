@@ -28,5 +28,5 @@ wget -O - https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem > inter
 cat signed.crt intermediate.pem > chained.pem
 
 # Restart nginx container
-cd $HOME/expfactory-docker
+cd /home/ubuntu/expfactory-docker
 docker-compose restart nginx
