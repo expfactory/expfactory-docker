@@ -13,6 +13,7 @@ from expfactory.battery import get_load_static, get_experiment_run
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import HttpResponse, JsonResponse
+from expfactory.experiment import load_experiment
 from django.forms.models import model_to_dict
 from expdj.apps.turk.models import HIT, Result
 from expfactory.views import embed_experiment
@@ -316,15 +317,18 @@ def dummy_battery(request,bid):
     uncompleted_experiments = [e.template.exp_id for e in battery.experiments.all()] # must be exp_id
     task_list = select_random_n(uncompleted_experiments,1)
     experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    experiment_type = get_experiment_type(experimentTemplate)
     task_list = battery.experiments.filter(template=experimentTemplate)
     result = None
     context = {"worker_id": "Dummy Worker"}
+    template = "%s/serve_battery.html" %(experiment_type)
 
     return deploy_battery(deployment="docker-preview",
                           battery=battery,
+                          experiment_type=experiment_type,
                           context=context,
                           task_list=task_list,
-                          template="experiments/serve_battery.html",
+                          template=template,
                           uncompleted_experiments=uncompleted_experiments,
                           result=result)
 
@@ -363,6 +367,7 @@ def serve_battery(request,bid,userid=None):
 
     task_list = select_random_n(uncompleted_experiments,1)
     experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    experiment_type = get_experiment_type(experimentTemplate)
     task_list = battery.experiments.filter(template=experimentTemplate)
 
     # Generate a new results object for the worker, assignment, experiment
@@ -379,19 +384,24 @@ def serve_battery(request,bid,userid=None):
     if len(uncompleted_experiments) == 1:
         next_page = "/finished"
 
+    # Determine template name based on template_type
+    template = "%s/serve_battery.html" %(experiment_type)
+
     return deploy_battery(deployment="docker-local",
                           battery=battery,
+                          experiment_type=experiment_type,
                           context=context,
                           task_list=task_list,
-                          template="experiments/serve_battery.html",
+                          template=template,
                           uncompleted_experiments=uncompleted_experiments,
                           next_page=next_page,
                           result=result)
 
-def deploy_battery(deployment,battery,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
+def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
     :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
+    :param experiment_type: experiments,games,or surveys
     :param context: context, which should already include next_page,
     :param next_page: the next page to navigate to [optional] default is to reload the page to go to the next experiment
     :param task_list: list of models.Experiment instances
@@ -403,14 +413,24 @@ def deploy_battery(deployment,battery,context,task_list,template,result,uncomple
         next_page = "javascript:window.location.reload();"
 
     # Get experiment folders
-    experiment_folders = [os.path.join(media_dir,"experiments",x.template.exp_id) for x in task_list]
+    experiment_folders = [os.path.join(media_dir,experiment_type,x.template.exp_id) for x in task_list]
     context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
 
     # Get code to run the experiment (not in external file)
-    runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
-    if result != None:
-        runcode = runcode.replace("{{result.id}}",str(result.id))
-    runcode = runcode.replace("{{next_page}}",next_page)
+    runcode = ""
+
+    # Experiments templates
+    if experiment_type in ["experiments"]:
+        runcode = get_experiment_run(experiment_folders,deployment=deployment)[task_list[0].template.exp_id]
+        if result != None:
+            runcode = runcode.replace("{{result.id}}",str(result.id))
+        runcode = runcode.replace("{{next_page}}",next_page)
+    elif experiment_type in ["games"]:
+        experiment = load_experiment(experiment_folders[0])
+        runcode = experiment[0]["deployment_variables"]["run"]
+    elif experiment_type in ["surveys"]:
+        pass
+
     context["run"] = runcode
     response = render_to_response(template, context)
 

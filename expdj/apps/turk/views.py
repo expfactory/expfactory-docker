@@ -9,6 +9,7 @@ from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
+from expdj.apps.experiments.utils import get_experiment_type
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -108,6 +109,7 @@ def serve_hit(request,hid):
 
         task_list = select_random_n(uncompleted_experiments,1)
         experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+        experiment_type = get_experiment_type(experimentTemplate)
         task_list = battery.experiments.filter(template=experimentTemplate)
 
         # Generate a new results object for the worker, assignment, experiment
@@ -128,6 +130,7 @@ def serve_hit(request,hid):
 
         return deploy_battery(deployment="docker-mturk",
                               battery=battery,
+                              experiment_type=experiment_type,
                               context=aws,
                               task_list=task_list,
                               template="turk/mturk_battery.html",

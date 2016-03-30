@@ -14,11 +14,7 @@
                 {% if has_results %}
                 <a class='btn-default btn-lg' href='{% url 'export_battery' battery.id %}'>Export Results</a>
                 {% endif %}
-                {% if mturk_permission %}
-                    {% if hits %}
-                        <a class='btn-default btn-lg' target="_blank" href='{% url 'preview_battery' battery.id %}'>Preview</a>
-                    {% endif %}
-                {% endif %}
+                <a class='btn-default btn-lg' target="_blank" href='{% url 'preview_battery' battery.id %}'>Preview</a>
             {% else %}
                 {% if mturk_permission %}
                 {% if hits %}
