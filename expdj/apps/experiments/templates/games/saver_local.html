@@ -1,0 +1,39 @@
+uniqueId = "{{ uniqueId }}"
+url = "/local/{{ uniqueId }}/"
+var expfactory = new ExpFactory(uniqueId)
+this.data = {}
+
+// Start experiment when participant pushes button
+$("#start_experiment_button").click(function(){
+   $("#instructions_modal").hide();
+   $("#bootstrap_css").remove()
+   {{run | safe}}
+});
+
+{% if uniqueId %}
+$("#disagree_button").click(function(){
+    document.location = "{% url 'end_assignment' uniqueId %}"
+})
+{% endif %}
+
+function inputData(field, value) {
+  this.data[field] = value
+}
+
+function sendData(trial) {
+  inputData('trial', trial)
+  expfactory.recordTrialData(data)
+  console.log(expfactory)
+  expfactory.djstatus = "UPDATE"
+  $.ajax({ type: "POST",
+      contentType: "application/json",
+      url : url,
+      data : JSON.stringify(expfactory),
+      dataType: "json",
+      success: function(data) {
+          console.log("data update called")
+    }
+  })
+
+  this.data = {}
+}
