@@ -12,9 +12,117 @@
 </head>
 <body>
 
+{{run | safe}}
+
+<div class="navigation">
+    <ul class="clearfix">
+        <li><button type="button" name="backward" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent backward">Previous</button></li>
+	<li><button type="button" name="forward" class="forward mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">Next</button></li>
+        <li><button type="submit" name="process" class="submit mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">Finish</button></li>
+    </ul>
+</div>
+
+<div class="pad">
+    <div id="progressbar"></div>
+</div>
+</form>
+</div>
+
+
 <script>
-$(document).ready(function(){
-   $("#start_experiment_button").click();
+$( document ).ready(function() {
+
+    {% include "experiments/serve_battery_cookie.html" %}
+
+    uniqueId = "{{ uniqueId }}"
+    var expfactory = new ExpFactory(uniqueId)
+
+
+    $("#start_experiment_button").click();
+    expfactory_finished = false;
+
+    // Basic wizard with progress bar
+    $( "#progressbar" ).progressbar();
+    $( "#questions" ).wizard({
+        stepsWrapper: "#wrapped",
+	submit: ".submit",
+	beforeForward: function( event, state ) {
+
+            // Function to add message that answer is required
+            function is_required(elements){
+                var missing = false;
+                elements.each(function(index,element){
+                    var pid = "#" + $(element).attr("name")
+                    $(pid).css("color","red")
+                    missing = true;                   
+                });
+
+                if (missing == true){
+                   alert("Please answer all required questions in red.");
+                }
+            }
+
+            {{ validation|safe }}
+
+	    return !!$( this ).wizard( "form" ).valid();
+        },
+	afterSelect: function( event, state ) {
+	    $( "#progressbar" ).progressbar( "value", state.percentComplete );
+            if (expfactory_finished == true){
+                $(".submit").enable();
+            }
+        }
+
+    // Form submission
+    }).wizard( "form" ).submit(function( event ) {
+	event.preventDefault();
+        
+        // Save data to browser
+        var $inputs = $("input:checked");
+        var $text = $("input:text")
+        var $elements = $inputs.add($text)
+        
+        var results = []
+        $elements.each(function(index, element) {
+          var result = {}
+
+          if ($.inArray( $(element).attr("name"), [ "forward", "backward", "process"] ) == -1) {
+              result.name = $(element).attr("name");
+              result.value = $(element).attr("value");
+              result.options = $(element).attr("meta-options");
+              result.text = $(element).attr("meta-text");
+              results.push(result);
+          }
+        })
+
+        expfactory.recordTrialData(results)
+        expfactory.djstatus = "FINISHED"
+        console.log(expfactory)
+
+        setTimeout(function(){
+
+            $.ajax({ type: "POST",
+                contentType: "application/json",
+                url : "/local/{{ uniqueId }}",
+                data : JSON.stringify(expfactory),
+                dataType: "json",
+                success: function(data) {
+                    console.log("data update called")
+                }
+            })
+       }, 2000);
+
+
+     // Validation
+     }).validate({
+	errorPlacement: function( error, element ) {
+	    if ( element.is( ":radio" ) || element.is( ":checkbox" ) ) {
+		error.insertBefore( element.next() );
+            } else {
+	        error.insertAfter( element );
+	 }
+      }
+  });
 });
 </script>
 

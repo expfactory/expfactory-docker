@@ -10,6 +10,7 @@ from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
 from expfactory.battery import get_load_static, get_experiment_run
+from expfactory.survey import generate_survey
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import HttpResponse, JsonResponse
@@ -429,7 +430,9 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         experiment = load_experiment(experiment_folders[0])
         runcode = experiment[0]["deployment_variables"]["run"]
     elif experiment_type in ["surveys"]:
-        pass
+        experiment = load_experiment(experiment_folders[0])
+        runcode,validation = generate_survey(experiment,experiment_folders[0])
+        context["validation"] = validation
 
     context["run"] = runcode
     response = render_to_response(template, context)
