@@ -6,7 +6,7 @@ add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, preview_battery, serve_battery, serve_battery_anon, \
 generate_battery_user, localsync, experiment_results_dashboard, \
 battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
-save_survey_template, add_survey_template
+save_survey_template, add_survey_template, add_game_template, save_game_template
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -28,6 +28,10 @@ urlpatterns = patterns('',
     # Surveys
     url(r'^surveys/save$',save_survey_template,name='save_survey_template'),
     url(r'^surveys/add$',add_survey_template,name='add_survey_template'),
+
+    # Games
+    url(r'^games/save$',save_game_template,name='save_game_template'),
+    url(r'^games/add$',add_game_template,name='add_game_template'),
 
 
     # Experiments in Batteries

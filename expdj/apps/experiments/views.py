@@ -5,8 +5,7 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_survey_selection, \
-  get_experiment_type
+  update_credits, make_results_df, get_battery_results, get_experiment_type
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -462,38 +461,64 @@ def localsync(request,rid=None):
 
 #### EDIT/ADD/DELETE ###################################################
 
-# ExperimentTemplates ----------------------------------------------------------
-
+# General install functions -----------------------------------------------------
 @login_required
-def add_experiment_template(request):
-    '''add_experiment_template
-    View for presenting available experiments to user (from expfactory-experiments repo)
+def add_new_template(request,template_type):
+    '''add_new_template
+    View for installing new survey, game, or experiment
     '''
-    experiment_selection = get_experiment_selection()
+    new_selection = get_experiment_selection(template_type)
+    template = "%s/add_%s_template.html" %(template_type,template_type[:-1])
     current_experiments = ExperimentTemplate.objects.all()
     tags = [e.exp_id for e in current_experiments]
-    newexperiments = [e for e in experiment_selection if e["exp_id"] not in tags]
-    context = {"newexperiments": newexperiments,
+    newselection = [e for e in new_selection if e["exp_id"] not in tags]
+    context = {"newtemplates": newselection,
                "experiments": current_experiments}
-    return render(request, "experiments/add_experiment_template.html", context)
+    return render(request, template, context)
 
 @login_required
-def save_experiment_template(request):
-    '''save_experiments template
-    view for actually adding new experiments (files, etc) to application and database
+def save_new_template(request,template_type):
+    '''save_new_template
+    view for actually adding new surveys, experiments, or games (files, etc) to application and database
     '''
-    newexperiments = request.POST.keys()
-    experiment_selection = get_experiment_selection()
-    selected_experiments = [e["exp_id"] for e in experiment_selection if e["exp_id"] in newexperiments]
-    errored_experiments = install_experiments(experiment_tags=selected_experiments)
-    if len(errored_experiments) > 0:
-        message = "The experiments %s did not install successfully." %(",".join(errored_experiments))
+    newtemplates = request.POST.keys()
+    new_selection = get_experiment_selection(template_type)
+    selected_experiments = [e["exp_id"] for e in new_selection if e["exp_id"] in newtemplates]
+    errored = install_experiments(experiment_tags=selected_experiments,repo_type=template_type)
+    if len(errored) > 0:
+        message = "The %s %s did not install successfully." %(template_type,",".join(errored_surveys))
     else:
-        message = "Experiments installed successfully."
+        message = "%s installed successfully." %(template_type)
     experiments = ExperimentTemplate.objects.all()
     context = {"experiments":experiments,
                "message":message}
     return render(request, "experiments/all_experiments.html", context)
+
+# Install Templates ----------------------------------------------------------
+
+@login_required
+def add_experiment_template(request):
+    return add_new_template(request,"experiments")
+
+@login_required
+def add_survey_template(request):
+    return add_new_template(request,"surveys")
+
+@login_required
+def add_game_template(request):
+    return add_new_template(request,"games")
+
+@login_required
+def save_experiment_template(request):
+    return save_new_template(request,"experiments")
+
+@login_required
+def save_survey_template(request):
+    return save_new_template(request,"surveys")
+
+@login_required
+def save_game_template(request):
+    return save_new_template(request,"games")
 
 @login_required
 def edit_experiment_template(request,eid=None):
@@ -552,37 +577,6 @@ def delete_experiment_template(request, eid, do_redirect=True):
     if do_redirect == True:
         return redirect('experiments')
 
-# Surveys --------------------------------------------------------------
-@login_required
-def add_survey_template(request):
-    '''add_survey_template
-    View for presenting available survey experiments to user (from expfactory-surveys repo)
-    '''
-    surveys_selection = get_survey_selection()
-    current_experiments = ExperimentTemplate.objects.all()
-    tags = [e.exp_id for e in current_experiments]
-    newsurveys = [e for e in surveys_selection if e["exp_id"] not in tags]
-    context = {"newsurveys": newsurveys,
-               "experiments": current_experiments}
-    return render(request, "surveys/add_survey_template.html", context)
-
-@login_required
-def save_survey_template(request):
-    '''save_survey_template
-    view for actually adding new surveys (files, etc) to application and database
-    '''
-    newsurveys = request.POST.keys()
-    surveys_selection = get_survey_selection()
-    selected_experiments = [e["exp_id"] for e in surveys_selection if e["exp_id"] in newsurveys]
-    errored_surveys = install_experiments(experiment_tags=selected_experiments,repo_type="surveys")
-    if len(errored_surveys) > 0:
-        message = "The surveys %s did not install successfully." %(",".join(errored_surveys))
-    else:
-        message = "Surveys installed successfully."
-    experiments = ExperimentTemplate.objects.all()
-    context = {"experiments":experiments,
-               "message":message}
-    return render(request, "experiments/all_experiments.html", context)
 
 # Experiments ----------------------------------------------------------
 

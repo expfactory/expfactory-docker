@@ -21,19 +21,13 @@ media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
 # EXPERIMENT FACTORY PYTHON FUNCTIONS #####################################################
 
-def get_experiment_selection():
-    tmpdir = custom_battery_download(repos=["experiments"])
-    experiments = get_experiments("%s/experiments" %tmpdir,load=True,warning=False)
+def get_experiment_selection(repo_type="experiments"):
+    tmpdir = custom_battery_download(repos=[repo_type])
+    experiments = get_experiments("%s/%s" %(tmpdir,repo_type),load=True,warning=False,repo_type=repo_type)
     experiments = [x[0] for x in experiments]
     shutil.rmtree(tmpdir)
     return experiments
 
-def get_survey_selection():
-    tmpdir = custom_battery_download(repos=["surveys"])
-    surveys = get_experiments("%s/surveys" %tmpdir,load=True,warning=False,repo_type="surveys")
-    surveys = [x[0] for x in surveys]
-    shutil.rmtree(tmpdir)
-    return surveys
 
 def get_experiment_type(experiment):
     '''get_experiment_type returns the installation folder (eg, games, surveys, experiments) based on the template specified in the config.json

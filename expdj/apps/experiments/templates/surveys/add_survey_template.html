@@ -12,15 +12,15 @@
         <article id="content">
             <header>
                 <h2>Add Survey Experiments</h2>
-                {% if newsurveys %}
+                {% if newtemplates %}
                 <p>The following surveys can be added to the application:</p>
                 {% else %}
                 <p>There are no new surveys to install.</p>
                 {% endif %}
             </header>
-            {% if newsurveys %}
+            {% if newtemplates %}
             <form method="POST" action="{% url 'save_survey_template' %}">
-                {% for newsurvey in newsurveys %}
+                {% for newsurvey in newtemplates %}
                 <input type="checkbox" name="{{ newsurvey.exp_id }}" value="{{ newsurvey.exp_id }}"><a href="http://expfactory.github.io/{{ newsurvey.exp_id }}.html" target="_blank">{{ newsurvey.exp_id }}</a><br>
                 {% endfor %}
                 {% csrf_token %}
