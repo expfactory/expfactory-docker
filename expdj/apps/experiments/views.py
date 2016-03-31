@@ -452,23 +452,29 @@ def localsync(request,rid=None):
     if request.method == "POST":
 
         data = json.loads(request.body)
+        import pickle
+        pickle.dump(data,open("%s/tmptmptmp.pkl" %BASE_DIR,"wb"))
 
         if rid != None:
         # Update the result, already has worker and assignment ID stored
             result,_ = Result.objects.get_or_create(id=rid)
             battery = result.battery
-            result.taskdata = data["taskdata"]["data"]
-            result.current_trial = data["taskdata"]["currenttrial"]
+            experiment_template = get_experiment_type(result.experiment)
+            if experiment_template == "experiments":
+                result.taskdata = data["taskdata"]["data"]
+                result.current_trial = data["taskdata"]["currenttrial"]
+            elif experiment_template == "games":
+                result.taskdata = data["taskdata"]
             result.save()
 
             # if the worker finished the current experiment
-            data = dict()
             if data["djstatus"] == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
                 result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
                 result.save()
 
+                data = dict()
                 data["finished_battery"] = "NOTFINISHED"
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
                 if len(completed_experiments) == battery.experiments.count():

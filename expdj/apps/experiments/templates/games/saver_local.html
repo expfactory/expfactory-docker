@@ -1,5 +1,4 @@
 uniqueId = "{{ uniqueId }}"
-url = "/local/{{ uniqueId }}/"
 var expfactory = new ExpFactory(uniqueId)
 this.data = {}
 
@@ -23,16 +22,20 @@ function inputData(field, value) {
 function sendData(trial) {
   inputData('trial', trial)
   expfactory.recordTrialData(data)
-  console.log(expfactory)
-  expfactory.djstatus = "UPDATE"
+  var taskdata = expfactory.getTrialData()
+  taskdata.djstatus = "UPDATE"
+  var taskdata = {taskdata:expfactory.taskdata.getTrialData(), djstatus:"UPDATE"};
   $.ajax({ type: "POST",
       contentType: "application/json",
-      url : url,
-      data : JSON.stringify(expfactory),
+      url : "/local/{{ uniqueId }}/",
+      data : JSON.stringify(taskdata),
       dataType: "json",
       success: function(data) {
           console.log("data update called")
-    }
+    },
+      error: function(e){
+        console.log(e)
+      }
   })
 
   this.data = {}
