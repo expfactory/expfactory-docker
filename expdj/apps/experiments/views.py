@@ -399,7 +399,8 @@ def serve_battery(request,bid,userid=None):
                           next_page=next_page,
                           result=result)
 
-def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,uncompleted_experiments=None,next_page=None):
+def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,
+                   uncompleted_experiments=None,next_page=None,last_experiment=False):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
     :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
@@ -410,6 +411,7 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
     :param template: html template to render
     :param result: the result object, turk.models.Result
     :param uncompleted_experiments: list of uncompleted experiments models.Experiment [optional for preview]
+    :param last_experiment: boolean if true will redirect the user to a page to submit the result (for surveys)
     '''
     if next_page == None:
         next_page = "javascript:window.location.reload();"
@@ -444,6 +446,9 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         runcode = runcode.replace("{% csrf_token %}",csrf_field)
         context["validation"] = validation
 
+        if last_experiment == True:
+            context["last_experiment"] = last_experiment
+
     context["run"] = runcode
     response = render_to_response(template, context)
 
@@ -473,6 +478,7 @@ def sync(request,rid=None):
                 djstatus = data["djstatus"]
             elif experiment_template == "games":
                 data = json.loads(request.body)
+                redirect_url = data["redirect_url"]
                 result.taskdata = data["taskdata"]
                 djstatus = data["djstatus"]
             elif experiment_template == "surveys":
@@ -499,13 +505,15 @@ def sync(request,rid=None):
                     assign_experiment_credit.apply_async([result.worker.id],countdown=60)
                     data["finished_battery"] = "FINISHED"
 
+                # Refresh the page if we've completed a survey or game
+                if experiment_template in ["surveys","games"]:
+                    return redirect(redirect_url)
+
             data = json.dumps(data)
 
     else:
         data = json.dumps({"message":"received!"})
 
-    if experiment_template == "surveys":
-         return redirect(redirect_url)
     return HttpResponse(data, content_type='application/json')
 
 

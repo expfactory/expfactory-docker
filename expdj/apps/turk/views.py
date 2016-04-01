@@ -107,10 +107,16 @@ def serve_hit(request,hid):
             # Thank you for your participation - no more experiments!
             return render_to_response("turk/worker_sorry.html")
 
+        # if it's the last experiment, we will submit the result to amazon (only for surveys)
+        last_experiment = False
+        if len(uncompleted_experiments) == 1:
+            last_experiment = True
+
         task_list = select_random_n(uncompleted_experiments,1)
         experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
         experiment_type = get_experiment_type(experimentTemplate)
         task_list = battery.experiments.filter(template=experimentTemplate)
+        template = "%s/mturk_battery.html" %(experiment_type)
 
         # Generate a new results object for the worker, assignment, experiment
         result,_ = Result.objects.update_or_create(worker=worker,
@@ -133,10 +139,11 @@ def serve_hit(request,hid):
                               experiment_type=experiment_type,
                               context=aws,
                               task_list=task_list,
-                              template="turk/mturk_battery.html",
+                              template=template,
                               uncompleted_experiments=uncompleted_experiments,
                               next_page=None,
-                              result=result)
+                              result=result,
+                              last_experiment=last_experiment)
 
     else:
         return render_to_response("turk/robot_sorry.html")
@@ -174,6 +181,16 @@ def finished_view(request):
     return render_to_response("turk/worker_sorry.html")
 
 
+def survey_submit(request,rid):
+    '''survey_submit redirects user to a page to submit a result to amazon'''
+    result = Result.objects.filter(id=rid)[0]
+    amazon_host = get_host()
+    context = {"assignment_id":result.assignment.id,
+               "worker_id":result.worker.id,
+               "hit_id":result.hit.id,
+               "amazon_host":amazon_host}
+    return render(request, "surveys/worker_finished.html", context)
+
 def not_consent_view(request):
     '''The worker has previewed the experiment, clicked Start Experiment, but not consented'''
     return render_to_response("turk/mturk_battery_preview.html")
@@ -184,7 +201,7 @@ def end_assignment(request,rid):
     and triggering function to allocate credit for what is completed
     '''
     result = Result.objects.filter(id=rid)[0]
-    if assignment != None:
+    if result.assignment != None:
         assignment = result.assignment
         assignment.completed = True
         assignment.save()
