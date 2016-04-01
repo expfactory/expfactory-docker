@@ -125,7 +125,8 @@ def update_experiment_template(request,eid):
     context = {"experients": ExperimentTemplate.objects.all()}
     if request.user.is_superuser:
         experiment = get_experiment_template(eid=eid,request=request)
-        errored_experiments = install_experiments(experiment_tags=[experiment.exp_id])
+        experiment_type = get_experiment_type(experiment)
+        errored_experiments = install_experiments(experiment_tags=[experiment.exp_id],repo_type=experiment_type)
         if len(errored_experiments) > 0:
             message = "The experiments %s did not update successfully." %(",".join(errored_experiments))
         else:
@@ -415,6 +416,7 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
     '''
     if next_page == None:
         next_page = "javascript:window.location.reload();"
+    context["next_page"] = next_page
 
     # Get experiment folders
     experiment_folders = [os.path.join(media_dir,experiment_type,x.template.exp_id) for x in task_list]
@@ -500,13 +502,14 @@ def sync(request,rid=None):
 
                 data = dict()
                 data["finished_battery"] = "NOTFINISHED"
+                data["djstatus"] = djstatus
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
                 if len(completed_experiments) == battery.experiments.count():
                     assign_experiment_credit.apply_async([result.worker.id],countdown=60)
                     data["finished_battery"] = "FINISHED"
 
                 # Refresh the page if we've completed a survey or game
-                if experiment_template in ["surveys","games"]:
+                if experiment_template in ["surveys"]:
                     return redirect(redirect_url)
 
             data = json.dumps(data)
