@@ -22,6 +22,7 @@ from expdj.apps.turk.models import get_worker
 from expdj.apps.users.models import User
 from django.shortcuts import render
 import expdj.settings as settings
+import datetime
 import uuid
 import shutil
 import hashlib
@@ -437,6 +438,9 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
 
         # Field will be filled in by browser cookie
         csrf_field = '<input type="hidden" name="csrfmiddlewaretoken" value="hello">'
+
+        # We add a hidden field, djstatus, to incdicate a survey is completed on submission
+        csrf_field = '%s\n<input type="hidden" name="djstatus" value="FINISHED">' %(csrf_field)
         runcode = runcode.replace("{% csrf_token %}",csrf_field)
         context["validation"] = validation
 
@@ -457,20 +461,22 @@ def localsync(request,rid=None):
 
     if request.method == "POST":
 
-        data = json.loads(request.body)
-        import pickle
-        pickle.dump(data,open("%s/tmptmptmp.pkl" %BASE_DIR,"wb"))
-
         if rid != None:
         # Update the result, already has worker and assignment ID stored
             result,_ = Result.objects.get_or_create(id=rid)
             battery = result.battery
             experiment_template = get_experiment_type(result.experiment)
             if experiment_template == "experiments":
+                data = json.loads(request.body)
                 result.taskdata = data["taskdata"]["data"]
                 result.current_trial = data["taskdata"]["currenttrial"]
-            elif experiment_template in ["games","surveys"]:
+            elif experiment_template == "games":
+                data = json.loads(request.body)
                 result.taskdata = data["taskdata"]
+            elif experiment_template == "surveys":
+                data = request.POST
+                result.taskdata = data
+
             result.save()
 
             # if the worker finished the current experiment
