@@ -34,6 +34,7 @@ $( document ).ready(function() {
 
     {% include "experiments/serve_battery_cookie.html" %}
 
+    $("input[name='csrfmiddlewaretoken']").attr("value",csrftoken); 
     uniqueId = "{{ uniqueId }}"
     var expfactory = new ExpFactory(uniqueId)
 
@@ -54,7 +55,7 @@ $( document ).ready(function() {
                 elements.each(function(index,element){
                     var pid = "#" + $(element).attr("name")
                     $(pid).css("color","red")
-                    missing = true;                   
+                    missing = true;
                 });
 
                 if (missing == true){
@@ -75,43 +76,7 @@ $( document ).ready(function() {
 
     // Form submission
     }).wizard( "form" ).submit(function( event ) {
-	event.preventDefault();
-        
-        // Save data to browser
-        var $inputs = $("input:checked");
-        var $text = $("input:text")
-        var $elements = $inputs.add($text)
-        
-        var results = []
-        $elements.each(function(index, element) {
-          var result = {}
-
-          if ($.inArray( $(element).attr("name"), [ "forward", "backward", "process"] ) == -1) {
-              result.name = $(element).attr("name");
-              result.value = $(element).attr("value");
-              result.options = $(element).attr("meta-options");
-              result.text = $(element).attr("meta-text");
-              results.push(result);
-          }
-        })
-
-        expfactory.recordTrialData(results)
-        expfactory.djstatus = "FINISHED"
-        console.log(expfactory)
-
-        setTimeout(function(){
-
-            $.ajax({ type: "POST",
-                contentType: "application/json",
-                url : "/local/{{ uniqueId }}",
-                data : JSON.stringify(expfactory),
-                dataType: "json",
-                success: function(data) {
-                    console.log("data update called")
-                }
-            })
-       }, 2000);
-
+       console.log("submit!");
 
      // Validation
      }).validate({

@@ -431,7 +431,13 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         runcode = experiment[0]["deployment_variables"]["run"]
     elif experiment_type in ["surveys"]:
         experiment = load_experiment(experiment_folders[0])
-        runcode,validation = generate_survey(experiment,experiment_folders[0])
+        runcode,validation = generate_survey(experiment,experiment_folders[0],
+                                             form_action="/local/%s/" %result.id,
+                                             csrf_token=True)
+
+        # Field will be filled in by browser cookie
+        csrf_field = '<input type="hidden" name="csrfmiddlewaretoken" value="hello">'
+        runcode = runcode.replace("{% csrf_token %}",csrf_field)
         context["validation"] = validation
 
     context["run"] = runcode
@@ -463,7 +469,7 @@ def localsync(request,rid=None):
             if experiment_template == "experiments":
                 result.taskdata = data["taskdata"]["data"]
                 result.current_trial = data["taskdata"]["currenttrial"]
-            elif experiment_template == "games":
+            elif experiment_template in ["games","surveys"]:
                 result.taskdata = data["taskdata"]
             result.save()
 
