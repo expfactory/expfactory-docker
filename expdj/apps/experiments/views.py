@@ -5,7 +5,8 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys
+  update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
+  complete_survey_result
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -489,7 +490,7 @@ def sync(request,rid=None):
                 djstatus = data["djstatus"]
                 # Remove keys we don't want
                 data = remove_keys(data,["process","csrfmiddlewaretoken","url","djstatus"])
-                result.taskdata = data
+                result.taskdata = complete_survey_result(result.experiment.exp_id,data)
 
             result.save()
 
