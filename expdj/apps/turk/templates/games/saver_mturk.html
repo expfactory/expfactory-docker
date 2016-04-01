@@ -21,16 +21,34 @@ function inputData(field, value) {
 
 function sendData(trial) {
   inputData('trial', trial)
+  if (data.finished == 0) {
+      var djstatus = "UPDATE"
+  } else {
+      var djstatus = "FINISHED"
+  }
   expfactory.recordTrialData(data)
-  var taskdata = {taskdata:expfactory.taskdata.getTrialData(), djstatus:"UPDATE","redirect_url":document.URL};
+  var taskdata = {taskdata:expfactory.taskdata.getTrialData(), djstatus:djstatus,"redirect_url":document.URL};
   $.ajax({ type: "POST",
       contentType: "application/json",
       url : "/local/{{ uniqueId }}/",
       data : JSON.stringify(taskdata),
       dataType: "json",
       success: function(data) {
-          console.log("data update called")
-    },
+        
+          if (data.finished_battery == "FINISHED"){
+              $("#turkey_form").submit();
+              document.location = "{{ next_page }}"
+          }
+         
+          if (data.djstatus == "FINISHED") {
+              setTimeout(function(){
+                  document.location = "{{ next_page }}";
+              },2000);         
+ 
+          } else {
+              console.log("data update called")
+          }
+      },
       error: function(e){
         console.log(e)
       }
