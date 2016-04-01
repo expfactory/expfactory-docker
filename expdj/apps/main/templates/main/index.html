@@ -4,11 +4,11 @@
 {% block hero %}
 <section id="hero" class="container">
     <header>
-        <h2>The <a href="http://expfactory.github.io">Experiment Factory</a>
+        <h2>The <a href="https://expfactory.github.io">Experiment Factory</a>
         </br>Make Experiments.
         </h2>
     </header>
-    <p>Designed and built by <strong><a href="http://poldracklab.stanford.edu">Poldracklab</a></strong>.</p>
+    <p>Designed and built by <strong><a href="https://poldracklab.stanford.edu">Poldracklab</a></strong>.</p>
     <ul class="actions">
         {% if request.user.is_authenticated %}
         <li><a href="{% url 'experiments' %}" class="button">View Experiments</a></li>

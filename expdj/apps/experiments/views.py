@@ -5,7 +5,7 @@ from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm,
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
 from expdj.apps.turk.tasks import assign_experiment_credit
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_experiment_type
+  update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -436,11 +436,11 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
                                              form_action="/local/%s/" %result.id,
                                              csrf_token=True)
 
-        # Field will be filled in by browser cookie
+        # Field will be filled in by browser cookie, and hidden fields are added for data
         csrf_field = '<input type="hidden" name="csrfmiddlewaretoken" value="hello">'
-
-        # We add a hidden field, djstatus, to incdicate a survey is completed on submission
         csrf_field = '%s\n<input type="hidden" name="djstatus" value="FINISHED">' %(csrf_field)
+        csrf_field = '%s\n<input type="hidden" name="url" value="chickenfingers">' %(csrf_field)
+
         runcode = runcode.replace("{% csrf_token %}",csrf_field)
         context["validation"] = validation
 
@@ -453,7 +453,7 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
 
 # These views are to work with backbone.js
 @ensure_csrf_cookie
-def localsync(request,rid=None):
+def sync(request,rid=None):
     '''localsync
     view/method for running experiments to get data from the server
     :param rid: the result object ID, obtained before user sees page
@@ -470,17 +470,23 @@ def localsync(request,rid=None):
                 data = json.loads(request.body)
                 result.taskdata = data["taskdata"]["data"]
                 result.current_trial = data["taskdata"]["currenttrial"]
+                djstatus = data["djstatus"]
             elif experiment_template == "games":
                 data = json.loads(request.body)
                 result.taskdata = data["taskdata"]
+                djstatus = data["djstatus"]
             elif experiment_template == "surveys":
                 data = request.POST
+                redirect_url = data["url"]
+                djstatus = data["djstatus"]
+                # Remove keys we don't want
+                data = remove_keys(data,["process","csrfmiddlewaretoken","url","djstatus"])
                 result.taskdata = data
 
             result.save()
 
             # if the worker finished the current experiment
-            if data["djstatus"] == "FINISHED":
+            if djstatus == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
                 result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
@@ -497,6 +503,9 @@ def localsync(request,rid=None):
 
     else:
         data = json.dumps({"message":"received!"})
+
+    if experiment_template == "surveys":
+         return redirect(redirect_url)
     return HttpResponse(data, content_type='application/json')
 
 

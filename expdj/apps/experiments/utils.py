@@ -278,3 +278,15 @@ def update_credits(experiment,cid):
         experiment.include_catch = False
 
     experiment.save()
+
+# GENERAL UTILS ############################################################################
+
+def remove_keys(dictionary, keys):
+    '''remove_key deletes a key from a dictionary'''
+    if isinstance(keys,str):
+        keys = [keys]
+    new_dict = dict(dictionary) # in case Query dict
+    for key in keys:
+        if key in new_dict:
+            del new_dict[key]
+    return new_dict

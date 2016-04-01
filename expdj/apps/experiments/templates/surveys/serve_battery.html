@@ -34,10 +34,8 @@ $( document ).ready(function() {
 
     {% include "experiments/serve_battery_cookie.html" %}
 
-    $("input[name='csrfmiddlewaretoken']").attr("value",csrftoken); 
-    uniqueId = "{{ uniqueId }}"
-    var expfactory = new ExpFactory(uniqueId)
-
+    $("input[name='csrfmiddlewaretoken']").attr("value",csrftoken);
+    $("input[name='url']").attr("value",document.URL);
 
     $("#start_experiment_button").click();
     expfactory_finished = false;
@@ -76,7 +74,7 @@ $( document ).ready(function() {
 
     // Form submission
     }).wizard( "form" ).submit(function( event ) {
-       console.log("submit!");
+       console.log("Submit!");
 
      // Validation
      }).validate({

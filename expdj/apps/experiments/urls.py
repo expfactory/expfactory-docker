@@ -4,7 +4,7 @@ view_experiment, export_experiment, preview_experiment, batteries_view, add_batt
 edit_battery, view_battery, delete_battery, export_battery, remove_experiment, \
 add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, preview_battery, serve_battery, serve_battery_anon, \
-generate_battery_user, localsync, experiment_results_dashboard, \
+generate_battery_user, sync, experiment_results_dashboard, \
 battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
 save_survey_template, add_survey_template, add_game_template, save_game_template
 from expdj import settings
@@ -62,8 +62,8 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',intro_battery,name='intro_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/accept$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
-    url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',localsync,name='local'),
-    url(r'^local/$',localsync,name='local')) # local sync of data
+    url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',sync,name='local'),
+    url(r'^local/$',sync,name='local')) # local sync of data
 
 if settings.DEBUG:
     urlpatterns += patterns('',
