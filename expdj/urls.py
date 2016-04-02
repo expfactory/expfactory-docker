@@ -31,12 +31,12 @@ class ExperimentTemplateSerializer(serializers.HyperlinkedModelSerializer):
     cognitive_atlas_task = CognitiveAtlasTaskSerializer()
     class Meta:
         model = ExperimentTemplate
-        fields = ('exp_id', 'name', 'cognitive_atlas_task', 'reference')
+        fields = ('exp_id','name','cognitive_atlas_task','reference','version','template')
 
 class WorkerSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Worker
-        fields = ["id"]   
+        fields = ["id"]
 
 class ResultSerializer(serializers.HyperlinkedModelSerializer):
     experiment = ExperimentTemplateSerializer()
@@ -49,7 +49,7 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Result
-        fields = ('data', 'experiment', 'battery', 'worker','language','browser','platform','completed','datetime')
+        fields = ('data','experiment','battery','worker','language','browser','platform','completed','datetime')
 
 
 # ViewSets define the view behavior.
