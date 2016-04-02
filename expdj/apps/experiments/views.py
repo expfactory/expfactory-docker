@@ -499,6 +499,7 @@ def sync(request,rid=None):
                 # Mark experiment as completed
                 result.completed = True
                 result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+                result.version = result.experiment.version
                 result.save()
 
                 data = dict()

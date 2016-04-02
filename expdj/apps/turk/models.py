@@ -507,7 +507,7 @@ class Assignment(models.Model):
 class Result(models.Model):
     '''A result holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
     taskdata = JSONField(null=True,blank=True,load_kwargs={'object_pairs_hook': collections.OrderedDict})
-    #data = models.Field(source='get_taskdata')
+    version = models.CharField(max_length=128,null=True,blank=True,help_text="Experiment version (github commit) at completion time of result")
     worker = models.ForeignKey(Worker,null=False,blank=False,related_name='result_worker')
     experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
     battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
