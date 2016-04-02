@@ -84,6 +84,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Type</th>
                     <th>Cognitive Atlas Task</th>
                     <th></th>
                </tr>
@@ -92,7 +93,17 @@
            {% for experiment in battery.experiments.all %}
                <tr>
                    <td><a href="{% url 'experiment_details' battery.id experiment.id %}">{{ experiment.template.name }}</a></td>
-                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
+                   <td>{% if experiment.template.template = "jspsych" %}
+                       experiment
+                       {% endif %}
+                       {% if experiment.template.template = "survey" %}
+                       survey
+                       {% endif %}
+                       {% if experiment.template.template = "phaser" %}
+                       game
+                       {% endif %}
+                   </td>
+                   <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.template.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
                    <td>
                       {% if edit_permission %}
                       <a class="btn btn-default" title="export experiment results" href="{% url 'export_experiment' experiment.id %}"><i class="fa fa-download"></i></a>
@@ -207,6 +218,7 @@ $(document).ready(function() {
     $('#experiments_table').dataTable({
     "autoWidth": false,
      "columns": [
+        null,
         null,
         null,
        { "width": "20%" }

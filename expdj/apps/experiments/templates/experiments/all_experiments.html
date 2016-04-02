@@ -25,6 +25,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Type</th>
                     <th>Cognitive Atlas Task</th>
                     <th></th>
                </tr>
@@ -33,6 +34,16 @@
            {% for experiment in experiments %}
                <tr>
                    <td><a href="{% url 'experiment_details' experiment.exp_id %}">{{ experiment.name }}</a></td>
+                   <td>{% if experiment.template = "jspsych" %}
+                       experiment
+                       {% endif %}
+                       {% if experiment.template = "survey" %}
+                       survey
+                       {% endif %}
+                       {% if experiment.template = "phaser" %}
+                       game
+                       {% endif %}
+                   </td>
                    <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.cognitive_atlas_task }}</a></td>
                    <td>
                       <a class="btn btn-default" target="_blank" title="preview" href="{% url 'preview_experiment' experiment.exp_id %}" id="preview_experiment"><i class="fa fa-eye"></i></a>
@@ -65,7 +76,8 @@ $(document).ready(function() {
 
   $('#experiments_table').dataTable({
     "columns": [
-      { "width": "40%" },
+      { "width": "20%" },
+      { "width": "20%" },
       { "width": "40%" },
       { "width": "20%" },
      ]
