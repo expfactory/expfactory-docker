@@ -87,6 +87,10 @@ def serve_hit(request,hid):
         # This is the submit URL, either external or sandbox
         host = get_host()
 
+        # Only supporting chrome
+        if request.user_agent.browser == "Chrome":
+            return render_to_response("turk/browser_sorry.html")
+
         # Try to get some info about browser, language, etc.
         browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
         platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
