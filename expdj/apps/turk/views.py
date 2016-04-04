@@ -189,10 +189,9 @@ def survey_submit(request,rid,hid):
     '''survey_submit redirects user to a page to submit a result to amazon'''
     result = Result.objects.filter(id=rid)[0]
     amazon_host = get_host()
-    hit = HIT.objects.filter(id=hid)
-    context = {"assignment_id":result.assignment.id,
+    context = {"assignment_id":result.assignment.mturk_id,
                "worker_id":result.worker.id,
-               "hit_id":hit.id,
+               "hit_id":hid,
                "amazon_host":amazon_host}
     return render(request, "surveys/worker_finished.html", context)
 
