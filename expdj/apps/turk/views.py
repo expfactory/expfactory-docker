@@ -185,13 +185,14 @@ def finished_view(request):
     return render_to_response("turk/worker_sorry.html")
 
 
-def survey_submit(request,rid):
+def survey_submit(request,rid,hid):
     '''survey_submit redirects user to a page to submit a result to amazon'''
     result = Result.objects.filter(id=rid)[0]
     amazon_host = get_host()
+    hit = HIT.objects.filter(id=hid)
     context = {"assignment_id":result.assignment.id,
                "worker_id":result.worker.id,
-               "hit_id":result.hit.id,
+               "hit_id":hit.id,
                "amazon_host":amazon_host}
     return render(request, "surveys/worker_finished.html", context)
 

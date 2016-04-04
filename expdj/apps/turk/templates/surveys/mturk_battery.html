@@ -36,7 +36,7 @@ $( document ).ready(function() {
 
     $("input[name='csrfmiddlewaretoken']").attr("value",csrftoken);
      {% if last_experiment %}
-         var redirect_url = "{% url 'survey_submit' uniqueId %}"
+         var redirect_url = "{% url 'survey_submit' uniqueId hit_id %}"
          $("input[name='url']").attr("value",redirect_url);
      {% else %}
          $("input[name='url']").attr("value",document.URL);
