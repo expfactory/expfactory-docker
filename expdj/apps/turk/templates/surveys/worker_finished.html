@@ -1,10 +1,11 @@
-{% load staticfiles %}
+{% load static from staticfiles %}
 <html>
 <head>
     <title>The Experiment Factory: No more experiments!</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+    <script src="{% static "js/jquery.min.js"%}"></script>
 </head>
 <body>
 <style>
@@ -42,5 +43,7 @@ div {
 </form>
 
 <script>
-$("#turkey_form").submit();
+$(document).ready(function(){
+    $("#turkey_form").submit();
+});
 </script>

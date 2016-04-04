@@ -88,7 +88,7 @@ def serve_hit(request,hid):
         host = get_host()
 
         # Only supporting chrome
-        if request.user_agent.browser == "Chrome":
+        if request.user_agent.browser.family != "Chrome":
             return render_to_response("turk/browser_sorry.html")
 
         # Try to get some info about browser, language, etc.
