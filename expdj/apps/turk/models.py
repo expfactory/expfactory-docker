@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection, \
-get_credentials, to_dict
+get_credentials, to_dict, get_time_difference
 from django.core.validators import MaxValueValidator, MinValueValidator
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
 from boto.mturk.qualification import AdultRequirement, NumberHitsApprovedRequirement, \
@@ -65,10 +65,24 @@ def get_worker(worker_id,create=True):
     :param worker_id: the unique identifier for the worker
     '''
     # (<Worker: WORKER_ID: experiments[0]>, True)
+    now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+
     if create == True:
-        worker,_ = Worker.objects.update_or_create(id=worker_id)
+        worker,_ = Worker.objects.update_or_create(id=worker_id,
+                                                   last_visit_time=now)
     else:
         worker = Worker.objects.filter(id=worker_id)
+
+    if worker.last_visit_time != None: # minutes
+        time_difference = get_time_difference(worker.last_visit_time,now)
+        # If more than an hour has passed, this is a new session
+        if time_difference >= 60.0:
+            worker.session_count +=1
+
+    # Update the last visit time to be now
+    worker.visit_count +=1
+    worker.last_visit_time = now
+    worker.save()
     return worker
 
 class HIT(models.Model):

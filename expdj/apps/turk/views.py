@@ -17,7 +17,6 @@ from expdj.apps.turk.forms import HITForm
 from optparse import make_option
 from numpy.random import choice
 import requests
-import datetime
 import json
 import os
 

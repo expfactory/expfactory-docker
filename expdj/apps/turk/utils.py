@@ -23,7 +23,6 @@ def to_dict(input_ordered_dict):
 PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
 SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'
 
-# TODO: this will need to be where our app is hosted
 PRODUCTION_WORKER_URL = u'https://www.mturk.com'
 SANDBOX_WORKER_URL = u'https://workersandbox.mturk.com'
 
@@ -116,33 +115,7 @@ def get_credentials(battery):
     return AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID
 
 def get_connection(aws_access_key_id,aws_secret_access_key):
-    """Create connection based upon settings/configuration parameters
-
-    The object returned from this function is a Mechanical Turk
-    connection object. If the Mechanical Turk Connection object could
-    not be created, an InvalidTurkSettings exception is raised.
-
-    The Django settings file should have either the TURK or
-    TURK_CONFIG_FILE parameters defined (and not set to None). If both
-    are defined (and not None), the TURK parameter takes precedent.
-
-    If the TURK parameter is used in the settings file, it will have a
-    syntax similar to the following:
-
-    TURK = {
-        'host': 'mturk.com/mturk/externalSubmit',
-        'sandbox_host':'workersandbox.mturk.com/mturk/externalSubmit'
-        'app_url': 'brainmeta.org'
-        'debug': 1
-    }
-
-    The host and debug parameters are optional and, if omitted,
-    defaults are used. The host is the Amazon Mechanical Turk host with
-    which to connect. There are two choices, production or sandbox. If
-    omitted, production is used.  Debug is the level of debug
-    information printed by the boto library.
-
-    """
+    """Create connection based upon settings/configuration parameters"""
 
     host = get_host()
     debug = 1
@@ -164,19 +137,6 @@ def get_app_url():
     if hasattr(settings, 'TURK') and settings.TURK is not None:
         if "app_url" in settings.TURK:
             return settings.TURK["app_url"]
-
-# Should do this properly and add a different question type?
-def get_check_questions():
-    return [{"question":"I am currently completing an Amazon Mechanical Turk HIT.",
-             "answers":["Yes","No"],
-             "correct_index":0},
-            {"question":"The season that is occurring in the month of December is:",
-             "answers":["Spring","Summer","Winter","Fall"],
-             "correct_index":2},
-            {"question":"When I subtract three from eight (8-3) the answer is:",
-             "answers":[1,2,3,4,5,6,7,8,9,10,11],
-             "correct_index":4}]
-
 
 # Selection Algorithms ###############################################################################
 
@@ -223,3 +183,9 @@ def get_worker_experiments(worker,battery,completed=False):
     else:
         completed_experiments = [e for e in worker_tags if e in battery_tags]
         return completed_experiments
+
+def get_time_difference(t1,t2,format='%Y-%m-%d %H:%M:%S'):
+    '''calculate difference between two time strings, t1 and t2, returns minutes'''
+    d1 = datetime.strptime(t1, format)
+    d2 = datetime.strptime(t2, format)
+    return (d2 - d1).total_seconds() / 60
