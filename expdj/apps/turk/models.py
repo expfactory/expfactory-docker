@@ -42,6 +42,9 @@ class DisposeException(Exception):
 
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    session_count = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of one hour sessions completed by the worker."))
+    visit_count = models.PositiveIntegerField(null=True,blank=True,help_text=("The total number of visits"))
+    last_visit_time = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, the Worker last visited"))
 
     def __str__(self):
         return "%s" %(self.id)
