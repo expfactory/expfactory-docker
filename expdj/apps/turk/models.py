@@ -12,6 +12,7 @@ from django.db.models.signals import pre_init
 from django.contrib.auth.models import User
 from django.db.models import Q, DO_NOTHING
 from boto.mturk.price import Price
+from django.utils import timezone
 from jsonfield import JSONField
 from django.db import models
 import collections
@@ -65,18 +66,20 @@ def get_worker(worker_id,create=True):
     :param worker_id: the unique identifier for the worker
     '''
     # (<Worker: WORKER_ID: experiments[0]>, True)
-    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+    now = timezone.now()
 
     if create == True:
         worker,_ = Worker.objects.update_or_create(id=worker_id)
     else:
-        worker = Worker.objects.filter(id=worker_id)
+        worker = Worker.objects.filter(id=worker_id)[0]
 
     if worker.last_visit_time != None: # minutes
         time_difference = get_time_difference(worker.last_visit_time,now)
         # If more than an hour has passed, this is a new session
         if time_difference >= 60.0:
             worker.session_count +=1
+    else: # this is the first session
+        worker.session_count = 1
 
     # Update the last visit time to be now
     worker.visit_count +=1
@@ -528,7 +531,7 @@ class Result(models.Model):
     experiment = models.ForeignKey(ExperimentTemplate,help_text="The Experiment Template completed by the worker in the battery",null=False,blank=False,on_delete=DO_NOTHING)
     battery = models.ForeignKey(Battery, help_text="Battery of Experiments deployed by the HIT.", verbose_name="Experiment Battery", null=False, blank=False,on_delete=DO_NOTHING)
     assignment = models.ForeignKey(Assignment,null=True,blank=True,related_name='assignment')
-    datetime = models.CharField(max_length=128,null=True,blank=True,help_text="DateTime string returned by browser at last submission of data")
+    finishtime = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, the Worker finished the result"))
     current_trial = models.PositiveIntegerField(null=True,blank=True,help_text=("The last (current) trial recorded as complete represented in the results."))
     language = models.CharField(max_length=128,null=True,blank=True,help_text="language of the browser associated with the result")
     browser = models.CharField(max_length=128,null=True,blank=True,help_text="browser of the result")

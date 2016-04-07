@@ -23,6 +23,7 @@ from expdj.apps.turk.models import get_worker
 from expdj.apps.users.models import User
 from django.shortcuts import render
 import expdj.settings as settings
+from django.utils import timezone
 import datetime
 import uuid
 import shutil
@@ -353,10 +354,8 @@ def serve_battery(request,bid,userid=None):
         return preview_battery(request,bid)
 
     worker = get_worker(userid,create=False)
-    if len(worker) == 0:
+    if isinstance(worker,list): # no id means returning []
         return render_to_response("turk/invalid_id_sorry.html")
-    else:
-        worker = worker[0]
 
     # Try to get some info about browser, language, etc.
     browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
@@ -501,7 +500,7 @@ def sync(request,rid=None):
             if djstatus == "FINISHED":
                 # Mark experiment as completed
                 result.completed = True
-                result.datetime = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+                result.finishtime = timezone.now()
                 result.version = result.experiment.version
                 result.save()
 

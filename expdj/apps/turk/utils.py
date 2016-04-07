@@ -184,8 +184,10 @@ def get_worker_experiments(worker,battery,completed=False):
         completed_experiments = [e for e in worker_tags if e in battery_tags]
         return completed_experiments
 
-def get_time_difference(t1,t2,format='%Y-%m-%d %H:%M:%S'):
+def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
     '''calculate difference between two time strings, t1 and t2, returns minutes'''
-    d1 = datetime.datetime.strptime(t1, format)
-    d2 = datetime.datetime.strptime(t2, format)
+    if isinstance(d1,str):
+        d1 = datetime.datetime.strptime(d1, format)
+    if isinstance(d2,str):
+        d2 = datetime.datetime.strptime(d2, format)
     return (d2 - d1).total_seconds() / 60
