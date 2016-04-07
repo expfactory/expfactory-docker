@@ -42,8 +42,8 @@ class DisposeException(Exception):
 
 class Worker(models.Model):
     id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    session_count = models.PositiveIntegerField(null=True,blank=True,help_text=("The number of one hour sessions completed by the worker."))
-    visit_count = models.PositiveIntegerField(null=True,blank=True,help_text=("The total number of visits"))
+    session_count = models.PositiveIntegerField(default=0,help_text=("The number of one hour sessions completed by the worker."))
+    visit_count = models.PositiveIntegerField(default=0,help_text=("The total number of visits"))
     last_visit_time = models.DateTimeField(null=True,blank=True,help_text=("The date and time, in UTC, the Worker last visited"))
 
     def __str__(self):
@@ -65,11 +65,10 @@ def get_worker(worker_id,create=True):
     :param worker_id: the unique identifier for the worker
     '''
     # (<Worker: WORKER_ID: experiments[0]>, True)
-    now = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
 
     if create == True:
-        worker,_ = Worker.objects.update_or_create(id=worker_id,
-                                                   last_visit_time=now)
+        worker,_ = Worker.objects.update_or_create(id=worker_id)
     else:
         worker = Worker.objects.filter(id=worker_id)
 

@@ -186,6 +186,6 @@ def get_worker_experiments(worker,battery,completed=False):
 
 def get_time_difference(t1,t2,format='%Y-%m-%d %H:%M:%S'):
     '''calculate difference between two time strings, t1 and t2, returns minutes'''
-    d1 = datetime.strptime(t1, format)
-    d2 = datetime.strptime(t2, format)
+    d1 = datetime.datetime.strptime(t1, format)
+    d2 = datetime.datetime.strptime(t2, format)
     return (d2 - d1).total_seconds() / 60
