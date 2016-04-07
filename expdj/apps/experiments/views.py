@@ -437,8 +437,11 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         runcode = experiment[0]["deployment_variables"]["run"]
     elif experiment_type in ["surveys"]:
         experiment = load_experiment(experiment_folders[0])
+        resultid = ""
+        if result != None:
+            resultid = result.id
         runcode,validation = generate_survey(experiment,experiment_folders[0],
-                                             form_action="/local/%s/" %result.id,
+                                             form_action="/local/%s/" %resultid,
                                              csrf_token=True)
 
         # Field will be filled in by browser cookie, and hidden fields are added for data
