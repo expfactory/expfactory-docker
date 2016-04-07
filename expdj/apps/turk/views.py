@@ -149,7 +149,7 @@ def serve_hit(request,hid):
                               last_experiment=last_experiment)
 
     else:
-        return render_to_response("turk/robot_sorry.html")
+        return render_to_response("turk/error_sorry.html")
 
 def preview_hit(request,hid):
     '''preview_hit is the view for when a worker has not accepted the task'''

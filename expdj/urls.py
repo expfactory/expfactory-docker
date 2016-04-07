@@ -49,7 +49,7 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Result
-        fields = ('data','experiment','battery','worker','language','browser','platform','completed','datetime')
+        fields = ('data','experiment','battery','worker','language','browser','platform','completed','finishtime')
 
 
 # ViewSets define the view behavior.
