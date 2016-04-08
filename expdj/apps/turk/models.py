@@ -308,18 +308,28 @@ class HIT(models.Model):
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
 
-        result = self.connection.create_hit(
-                title=self.title,
-                description=self.description,
-                keywords=self.keywords,
-                duration=datetime.timedelta(self.assignment_duration_in_hours/24.0),
-                lifetime=datetime.timedelta(self.lifetime_in_hours/24.0),
-                max_assignments=self.max_assignments,
-                question=questionform,
-                qualifications=qualifications,
-                reward=Price(amount=self.reward),
-                response_groups=('Minimal', 'HITDetail'),  # I don't know what response groups are
-        )[0]
+        if len(qualifications.requirements)>0:
+            result = self.connection.create_hit(title=self.title,
+                                                description=self.description,
+                                                keywords=self.keywords,
+                                                duration=datetime.timedelta(self.assignment_duration_in_hours/24.0),
+                                                lifetime=datetime.timedelta(self.lifetime_in_hours/24.0),
+                                                max_assignments=self.max_assignments,
+                                                question=questionform,
+                                                qualifications=qualifications,
+                                                reward=Price(amount=self.reward),
+                                                response_groups=('Minimal', 'HITDetail'))[0]
+
+        else:
+            result = self.connection.create_hit(title=self.title,
+                                                description=self.description,
+                                                keywords=self.keywords,
+                                                duration=datetime.timedelta(self.assignment_duration_in_hours/24.0),
+                                                lifetime=datetime.timedelta(self.lifetime_in_hours/24.0),
+                                                max_assignments=self.max_assignments,
+                                                question=questionform,
+                                                reward=Price(amount=self.reward),
+                                                response_groups=('Minimal', 'HITDetail'))[0]
 
         # Update our hit object with the aws HIT
         self.mturk_id = result.HITId
