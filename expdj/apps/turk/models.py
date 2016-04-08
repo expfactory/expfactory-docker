@@ -292,8 +292,8 @@ class HIT(models.Model):
             qualifications.add(AdultRequirement("EqualTo", 1))
         else:
             qualifications.add(AdultRequirement("EqualTo",0))
-        if self.qualification_custom != None:
-           qualifications.add(Requirement(self.qualification_custom, "EqualTo",1, required_to_preview = True))
+        if self.qualification_custom not in [None,""]:
+            qualifications.add(Requirement(self.qualification_custom, "EqualTo",1, required_to_preview = True))
         if self.qualification_number_hits_approved != None:
             qual_number_hits = NumberHitsApprovedRequirement("GreaterThan",self.qualification_number_hits_approved)
             qualifications.add(qual_number_hits)
