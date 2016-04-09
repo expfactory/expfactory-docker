@@ -429,7 +429,7 @@ class Assignment(models.Model):
     # Convenience lookup dictionaries for the above lists
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
 
-    mturk_id = models.CharField("Assignment ID",max_length=255,unique=True,null=True,help_text="A unique identifier for the assignment")
+    mturk_id = models.CharField("Assignment ID",max_length=255,blank=True,null=True,help_text="A unique identifier for the assignment")
     worker = models.ForeignKey(Worker,null=True,blank=True,help_text="The ID of the Worker who accepted the HIT")
     hit = models.ForeignKey(HIT,null=True,blank=True,related_name='assignments')
     status = models.CharField(max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the assignment")
