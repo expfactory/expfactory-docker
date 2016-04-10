@@ -6,7 +6,8 @@ add_experiment, edit_experiment, save_experiment, update_experiment_template, \
 remove_condition, preview_battery, serve_battery, serve_battery_anon, \
 generate_battery_user, sync, experiment_results_dashboard, \
 battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
-save_survey_template, add_survey_template, add_game_template, save_game_template
+save_survey_template, add_survey_template, add_game_template, save_game_template, \
+enable_cookie_view
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -63,7 +64,8 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/accept$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',sync,name='local'),
-    url(r'^local/$',sync,name='local')) # local sync of data
+    url(r'^local/$',sync,name='local'), # local sync of data
+    url(r'^cookie/$',enable_cookie_view,name='enable_cookie_view'))
 
 if settings.DEBUG:
     urlpatterns += patterns('',

@@ -221,6 +221,11 @@ def batteries_view(request,uid=None):
     context = {'batteries': batteries}
     return render(request, 'experiments/all_batteries.html', context)
 
+# Errors and Messages ----------------------------------------------------------
+def enable_cookie_view(request):
+    '''finished_view thanks worker for participation, and gives submit button
+    '''
+    return render_to_response("experiments/cookie_sorry.html")
 
 # Preview and Serving ----------------------------------------------------------
 # Preview experiments - right now just for templates
