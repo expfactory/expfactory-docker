@@ -556,7 +556,7 @@ def save_new_template(request,template_type):
     selected_experiments = [e["exp_id"] for e in new_selection if e["exp_id"] in newtemplates]
     errored = install_experiments(experiment_tags=selected_experiments,repo_type=template_type)
     if len(errored) > 0:
-        message = "The %s %s did not install successfully." %(template_type,",".join(errored_surveys))
+        message = "The %s %s did not install successfully." %(template_type,",".join(errored))
     else:
         message = "%s installed successfully." %(template_type)
     experiments = ExperimentTemplate.objects.all()
