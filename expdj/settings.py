@@ -69,7 +69,8 @@ INSTALLED_APPS = (
     'djrill',
     'djcelery',
     'rest_framework',
-    'rest_framework.authtoken'
+    'rest_framework.authtoken',
+    'opbeat.contrib.django',
 )
 
 
@@ -105,6 +106,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
+    'opbeat.contrib.django.middleware.OpbeatAPMMiddleware',
 )
 
 ROOT_URLCONF = 'expdj.urls'

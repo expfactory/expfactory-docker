@@ -124,7 +124,7 @@ def get_battery(bid,request):
 @login_required
 def update_experiment_template(request,eid):
     '''This will update static files, along with the config.json parameters'''
-    context = {"experients": ExperimentTemplate.objects.all()}
+    context = {"experiments": ExperimentTemplate.objects.all()}
     if request.user.is_superuser:
         experiment = get_experiment_template(eid=eid,request=request)
         experiment_type = get_experiment_type(experiment)

@@ -49,6 +49,7 @@ RUN pip install scikit-learn
 RUN pip install nilearn
 RUN pip install django-cleanup
 RUN pip install django-chosen
+RUN pip install opbeat
 RUN pip install 'django-hstore==1.3.5'
 RUN pip install cognitiveatlas
 RUN pip install django-datatables-view
