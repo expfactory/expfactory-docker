@@ -1,38 +1,31 @@
-<!doctype html>
+{% load staticfiles %}
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Page Not Found :(</title>
-  <style>
-    body { text-align: center;}
-    h1 { font-size: 50px; text-align: center }
-    span[frown] { transform: rotate(90deg); display:inline-block; color: #bbb; }
-    body { font: 20px Constantia, 'Hoefler Text',  "Adobe Caslon Pro", Baskerville, Georgia, Times, serif; color: #999; text-shadow: 2px 2px 2px rgba(200, 200, 200, 0.5); }
-    ::-moz-selection{ background:#FF5E99; color:#fff; }
-    ::selection { background:#FF5E99; color:#fff; }
-    article {display:block; text-align: left; width: 500px; margin: 0 auto; }
-
-    a { color: rgb(36, 109, 56); text-decoration:none; }
-    a:hover { color: rgb(96, 73, 141) ; text-shadow: 2px 2px 2px rgba(36, 109, 56, 0.5); }
-  </style>
+    <title>The Experiment Factory: Page Not Found</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
 </head>
 <body>
-  <article>
-    <h1>Not found <span frown>:(</span></h1>
-    <div>
-      <p>Sorry, but the page you were trying to view does not exist.</p>
-      <p>It looks like this was the result of either:</p>
-      <ul>
-        <li>a mistyped address</li>
-        <li>an out-of-date link</li>
-      </ul>
-    </div>
+<style>
+div {
+    width: 400px;
+    height: 400px;
+    font-family: 'Roboto', sans-serif;
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 
-    <script>
-      var GOOG_FIXURL_LANG = (navigator.language || '').slice(0,2),
-      GOOG_FIXURL_SITE = location.host;
-    </script>
-    <script src="http://linkhelp.clients.google.com/tbproxy/lh/wm/fixurl.js"></script>
-  </article>
+    margin: auto;
+}
+</style>
+<body>
+    <div>
+        <h3>Beep Boop! Page not found, 404!</h3>
+        <img src="{% static "images/robot.png"%}"/>
+        <p>We couldn't find the page you requested.</p>
+    </div>
 </body>
 </html>

@@ -16,6 +16,13 @@ from django.conf import settings
 from expdj.apps.turk.utils import to_dict
 import os
 
+# Custom error views
+from django.conf.urls import ( handler404, handler500 )
+
+# Configure custom error pages
+handler404 = 'expdj.apps.main.views.handler404'
+handler500 = 'expdj.apps.main.views.handler500'
+
 # Seriailizers define the API representation
 class BatterySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
