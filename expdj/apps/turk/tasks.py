@@ -25,7 +25,8 @@ def assign_experiment_credit(worker_id):
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
     if len(results)>0:
-        results[0].assignment.approve()
+        if results[0].assignment != None:
+            results[0].assignment.approve()
 
 
 def assign_reward(worker_id):
