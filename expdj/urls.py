@@ -1,23 +1,29 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from rest_framework import routers, serializers, viewsets
-from django.conf.urls import include, url, patterns
-from django.http import Http404, HttpResponse
-from django.conf.urls.static import static
-from expdj.apps.turk.models import Result, Worker
 from expdj.apps.experiments.models import Battery, ExperimentTemplate, CognitiveAtlasTask
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from expdj.apps.experiments import urls as experiment_urls
+from django.contrib.auth.decorators import login_required
+from rest_framework import routers, serializers, viewsets
+from django.contrib.sitemaps.views import sitemap, index
+from django.conf.urls import include, url, patterns
+from expdj.apps.turk.models import Result, Worker
+from expdj.apps.users import urls as users_urls
+from django.http import Http404, HttpResponse
 from expdj.apps.main import urls as main_urls
 from expdj.apps.turk import urls as turk_urls
-from expdj.apps.users import urls as users_urls
-from expdj.apps.experiments import urls as experiment_urls
-from django.contrib import admin
 from django.conf.urls.static import static
-from django.conf import settings
 from expdj.apps.turk.utils import to_dict
+from django.conf import settings
+from django.contrib import admin
 import os
 
 # Custom error views
 from django.conf.urls import ( handler404, handler500 )
+
+# Sitemaps
+from expdj.api.sitemap import ExperimentTemplateSitemap, SurveyTemplateSitemap, GameTemplateSitemap
+sitemaps = {"Experiments":ExperimentTemplateSitemap,
+            "Surveys":SurveyTemplateSitemap,
+            "Games":GameTemplateSitemap}
 
 # Configure custom error pages
 handler404 = 'expdj.apps.main.views.handler404'
@@ -75,6 +81,8 @@ urlpatterns = [ url(r'^', include(main_urls)),
                 url(r'^', include(experiment_urls)),
                 url(r'^accounts/', include(users_urls)),
                 url(r'^', include(router.urls)),
+                url(r'^sitemap\.xml$', index, {'sitemaps': sitemaps}),
+                url(r'^sitemap-(?P<section>.+)\.xml$', sitemap, {'sitemaps': sitemaps}),
                 url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
                 url(r'^admin/', include(admin.site.urls))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

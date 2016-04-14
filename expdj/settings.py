@@ -54,6 +54,8 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
     'django_user_agents',
     'django.contrib.staticfiles',
     'django_extensions',

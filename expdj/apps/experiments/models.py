@@ -92,7 +92,7 @@ class ExperimentTemplate(models.Model):
     # Get the url for an experiment
     def get_absolute_url(self):
         return_cid = self.exp_id
-        return reverse('experiment_template_details', args=[str(return_cid)])
+        return reverse('experiment_details', args=[str(return_cid)])
 
 class CreditCondition(models.Model):
     '''CreditCondition

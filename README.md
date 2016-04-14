@@ -122,6 +122,17 @@ Log into the production server, and you can run [scripts/prepare_instance.sh](sc
  - set up HTTPS (see instructions below)
 
 
+### Site Name
+Use the script [scripts/name_site.py](scripts/name_site.py) to name the site. You will need to log into the instance and run this to do so. When it's running (after `docker-compose up -d` first find the id of the container that has the `/code` directory:
+
+      docker ps
+
+Then connect to it interactively:
+
+      docker exec -it CONTAINERID bash
+
+and run the script. You can also copy paste the code into the interactive shell generated with `python manage.py shell`.
+
 ### Configuration with Mechanical Turk
 
 Mechnical Turk relies on an AWS Secret Access Key and AWS Access Key. The interface can support multiple battery deployments, each of which might be associated with different credientials, and so this authentication information is not stored with the application, but in a (more) secure file on the server. Thus, use the template in "[auth](auth/dummy.cred)" to specify your credentials. Any files of this format that you add to this folder will be available for users to select from. You will also need to fill in the file called "bogus_secrets.py" and rename it to secrets.py for the variables `SECRET_KEY` and `app_url` and when you are ready for deployment, change the `debug` variable to 0.

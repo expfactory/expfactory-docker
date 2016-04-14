@@ -158,11 +158,13 @@ def view_experiment(request, eid, bid=None):
     else:
         experiment = get_experiment_template(eid,request)
         template = 'experiments/experiment_template_details.html'
+        experiment_type = get_experiment_type(experiment)
         battery = None
 
     context = {'experiment': experiment,
                'edit_permission':edit_permission,
                'delete_permission':delete_permission,
+               'experiment_type':experiment_type,
                'battery':battery}
 
     return render_to_response(template, context)
