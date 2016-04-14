@@ -1,0 +1,79 @@
+{% extends "main/base.html" %}
+{% block head %}
+<style>
+/* Google Style has bug so it's squished */
+.cse .gsc-search-button input.gsc-search-button-v2,
+input.gsc-search-button-v2 {
+width: 28px !important;
+height: 26px !important;
+padding: 4px !important;
+min-width: 13px !important;
+margin-top: 0 !important;
+}
+
+.gsc-control-cse div {
+ height:30px !important;
+}
+
+.gsc-search-button {
+ padding-top:10px !important;
+}
+
+.gsib_a {
+  padding: 0px !important;
+}
+.gsib_a input {
+  background: none !important;
+}
+.gsc-selected-option-container {
+  min-width: 100px !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fade"></div>
+
+{% if message %}
+<div class="row">
+    <ul class="messages">
+    <div class="alert alert-dismissible alert-danger">
+    {{ message|safe }}
+    </div>
+    </ul>
+</div>
+{% endif %}
+
+<!-- Search with two columns -->
+<div class="row" style="padding-bottom:30px">
+        <h2>Search</h2>
+        <div class="row">
+            <div class="col-md-3">
+            </div>
+         </div>
+
+         <div class="row">
+
+            <!-- Google Search Column-->
+            <div class="col-md-12" style="padding-top:30px;padding-bottom-20px;">
+              <script>
+                (function() {
+                  var cx = '010503388974132107851:ugk2xiz1tji';
+                  var gcse = document.createElement('script');
+                  gcse.type = 'text/javascript';
+                  gcse.async = true;
+                  gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+                      '//cse.google.com/cse.js?cx=' + cx;
+                  var s = document.getElementsByTagName('script')[0];
+                  s.parentNode.insertBefore(gcse, s);
+                })();
+              </script>
+              <gcse:search linkTarget="_self"></gcse:search>
+            </div>
+         </div>
+
+</div>
+<div class="row">
+</div>
+
+{% endblock %}
