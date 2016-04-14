@@ -21,7 +21,7 @@
                 {% endif %}
             </header>
             {% if experiments %}
-            <table id="experiments_table" class="display compact" cellspacing="0" width="100%">
+            <table id="experiments_table" class="table table-condensed table-striped table-hover" cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -66,6 +66,7 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+  {% if delete_permission %}
   $('#delete_experiment').click(function(e) {
     return confirm("Are you sure you want to delete this experiment?");
   });
@@ -80,8 +81,20 @@ $(document).ready(function() {
       { "width": "20%" },
       { "width": "40%" },
       { "width": "20%" },
-     ]
+    ],
+    "pageLength": 25,
   });
+  {% else %}
+  $('#experiments_table').dataTable({
+    "columns": [
+      { "width": "40%" },
+      { "width": "20%" },
+      { "width": "35%" },
+      { "width": "5%" },
+    ],
+    "pageLength": 25,
+  });
+  {% endif %}
 
 });
 </script>

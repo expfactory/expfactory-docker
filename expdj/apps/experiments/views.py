@@ -140,7 +140,6 @@ def update_experiment_template(request,eid):
 
 
 # View a single experiment
-@login_required
 def view_experiment(request, eid, bid=None):
 
     # Determine permissions for edit and deletion
@@ -201,7 +200,6 @@ def view_battery(request, bid):
 
 
 # All experiments
-@login_required
 def experiments_view(request):
     experiments = ExperimentTemplate.objects.all()
     delete_permission = check_experiment_edit_permission(request)
@@ -229,7 +227,6 @@ def enable_cookie_view(request):
 
 # Preview and Serving ----------------------------------------------------------
 # Preview experiments - right now just for templates
-@login_required
 def preview_experiment(request,eid):
     experiment = get_experiment_template(eid,request)
     experiment_type = get_experiment_type(experiment)

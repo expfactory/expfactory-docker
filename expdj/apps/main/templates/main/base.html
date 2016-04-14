@@ -5,6 +5,7 @@
         <title>{% block title %}The Experiment Factory{% endblock %}</title>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="description" content="The Experiment Factory is an open source, modular infrastructure for the deployment of standardized behavioral experiments, surveys, and games.">
             <link rel="icon" type="image/ico" href="/static/favicon.ico"/>
 
             {% block includes %}{% endblock %}
@@ -17,7 +18,7 @@
             <!--[if lte IE 9]><link rel="stylesheet" href="{% static "css/ie9.css"%}" /><![endif]-->
             {% endblock %}
             {% block head %}{% endblock %}
-	    {% block functions %}{% endblock %}
+	          {% block functions %}{% endblock %}
     </head>
         {% block body %}
         <body class="left-sidebar">
@@ -34,14 +35,11 @@
                                 {% if request.user.is_authenticated %}
                                 <li><a href="{% url 'experiments' %}">Experiments</a>
                                 {% else %}
-                                <li><a href="https://expfactory.github.io/table.html">Experiments</li>
+                                <li><a href="https://expfactory.github.io/table.html">Experiments</a>
                                 {% endif %}
                                 <ul>
-                                    {% if request.user.is_authenticated %}
-                                    <li><a href="{% url 'experiments' %}">Available Experiments</a></li>
-                                    {% else %}
+                                    <li><a href="{% url 'experiments' %}">Installed Experiments</a></li>
                                     <li><a href="https://expfactory.github.io/table.html">Available Experiments</a></li>
-                                    {% endif %}
                                     {% if request.user.is_superuser %}
                                         <li><a href="{% url 'add_experiment_template' %}">Add Experiment Templates</a></li>
                                         <li><a href="{% url 'add_survey_template' %}">Add Survey Templates</a></li>
