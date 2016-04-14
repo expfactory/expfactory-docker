@@ -5,6 +5,10 @@
     <meta charset="utf-8" />
     <script src="{% static "js/jquery.min.js"%}"></script>
     <script src="{% static "js/bootstrap.min.js"%}"></script>
+
+    <!-- Google Analytics -->
+    {% include "main/google_analytics.html" %}
+
 </head>
 <body>
 
@@ -31,8 +35,6 @@ $(document).ready(function(){
 
 });
 </script>
-
-{% include "main/google_analytics.html" %}
 
 </body>
 </html>

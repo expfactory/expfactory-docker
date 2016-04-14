@@ -9,6 +9,10 @@
     <script type="text/javascript" src="/static/expdjjs/backbone-min.js"></script>
     <script type="text/javascript" src="/static/expdjjs/expfactory.js"></script>
     {{ experiment_load | safe }}
+
+    <!-- Google Analytics -->
+    {% include "main/google_analytics.html" %}
+
 </head>
 <body>
 
@@ -29,7 +33,6 @@ $(document).ready(function(){
    $("#start_experiment_button").click();
 });
 </script>
-{% include "main/google_analytics.html" %}
 
   </body>
 </html>

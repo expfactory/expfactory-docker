@@ -19,6 +19,10 @@
             {% endblock %}
             {% block head %}{% endblock %}
 	          {% block functions %}{% endblock %}
+
+            <!-- Google Analytics -->
+            {% include "main/google_analytics.html" %}
+
     </head>
         {% block body %}
         <body class="left-sidebar">
@@ -139,9 +143,6 @@
                 $('[data-toggle="tooltip"]').tooltip()
             })
         </script>
-
-        <!-- Google Analytics -->
-        {% include "main/google_analytics.html" %}
 
     </body>
     {% endblock %}

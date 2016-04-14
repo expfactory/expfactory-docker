@@ -6,14 +6,16 @@
     <script src="{% static "js/jquery.min.js"%}"></script>
     <link rel="stylesheet" href="{% static "css/bootstrap.css"%}" />
     <script src="{% static "js/bootstrap.min.js"%}"></script>
+
+    <!-- Google Analytics -->
+    {% include "main/google_analytics.html" %}
+
 </head>
 <body>
 
     <div id="mturk_preview_message">
         <div class="alert alert-info" style="font-size:26px; height:200px; padding-top:75px; padding-left:300px">You must participate in the experiment to view the content.</div>
     </div>
-
-    {% include "main/google_analytics.html" %}
 
   </body>
 </html>

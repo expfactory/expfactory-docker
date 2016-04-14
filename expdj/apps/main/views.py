@@ -16,6 +16,9 @@ def about_view(request):
     context = {'active':'home'}
     return render(request, 'main/about.html', context)
 
+def search_view(request):
+    return render(request, 'main/search.html')
+
 
 @login_required
 def get_token(request):

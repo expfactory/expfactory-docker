@@ -21,9 +21,9 @@ from django.conf.urls import ( handler404, handler500 )
 
 # Sitemaps
 from expdj.api.sitemap import ExperimentTemplateSitemap, SurveyTemplateSitemap, GameTemplateSitemap
-sitemaps = {"Experiments":ExperimentTemplateSitemap,
-            "Surveys":SurveyTemplateSitemap,
-            "Games":GameTemplateSitemap}
+sitemaps = {"experiments":ExperimentTemplateSitemap,
+            "surveys":SurveyTemplateSitemap,
+            "games":GameTemplateSitemap}
 
 # Configure custom error pages
 handler404 = 'expdj.apps.main.views.handler404'
