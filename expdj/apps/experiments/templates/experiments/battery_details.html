@@ -69,6 +69,7 @@
       <tbody>
           <tr><td>Battery Name</td><td>{{ battery.name }}</td></tr>
           <tr><td>Experiments</td><td>{{ battery.experiments.count }}</td></tr>
+          <tr><td>Presentation Order</td><td>{{ battery.presentation_order }}</td></tr>
           <tr><td>Max Time</td><td>{{ battery.maximum_time }}</td></tr>
           <tr><td>Max Experiments</td><td>{{ battery.number_of_experiments }}</td></tr>
           <tr><td>Active</td><td>{{ battery.active }}</td></tr>
@@ -79,12 +80,12 @@
         <!-- Experiments Pane -->
         <div class="tab-pane fade" id="experiments">
             <h4>Experiments</h4>
-	    {% if battery.experiments.all %}
+      	    {% if battery.experiments.all %}
             <table class="table table-striped table-bordered" cellspacing="0" width="100%" id="experiments_table">
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Order</th>
+                    <th>Order <i data-toggle="tooltip" title="Specify the presentation order, as determined when you generated the battery - 'random' will show experiments at random, and 'specific' will use the order in this field below. You are allowed to have multiple experiments with equivalent numbers, and an experiment will be selected randomly from this subset." class="fa fa-question-circle"></i></th>
                     <th>Type</th>
                     <th>Cognitive Atlas Task</th>
                     <th></th>

@@ -2,11 +2,11 @@ from django.shortcuts import get_object_or_404, render_to_response, render, redi
 from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
  ExperimentVariable, CreditCondition
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
-from expdj.apps.turk.utils import get_worker_experiments, select_random_n
+from expdj.apps.turk.utils import get_worker_experiments
 from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
-  complete_survey_result
+  complete_survey_result, select_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -335,9 +335,8 @@ def dummy_battery(request,bid):
     deployment = "docker-local"
 
     # Does the worker have experiments remaining?
-    uncompleted_experiments = [e.template.exp_id for e in battery.experiments.all()] # must be exp_id
-    task_list = select_random_n(uncompleted_experiments,1)
-    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    task_list = select_experiments(battery,uncompleted_experiments=battery.experiments.all())
+    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0].template.exp_id)[0]
     experiment_type = get_experiment_type(experimentTemplate)
     task_list = battery.experiments.filter(template=experimentTemplate)
     result = None
@@ -350,7 +349,6 @@ def dummy_battery(request,bid):
                           context=context,
                           task_list=task_list,
                           template=template,
-                          uncompleted_experiments=uncompleted_experiments,
                           result=result)
 
 
@@ -384,8 +382,8 @@ def serve_battery(request,bid,userid=None):
         # Thank you for your participation - no more experiments!
         return render_to_response("turk/worker_sorry.html")
 
-    task_list = select_random_n(uncompleted_experiments,1)
-    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+    task_list = select_experiments(battery,uncompleted_experiments)
+    experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0].template.exp_id)[0]
     experiment_type = get_experiment_type(experimentTemplate)
     task_list = battery.experiments.filter(template=experimentTemplate)
 
@@ -412,12 +410,10 @@ def serve_battery(request,bid,userid=None):
                           context=context,
                           task_list=task_list,
                           template=template,
-                          uncompleted_experiments=uncompleted_experiments,
                           next_page=next_page,
                           result=result)
 
-def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,
-                   uncompleted_experiments=None,next_page=None,last_experiment=False):
+def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,next_page=None,last_experiment=False):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
     :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
@@ -427,7 +423,6 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
     :param task_list: list of models.Experiment instances
     :param template: html template to render
     :param result: the result object, turk.models.Result
-    :param uncompleted_experiments: list of uncompleted experiments models.Experiment [optional for preview]
     :param last_experiment: boolean if true will redirect the user to a page to submit the result (for surveys)
     '''
     if next_page == None:
@@ -809,8 +804,9 @@ def change_experiment_order(request,bid,eid):
         if can_edit:
             if "order" in request.POST:
                 new_order = request.POST["order"]
-                experiment.order = int(new_order)
-                experiment.save()
+                if new_order != "":
+                    experiment.order = int(new_order)
+                    experiment.save()
 
     return HttpResponseRedirect(battery.get_absolute_url())
 

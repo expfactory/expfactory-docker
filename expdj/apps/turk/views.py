@@ -1,15 +1,14 @@
 from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
 get_battery_intro, deploy_battery
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments, \
-select_random_n
+from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
+from expdj.apps.experiments.utils import get_experiment_type, select_experiments
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expfactory.battery import get_load_static, get_experiment_run
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
-from expdj.apps.experiments.utils import get_experiment_type
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -115,8 +114,8 @@ def serve_hit(request,hid):
         if len(uncompleted_experiments) == 1:
             last_experiment = True
 
-        task_list = select_random_n(uncompleted_experiments,1)
-        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0])[0]
+        task_list = select_experiments(battery,uncompleted_experiments)
+        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0].template.exp_id)[0]
         experiment_type = get_experiment_type(experimentTemplate)
         task_list = battery.experiments.filter(template=experimentTemplate)
         template = "%s/mturk_battery.html" %(experiment_type)
@@ -143,7 +142,6 @@ def serve_hit(request,hid):
                               context=aws,
                               task_list=task_list,
                               template=template,
-                              uncompleted_experiments=uncompleted_experiments,
                               next_page=None,
                               result=result,
                               last_experiment=last_experiment)

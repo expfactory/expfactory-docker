@@ -9,6 +9,8 @@ from expfactory.experiment import get_experiments
 from expfactory.survey import export_questions
 from expfactory.utils import copy_directory
 from expdj.apps.turk.models import Result
+from django.db.models import Min
+from numpy.random import choice
 from datetime import datetime
 from git import Repo
 import tempfile
@@ -286,6 +288,64 @@ def update_credits(experiment,cid):
         experiment.include_catch = False
 
     experiment.save()
+
+# EXPERIMENT SELECTION #####################################################################
+
+def select_random_n(experiments,N):
+    '''select_experiments_N
+    a selection algorithm that selects a random N experiments from list
+    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
+    :param N: the number of experiments to select
+    '''
+    if N>len(experiments):
+        N=len(experiments)
+    return choice(experiments,N).tolist()
+
+
+def select_ordered(experiments,selection_number=1):
+    '''select_ordered will return a list of the next "selection_number"
+    of experiments. Lower numbers are returned first, and if multiple numbers
+    are specified for orders, these will be selected from randomly.
+    :param experiments: the list of Experiment objects to select from
+    :param selection_number: the number of experiments to choose (default 1)
+    '''
+    next_value = experiments.aggregate(Min('order'))["order__min"]
+    experiment_choices = [e for e in experiments if e.order == next_value]
+    return select_random_n(experiment_choices,selection_number)
+
+
+def select_experiments(battery,uncompleted_experiments,selection_number=1):
+    '''select_experiments selects experiments based on the presentation_order variable
+    defined in the battery (random or specific)
+    :param battery: the battery object
+    :param uncompleted_experiments: a list of Experiment objects to select from
+    :param selection_number: the number of experiments to select
+    '''
+    if battery.presentation_order == "random":
+        task_list = select_random_n(uncompleted_experiments,selection_number)
+    elif battery.presentation_order == "specified":
+        task_list = select_ordered(uncompleted_experiments,selection_number=selection_number)
+    return task_list
+
+
+def select_experiments_time(maximum_time_allowed,experiments):
+    '''select_experiments_time
+    a selection algorithm that selects experiments from list based on not exceeding some max time
+    this function is not implemented anywhere, as the battery length is determined by experiments
+    added to battery.
+    :param maximum_time_allowed: the maximum time allowed, in seconds
+    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
+    '''
+    # Add tasks with random selection until we reach the time limit
+    task_list = []
+    total_time = 0
+    exps = experiments[:]
+    while (total_time < maximum_time_allowed) and len(exps)>0:
+        # Randomly select an experiment
+        experiment = exps.pop(choice(range(len(exps))))
+        if (total_time + experiment.template.time*60.0) <= maximum_time_allowed:
+            task_list.append(experiment)
+    return task_list
 
 # GENERAL UTILS ############################################################################
 

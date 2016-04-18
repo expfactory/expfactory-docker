@@ -1,8 +1,8 @@
+from expdj.apps.experiments.models import Experiment
 from boto.mturk.connection import MTurkConnection
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.price import Price
 from expdj.settings import BASE_DIR
-from numpy.random import choice
 import ConfigParser
 import datetime
 import pandas
@@ -138,38 +138,9 @@ def get_app_url():
         if "app_url" in settings.TURK:
             return settings.TURK["app_url"]
 
-# Selection Algorithms ###############################################################################
-
-def select_experiments_time(maximum_time_allowed,experiments):
-    '''select_experiments_time
-    a selection algorithm that selects experiments from list based on not exceeding some max time
-    :param maximum_time_allowed: the maximum time allowed, in seconds
-    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
-    '''
-    # Add tasks with random selection until we reach the time limit
-    task_list = []
-    total_time = 0
-    exps = experiments[:]
-    while (total_time < maximum_time_allowed) and len(exps)>0:
-        # Randomly select an experiment
-        experiment = exps.pop(choice(range(len(exps))))
-        if (total_time + experiment.template.time*60.0) <= maximum_time_allowed:
-            task_list.append(experiment)
-    return task_list
-
-def select_random_n(experiments,N):
-    '''select_experiments_N
-    a selection algorithm that selects a random N experiments from list
-    :param experiments: list of experiment.Experiment objects, with time variable specified in minutes
-    :param N: the number of experiments to select
-    '''
-    if N>len(experiments):
-        N=len(experiments)
-    return choice(experiments,N).tolist()
-
 
 def get_worker_experiments(worker,battery,completed=False):
-    '''get_worker_experiments returns a list of experiment tags that
+    '''get_worker_experiments returns a list of experiment objects that
     a worker has/has not completed for a particular battery
     '''
     from expdj.apps.turk.models import Result
@@ -178,11 +149,11 @@ def get_worker_experiments(worker,battery,completed=False):
     worker_tags = [x.experiment.exp_id for x in worker_experiments if x.completed==True]
 
     if completed==False:
-        uncompleted_experiments = [e for e in battery_tags if e not in worker_tags]
-        return uncompleted_experiments
+        experiment_selection = [e for e in battery_tags if e not in worker_tags]
     else:
-        completed_experiments = [e for e in worker_tags if e in battery_tags]
-        return completed_experiments
+        experiment_selection = [e for e in worker_tags if e in battery_tags]
+    return Experiment.objects.filter(template__exp_id__in=experiment_selection)
+
 
 def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
     '''calculate difference between two time strings, t1 and t2, returns minutes'''
