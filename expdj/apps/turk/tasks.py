@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from expdj.apps.turk.models import Result, Assignment, get_worker
+from expdj.apps.turk.models import Result, Assignment, get_worker, HIT
 from expdj.apps.experiments.models import ExperimentTemplate
 from celery import shared_task, Celery
 from django.conf import settings
@@ -11,6 +11,14 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expdj.settings')
 app = Celery('expdj')
 app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+@shared_task
+def update_assignments(hit_id):
+    '''update_assignments updates all assignment (status, etc) from Amazon given a hit_id
+    :param hit_id: HIT id from turk.models
+    '''
+    hit = HIT.objects.get(id=hit_id)
+    hit.update_assignments()
 
 @shared_task
 def assign_experiment_credit(worker_id):

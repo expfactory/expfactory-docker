@@ -84,6 +84,7 @@
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Order</th>
                     <th>Type</th>
                     <th>Cognitive Atlas Task</th>
                     <th></th>
@@ -93,6 +94,22 @@
            {% for experiment in battery.experiments.all %}
                <tr>
                    <td><a href="{% url 'experiment_details' battery.id experiment.id %}">{{ experiment.template.name }}</a></td>
+                   <!-- Experiment Order-->
+                   <td>
+                     {% if edit_permission %}
+                     <form action="{% url 'change_experiment_order' battery.id experiment.id %}" method="post">
+                         <div class="input-group">
+                             {% csrf_token %}
+                             <input type="numeric" class="form-control" style="width:50px" placeholder="{{ experiment.order }}" name="order">
+                             <span class="input-group-btn">
+                                 <button class="btn btn-secondary" type="submit" value="submit">save</button>
+                             </span>
+                        </div>
+                     </form>
+                     {% else %}
+                     {{ experiment.order }}
+                     {% endif %}
+                   </td>
                    <td>{% if experiment.template.template = "jspsych" %}
                        experiment
                        {% endif %}
@@ -219,6 +236,7 @@ $(document).ready(function() {
     "autoWidth": false,
      "columns": [
         null,
+        { "width": "10%" },
         null,
         null,
        { "width": "20%" }

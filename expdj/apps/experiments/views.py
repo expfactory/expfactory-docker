@@ -3,7 +3,7 @@ from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Batter
  ExperimentVariable, CreditCondition
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
 from expdj.apps.turk.utils import get_worker_experiments, select_random_n
-from expdj.apps.turk.tasks import assign_experiment_credit
+from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
   complete_survey_result
@@ -14,10 +14,10 @@ from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
+from expdj.apps.turk.models import HIT, Result, Assignment
 from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
 from django.forms.models import model_to_dict
-from expdj.apps.turk.models import HIT, Result
 from expfactory.views import embed_experiment
 from expdj.apps.turk.models import get_worker
 from expdj.apps.users.models import User
@@ -174,8 +174,12 @@ def view_experiment(request, eid, bid=None):
 def view_battery(request, bid):
     battery = get_battery(bid,request)
 
-    # Get associated HITS
+    # Get associated HITS, update all
     hits = HIT.objects.filter(battery=battery)
+
+    # Use task to update assignments
+    for hit in hits:
+        update_assignments.apply_async([hit.id])
 
     # Generate anonymous link
     anon_link = "%s/batteries/%s/%s/anon" %(DOMAIN_NAME,bid,hashlib.md5(battery.name).hexdigest())
@@ -190,13 +194,21 @@ def view_battery(request, bid):
     if len(Result.objects.filter(battery=battery)) > 0:
         has_results = True
 
+    # Render assignment details
+    assignments = dict()
+    assignments["accepted"] = [a for a in Assignment.objects.filter(hit__battery=battery) if a.status == "A"]
+    assignments["none"] = [a for a in Assignment.objects.filter(hit__battery=battery) if a.status == None]
+    assignments["submit"] = [a for a in Assignment.objects.filter(hit__battery=battery) if a.status == "S"]
+    assignments["rejected"] = [a for a in Assignment.objects.filter(hit__battery=battery) if a.status == "R"]
+
     context = {'battery': battery,
                'edit_permission':edit_permission,
                'delete_permission':delete_permission,
                'mturk_permission':mturk_permission,
                'hits':hits,
                'has_results':has_results,
-               'anon_link':anon_link}
+               'anon_link':anon_link,
+               'assignments':assignments}
 
     return render(request,'experiments/battery_details.html', context)
 
@@ -780,6 +792,28 @@ def add_experiment(request,bid):
     current_experiments = [x.template.exp_id for x in battery.experiments.all()]
     newexperiments = [x for x in ExperimentTemplate.objects.all() if x.exp_id not in current_experiments]
     return prepare_change_experiment(request,battery,newexperiments,"Add New")
+
+
+@login_required
+def change_experiment_order(request,bid,eid):
+    '''change_experiment_order changes the ordering of experiment presentation.
+    Any integer value is allowed, and duplicate values means that experiments will
+    the equivalent number will be selected from randomly.
+    :param bid: the battery id
+    :param eid: the experiment id
+    '''
+    experiment = get_experiment(eid,request)
+    battery = get_battery(bid,request)
+    can_edit = check_experiment_edit_permission(request)
+    if request.method == "POST":
+        if can_edit:
+            if "order" in request.POST:
+                new_order = request.POST["order"]
+                experiment.order = int(new_order)
+                experiment.save()
+
+    return HttpResponseRedirect(battery.get_absolute_url())
+
 
 @login_required
 def remove_experiment(request,bid,eid):

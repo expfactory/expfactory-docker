@@ -7,7 +7,7 @@ remove_condition, preview_battery, serve_battery, serve_battery_anon, \
 generate_battery_user, sync, experiment_results_dashboard, \
 battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
 save_survey_template, add_survey_template, add_game_template, save_game_template, \
-enable_cookie_view
+enable_cookie_view, change_experiment_order
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -42,6 +42,7 @@ urlpatterns = patterns('',
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/customize$',edit_experiment,name='edit_experiment'),
     #url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/results$',experiment_results_dashboard,name='experiment_results_dashboard'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/view$',view_experiment, name='experiment_details'),
+    url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/order$',change_experiment_order, name='change_experiment_order'),
     url(r'^experiments/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/remove$',remove_experiment,name='remove_experiment'),
     url(r'^conditions/(?P<bid>\d+|[A-Z]{8})/(?P<eid>\d+|[A-Z]{8})/(?P<cid>\d+|[A-Z]{8})/remove$',remove_condition,name='remove_condition'),
 

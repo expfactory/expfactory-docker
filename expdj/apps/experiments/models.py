@@ -119,6 +119,7 @@ class CreditCondition(models.Model):
 class Experiment(models.Model):
     template = models.ForeignKey(ExperimentTemplate, help_text="Experiment template to be customized by the researcher", verbose_name="Experiment Factory Experiment", null=True, blank=False,on_delete=DO_NOTHING)
     credit_conditions = models.ManyToManyField(CreditCondition,related_name="conditions",help_text="functions over performance and rejection variables to allocate payments and credit.",blank=True)
+    order = models.IntegerField(help_text="Order for experiment presentation. Smaller numbers will be selected first, and equivalent numbers will be chosen from randomly.", null=False, default=1,verbose_name="Experiment order", blank=False)
     include_bonus = models.BooleanField(choices=((False, 'does not include bonus'),
                                                 (True, 'includes bonus')),
                                                 default=False,verbose_name="Bonus")
@@ -148,6 +149,13 @@ class Battery(models.Model):
     active = models.BooleanField(choices=((False, 'Inactive'),
                                           (True, 'Active')),
                                            default=True,verbose_name="Active")
+    ORDER_CHOICES = (
+        ("random", "random"),
+        ("specified", "specified"),
+    )
+
+    presentation_order = models.CharField("order function for presentation of experiments",max_length=200,choices=ORDER_CHOICES,default="random",help_text="Select experiments randomly, or in a custom specified order.")
+
     def get_absolute_url(self):
         return_cid = self.id
         return reverse('battery_details', args=[str(return_cid)])
