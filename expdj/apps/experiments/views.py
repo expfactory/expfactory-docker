@@ -143,29 +143,27 @@ def update_experiment_template(request,eid):
 def view_experiment(request, eid, bid=None):
 
     # Determine permissions for edit and deletion
-    edit_permission = check_experiment_edit_permission(request)
-    delete_permission = edit_permission
+    context = dict()
+    context["edit_permission"] = check_experiment_edit_permission(request)
+    context["delete_permission"] = context["edit_permission"]
 
     # View an experiment associated with a battery
     if bid:
         experiment = get_experiment(eid,request)
         battery = get_battery(bid,request)
-        edit_permission = check_battery_edit_permission(request,battery)
-        delete_permission = edit_permission
+        context["edit_permission"] = check_battery_edit_permission(request,battery)
+        context["delete_permission"] = context["edit_permission"] # same for now
         template = 'experiments/experiment_details.html'
 
     # An experiment template
     else:
         experiment = get_experiment_template(eid,request)
         template = 'experiments/experiment_template_details.html'
-        experiment_type = get_experiment_type(experiment)
+        context["experiment_type"] = get_experiment_type(experiment)
         battery = None
 
-    context = {'experiment': experiment,
-               'edit_permission':edit_permission,
-               'delete_permission':delete_permission,
-               'experiment_type':experiment_type,
-               'battery':battery}
+    context["battery"] = battery
+    context["experiment"] = experiment
 
     return render_to_response(template, context)
 
