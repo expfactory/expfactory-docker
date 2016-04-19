@@ -1,0 +1,32 @@
+uniqueId = "{{ uniqueId }}"
+var expfactory = new ExpFactory(uniqueId)
+this.data = {}
+
+// Start experiment when participant pushes button
+$("#start_experiment_button").click(function(){
+   $("#instructions_modal").hide();
+   $("#bootstrap_css").remove()
+   {{run | safe}}
+});
+
+{% if uniqueId %}
+$("#disagree_button").click(function(){
+    document.location = "{% url 'end_assignment' uniqueId %}"
+})
+{% endif %}
+
+function inputData(field, value) {
+  this.data[field] = value
+}
+
+function sendData(trial) {
+  inputData('trial', trial)
+  if (data.finished == 0) {
+      var djstatus = "UPDATE"
+  } else {
+      var djstatus = "FINISHED"
+  }
+  expfactory.recordTrialData(data)
+  var taskdata = {taskdata:expfactory.taskdata.getTrialData(), djstatus:djstatus,"redirect_url":document.URL};
+  this.data = {}
+}

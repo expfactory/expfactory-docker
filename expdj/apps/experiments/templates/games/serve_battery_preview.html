@@ -1,0 +1,27 @@
+<html>
+{% load static from staticfiles %}
+  <head>
+    <title>The Experiment Factory</title>
+    <meta charset="utf-8" />
+    <script src="{% static "js/jquery.min.js"%}"></script>
+    <script src="{% static "js/bootstrap.min.js"%}"></script>
+    <script type="text/javascript" src="/static/expdjjs/underscore-min.js"></script>
+    <script type="text/javascript" src="/static/expdjjs/backbone-min.js"></script>
+    <script type="text/javascript" src="/static/expdjjs/expfactory.js"></script>
+    {{ experiment_load | safe }}
+</head>
+<body>
+
+<button id="start_experiment_button" type="button" class="btn hidden" hidden></button>
+<script>
+
+          {% include "games/saver_local_preview.html" %}
+
+$(document).ready(function(){
+    console.log(expfactory)
+   $("#start_experiment_button").click();
+});
+</script>
+
+</body>
+</html>

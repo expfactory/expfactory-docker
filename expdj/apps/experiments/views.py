@@ -341,7 +341,10 @@ def dummy_battery(request,bid):
     task_list = battery.experiments.filter(template=experimentTemplate)
     result = None
     context = {"worker_id": "Dummy Worker"}
-    template = "%s/serve_battery.html" %(experiment_type)
+    if experiment_type == "games":
+        template = "%s/serve_battery_preview.html" %(experiment_type)        
+    else:
+        template = "%s/serve_battery.html" %(experiment_type)
 
     return deploy_battery(deployment="docker-preview",
                           battery=battery,
