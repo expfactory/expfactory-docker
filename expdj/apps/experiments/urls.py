@@ -61,8 +61,8 @@ urlpatterns = patterns('',
     # Deployment
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/preview$',preview_battery,name='preview_battery'), # intro preview without subid
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/dummy$',dummy_battery,name='dummy_battery'),       # running without subid
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/serve$',intro_battery,name='intro_battery'),
-    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{36})/accept$',serve_battery,name='serve_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{30,36})/serve$',intro_battery,name='intro_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<userid>\d+|[A-Za-z0-9-]{30,36})/accept$',serve_battery,name='serve_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/(?P<keyid>\d+|[A-Za-z0-9-]{32})/anon$',serve_battery_anon,name='serve_battery_anon'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve/gmail$',serve_battery_gmail,name='serve_battery_gmail'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',sync,name='local'),

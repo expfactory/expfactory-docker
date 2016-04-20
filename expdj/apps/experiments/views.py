@@ -9,11 +9,11 @@ from expdj.apps.experiments.utils import get_experiment_selection, install_exper
   complete_survey_result, select_experiments
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.core.exceptions import PermissionDenied, ValidationError
 from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import ensure_csrf_cookie
 from expdj.apps.turk.models import HIT, Result, Assignment
 from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
@@ -299,6 +299,7 @@ def serve_battery_anon(request,bid,keyid):
     else:
         return render_to_response("turk/robot_sorry.html")
 
+@csrf_protect
 def serve_battery_gmail(request,bid):
     '''serves a battery, creating user with gmail'''
     # Check if the keyid is correct

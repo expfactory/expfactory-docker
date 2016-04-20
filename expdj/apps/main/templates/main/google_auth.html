@@ -1,0 +1,60 @@
+{% extends "main/base.html" %}
+{% load staticfiles %}
+{% block head %}
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <meta name="google-signin-scope" content="profile email">
+    <meta name="google-signin-client_id" content="321257290213-h4tm5bl5c912cetnl9vs8uu7emumcq5t.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+{% endblock %}
+{% block content %}
+<div class="row">
+
+    <div class="col-md-12">
+
+        <!-- Content -->
+        <article id="content">
+
+          <div class="modal fade" tabindex="-1" role="dialog" id="login_modal" style="margin-top:200px; display: block; padding-right: 15px;">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h4 class="modal-title">Sign In to Start the Experiment</h4>
+                </div>
+                <div class="modal-body">
+                  <div style="position:relative;left:40%" class="g-signin2" data-onsuccess="onSignIn"></div>
+                </div>
+              </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+          </div><!-- /.modal -->
+
+        </article>
+    </div>
+</div>
+
+<form action="{% url 'serve_battery_gmail' bid %}" id="submit_form" method="POST">
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+  <input type="hidden" name="keyid" value="{{ keyid }}">
+  <input id="email" type="hidden" name="gmail" value="">
+  <input type="submit" value="OK" class="hidden">
+</form>
+
+<script>
+  function onSignIn(googleUser) {
+    var profile = googleUser.getBasicProfile();
+    var email = profile.getEmail()
+    $("#email").attr("value",email)
+    $("#submit_form").submit()
+  };
+</script>
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+<script>
+$(document).ready(function(){
+    $("#login_modal").modal("show");
+});
+</script>
+{% endblock %}
