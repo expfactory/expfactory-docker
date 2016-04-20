@@ -17,6 +17,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from expdj.apps.turk.models import HIT, Result, Assignment
 from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
+from expdj.apps.main.views import google_auth_view
 from django.forms.models import model_to_dict
 from expfactory.views import embed_experiment
 from expdj.apps.turk.models import get_worker
@@ -182,6 +183,9 @@ def view_battery(request, bid):
     # Generate anonymous link
     anon_link = "%s/batteries/%s/%s/anon" %(DOMAIN_NAME,bid,hashlib.md5(battery.name).hexdigest())
 
+    # Generate gmail auth link
+    gmail_link = "%s/batteries/%s/%s/auth" %(DOMAIN_NAME,bid,hashlib.md5(battery.name).hexdigest())
+
     # Determine permissions for edit and deletion
     edit_permission = check_battery_edit_permission(request,battery)
     delete_permission = check_battery_edit_permission(request,battery)
@@ -206,6 +210,7 @@ def view_battery(request, bid):
                'hits':hits,
                'has_results':has_results,
                'anon_link':anon_link,
+               'gmail_link':gmail_link,
                'assignments':assignments}
 
     return render(request,'experiments/battery_details.html', context)
@@ -233,7 +238,7 @@ def batteries_view(request,uid=None):
 
 # Errors and Messages ----------------------------------------------------------
 def enable_cookie_view(request):
-    '''finished_view thanks worker for participation, and gives submit button
+    '''enable_cookie_view alerts user cookies not enabled
     '''
     return render_to_response("experiments/cookie_sorry.html")
 
@@ -247,6 +252,7 @@ def preview_experiment(request,eid):
     experiment_html = embed_experiment(experiment_folder,url_prefix="/")
     context = {"preview_html":experiment_html}
     return render_to_response(template, context)
+
 
 @login_required
 def generate_battery_user(request,bid):
@@ -290,6 +296,23 @@ def serve_battery_anon(request,bid,keyid):
         userid = uuid.uuid4()
         worker = get_worker(userid,create=True)
         return redirect("intro_battery",bid=bid,userid=userid)
+    else:
+        return render_to_response("turk/robot_sorry.html")
+
+def serve_battery_gmail(request,bid):
+    '''serves a battery, creating user with gmail'''
+    # Check if the keyid is correct
+    battery = get_battery(bid,request)
+    uid = hashlib.md5(battery.name).hexdigest()
+    if "keyid" in request.POST and "gmail" in request.POST:
+        keyid = request.POST["keyid"]
+        address = request.POST["gmail"]
+        if uid==keyid:
+            userid = hashlib.md5(address).hexdigest()
+            worker = get_worker(userid,create=True)
+            return redirect("intro_battery",bid=bid,userid=userid)
+        else:
+            return render_to_response("turk/robot_sorry.html")
     else:
         return render_to_response("turk/robot_sorry.html")
 
@@ -340,7 +363,7 @@ def dummy_battery(request,bid):
     result = None
     context = {"worker_id": "Dummy Worker"}
     if experiment_type == "games":
-        template = "%s/serve_battery_preview.html" %(experiment_type)        
+        template = "%s/serve_battery_preview.html" %(experiment_type)
     else:
         template = "%s/serve_battery.html" %(experiment_type)
 

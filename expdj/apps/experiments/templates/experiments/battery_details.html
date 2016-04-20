@@ -15,6 +15,29 @@
                 <a class='btn-default btn-lg' href='{% url 'export_battery' battery.id %}'>Export Results</a>
                 {% endif %}
                 <a class='btn-default btn-lg' target="_blank" href='{% url 'preview_battery' battery.id %}'>Preview</a>
+                    {% if battery.experiments.all %}
+                    <span class="dropdown">
+                        <button class="btn-default btn-lg dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            Serve Battery
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                           <li role="separator" class="divider"></li>
+                           <li class="dropdown-header">Local Computer</li>
+                           <li role="separator" class="divider"></li>
+                            <li><a href="#" id="anon_link" class='btn-default btn-lg'>Anonymous Link</a></li>
+                            <li><a href="#" id="gmail_link" class='btn-default btn-lg'>Email Authentication Link</a></li>
+                            <li><a class='btn-default btn-lg' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a></li>
+                            {% if mturk_permission %}
+                                <li role="separator" class="divider"></li>
+                                <li class="dropdown-header">Amazon Mechanical Turk</li>
+                                <li role="separator" class="divider"></li>
+                                <li><a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a></li>
+                                <li><a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a></li>
+                            {% endif %}
+                        </ul>
+                    </span>
+                    {% endif %}
             {% else %}
                 {% if mturk_permission %}
                 {% if hits %}
@@ -28,16 +51,6 @@
             {% endif %}
 
             <div class="float_right">
-                {% if edit_permission %}
-                    {% if battery.experiments.all and mturk_permission %}
-                        <!--<a class='btn-default btn-lg' href='{% url 'multiple_new_hit' battery.id %}'> Batch HITs</a>-->
-                        <a class='btn-default btn-lg' href='{% url 'new_hit' battery.id %}'> New HIT</a>
-                    {% endif %}
-                    {% if battery.experiments.all %}
-                    <a href="#" id="anon_link" class='btn-default btn-lg'>Get Anonymous Link</button>
-                    <a class='btn-default btn-lg' href='{% url 'generate_battery_user' battery.id %}'>New Local Participant</a>
-                    {% endif %}
-                {% endif %}
                 {% if delete_permission %}
                 <a class='btn-danger btn-lg' href='{% url 'delete_battery' battery.id %}' id="delete_battery"> Delete Battery</a>
                 {% endif %}
@@ -225,11 +238,32 @@
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 
+<!-- Modal to show gmail link-->
+<div id="gmail_modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Email Authenticated Battery Link</h4>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+            <a href='{{ gmail_link }}' target="_blank">{{ gmail_link }}</a></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
 $(document).ready(function() {
+
+    $('.dropdown-toggle').dropdown()
     $('#battery_table').dataTable({
       responsive: true
     });
@@ -251,6 +285,9 @@ $(document).ready(function() {
     });
     $("#anon_link").click(function(e){
       $("#anon_modal").modal("show");
+    });
+    $("#gmail_link").click(function(e){
+      $("#gmail_modal").modal("show");
     });
     $('#delete_battery').click(function(e) {
       return confirm("Are you sure you want to delete the battery? This will remove all associated results!");
