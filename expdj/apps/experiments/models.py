@@ -1,10 +1,11 @@
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from polymorphic.models import PolymorphicModel
-from jsonfield import JSONField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models.signals import m2m_changed
-from django.db.models import Q, DO_NOTHING
+from polymorphic.models import PolymorphicModel
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
+from django.db.models import Q, DO_NOTHING
+from jsonfield import JSONField
 from django.db import models
 import collections
 import operator
@@ -155,6 +156,13 @@ class Battery(models.Model):
     )
 
     presentation_order = models.CharField("order function for presentation of experiments",max_length=200,choices=ORDER_CHOICES,default="random",help_text="Select experiments randomly, or in a custom specified order.")
+    blacklist_active = models.BooleanField(choices=((False, 'Off'),
+                                                    (True, 'On')),
+                                                    default=False,verbose_name="Blacklist based on rejection criteria")
+    blacklist_threshold = models.PositiveIntegerField(null=True,blank=True,default=10,help_text="Number of experiments to fail reject condition to add participant to blacklist",validators = [MinValueValidator(0.0)])
+    bonus_active = models.BooleanField(choices=((False, 'Off'),
+                                                (True, 'On')),
+                                                default=False,verbose_name="Bonus based on reward criteria")
 
     def get_absolute_url(self):
         return_cid = self.id
@@ -175,6 +183,7 @@ class Battery(models.Model):
             ('del_battery', 'Delete battery'),
             ('edit_battery', 'Edit battery')
         )
+
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:

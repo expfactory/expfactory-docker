@@ -58,8 +58,6 @@ class Worker(models.Model):
 
 
 
-
-
 def get_worker(worker_id,create=True):
     '''get a worker
     :param create: update or create
@@ -164,8 +162,6 @@ class HIT(models.Model):
     qualification_locale = models.CharField(max_length=255,choices=LOCALE_CHOICES,default='None',help_text="Worker Qualification: location requirement",verbose_name="worker qualification locale")
     qualification_custom = models.CharField(max_length=255,default=None,help_text="Worker Qualification: custom qualification ID",verbose_name="worker qualification custom",null=True,blank=True)
 
-
-
     def disable(self):
         """Disable/Destroy HIT that is no longer needed
         """
@@ -213,64 +209,25 @@ class HIT(models.Model):
         self.update()
 
     def expire(self):
-        """Expire a HIT that is no longer needed as Mechanical Turk service
-
-        The effect is identical to the HIT expiring on its own. The HIT
-        no longer appears on the Mechanical Turk web site, and no new
-        Workers are allowed to accept the HIT. Workers who have accepted
-        the HIT prior to expiration are allowed to complete it or return
-        it, or allow the assignment duration to elapse (abandon the HIT).
-        Once all remaining assignments have been submitted, the expired
-        HIT moves to the "Reviewable" state.
-
-        This is a thin wrapper around the Boto API and taken from their
-        documentation:
-        http://boto.cloudhackers.com/en/latest/ref/mturk.html
-        """
+        """Expire a HIT that is no longer needed as Mechanical Turk service"""
         if not self.has_connection():
             self.generate_connection()
         self.connection.expire_hit(self.mturk_id)
         self.update()
 
     def extend(self, assignments_increment=None, expiration_increment=None):
-        """Increase the maximum assignments or extend the expiration date
-
-        Increase the maximum number of assignments, or extend the
-        expiration date, of an existing HIT.
-
-        NOTE: If a HIT has a status of Reviewable and the HIT is
-        extended to make it Available, the HIT will not be returned by
-        helpers.update_reviewable_hits() and its submitted assignments
-        will not be returned by Assignment.update() until the HIT is
-        Reviewable again. Assignment auto-approval will still happen on
-        its original schedule, even if the HIT has been extended. Be
-        sure to retrieve and approve (or reject) submitted assignments
-        before extending the HIT, if so desired.
-
-        This is a thin wrapper around the Boto API and taken from their
-        documentation:
-        http://boto.cloudhackers.com/en/latest/ref/mturk.html
-        """
+        """Increase the maximum assignments or extend the expiration date"""
+        if not self.has_connection():
+            self.generate_connection()
         self.connection.extend_hit(self.mturk_id,
                                    assignments_increment=assignments_increment,
                                    expiration_increment=expiration_increment)
         self.update()
 
     def set_reviewing(self, revert=None):
-        """Toggle HIT status between Reviewable and Reviewing
-
-        Update a HIT with a status of Reviewable to have a status of
-        Reviewing, or reverts a Reviewing HIT back to the Reviewable
-        status.
-
-        Only HITs with a status of Reviewable can be updated with a
-        status of Reviewing. Similarly, only Reviewing HITs can be
-        reverted back to a status of Reviewable.
-
-        This is a thin wrapper around the Boto API and taken from their
-        documentation:
-        http://boto.cloudhackers.com/en/latest/ref/mturk.html
-        """
+        """Toggle HIT status between Reviewable and Reviewing"""
+        if not self.has_connection():
+            self.generate_connection()
         self.connection.set_reviewing(self.mturk_id, revert=revert)
         self.update()
 
@@ -514,15 +471,6 @@ class Assignment(models.Model):
             if hasattr(assignment, 'ApprovalTime'):
                 self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
 
-            # Update any Key-Value Pairs that were associated with this
-            # assignment
-            for result_set in assignment.answers:
-                for question in result_set:
-                    for key, value in question.fields:
-                        kv = KeyValue.objects.get_or_create(key=key,assignment=self)[0]
-                        if kv.value != value:
-                            kv.value = value
-                            kv.save()
         self.save()
 
     def __unicode__(self):
@@ -567,37 +515,18 @@ class Result(models.Model):
     def get_taskdata(self):
         return to_dict(self.taskdata)
 
-class KeyValue(models.Model):
-    """Answer/Key Value Pairs"""
 
-    MAX_DISPLAY_LENGTH = 255
-
-    key = models.CharField(
-            max_length=255,
-            help_text="The Key (variable) for a QuestionAnswer"
-    )
-    value = models.TextField(
-            null=True,
-            blank=True,
-            help_text="The value associated with the key",
-    )
-    assignment = models.ForeignKey(
-            Assignment,
-            null=True,
-            blank=True,
-            related_name="answers",
-    )
-
-    def short_value(self):
-        if len(self.value) > self.MAX_DISPLAY_LENGTH:
-            return u'%s...' % self.value[:self.MAX_DISPLAY_LENGTH]
-        else:
-            return self.value
-    short_value.short_description = "Value (%d chars)..." % MAX_DISPLAY_LENGTH
-
-    class Meta:
-        verbose_name = "Key-Value Pair"
-        verbose_name_plural = "Key-Value Pairs"
+class Blacklist(models.Model):
+    '''A blacklist prevents a user from continuing a battery'''
+    worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who was blacklisted")
+    blacklist_time = models.DateTimeField(null=True,blank=True,help_text=("Time of blacklist"))
+    battery = models.ForeignKey(Battery, help_text="Battery blacklisted from", verbose_name="Battery of experiments", null=False, blank=False)
+    flags = JSONField(null=True,blank=True,help_text="dictionary of experiments with violations",load_kwargs={'object_pairs_hook': collections.OrderedDict})
 
     def __unicode__(self):
-        return u"%s=%s" % (self.key, self.short_value())
+        return "<%s_%s>" (self.battery,self.worker)
+
+    class Meta:
+        verbose_name = "Blacklist"
+        verbose_name_plural = "Blacklists"
+        unique_together = ("worker","battery")
