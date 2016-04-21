@@ -192,11 +192,6 @@ def view_battery(request, bid):
     delete_permission = check_battery_edit_permission(request,battery)
     mturk_permission = check_mturk_access(request)
 
-    # Check if battery has results
-    has_results = False
-    if len(Result.objects.filter(battery=battery)) > 0:
-        has_results = True
-
     # Render assignment details
     assignments = dict()
     assignments["accepted"] = [a for a in Assignment.objects.filter(hit__battery=battery) if a.status == "A"]
@@ -209,7 +204,6 @@ def view_battery(request, bid):
                'delete_permission':delete_permission,
                'mturk_permission':mturk_permission,
                'hits':hits,
-               'has_results':has_results,
                'anon_link':anon_link,
                'gmail_link':gmail_link,
                'assignments':assignments}
