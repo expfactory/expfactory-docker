@@ -1,4 +1,3 @@
-from expdj.apps.turk.tasks import get_unique_variables, get_unique_experiments
 from expdj.apps.experiments.models import Experiment, ExperimentTemplate, \
   CognitiveAtlasTask, CognitiveAtlasConcept, ExperimentVariable, ExperimentNumericVariable, \
   ExperimentBooleanVariable, ExperimentStringVariable

@@ -1,7 +1,9 @@
 from __future__ import absolute_import
-from expdj.apps.turk.models import Result, Assignment, get_worker, HIT
+from expdj.apps.turk.models import Result, Assignment, get_worker, HIT, Blacklist
+from expdj.apps.experiments.utils import get_experiment_type
 from expdj.apps.experiments.models import ExperimentTemplate
 from celery import shared_task, Celery
+from django.utils import timezone
 from django.conf import settings
 from expdj.settings import TURK
 import numpy
@@ -37,8 +39,75 @@ def assign_experiment_credit(worker_id):
             if results[0].assignment.status == "S":
                 results[0].assignment.approve()
 
+@shared_task
+def check_blacklist(result_id):
+    '''check_blacklist compares a result (associated with an experiment) against
+    the rejection criteria, and adds a flag to the user/battery blacklist object
+    in the case of a violation. When the user/battery blacklist flag count
+    exceeds the battery.blacklist_threshold, the user is blacklisted.
+    :param result: a turk.models.Result object
+    '''
+
+    result = Result.objects.get(id=result_id)
+    worker = result.worker
+    battery = result.battery
+    experiment_template = result.experiment
+    experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
+
+    # rejection criteria
+    do_catch = True if experiment_template.rejection_variable != None and experiment.include_catch == True else False
+    do_blacklist = battery.blacklist_active
+    found_violation = False
+
+    if result.completed == True and do_catch == True and do_blacklist == True:
+
+        # A credit condition can be for reward or rejection
+        for credit_condition in experiment.credit_conditions.all():
+            variable_name = credit_condition.variable.name
+            variables = get_variables(result,variable_name)
+            func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+
+            # Look through variables and determine if in violation of condition
+            for variable in variables:
+                comparator = credit_condition.value
+                if isinstance(variable,float) or isinstance(variable,int):
+                    variable = float(variable)
+                    comparator = float(comparator)
+
+                # If the variable passes criteria and it's a rejection variable
+                if func(comparator,variable):
+                    if credit_condition.variable == experiment_template.rejection_variable and found_violation == False:
+                        found_violation = True
+                        description = "%s %s %s" %(variable,func_description,comparator)
+                        blacklist,_ = Blacklist.objects.get_or_create(worker=worker,battery=battery)
+                        add_blacklist(blacklist,experiment,description)
+
+
+def add_blacklist(blacklist,experiment,description):
+    '''add_blacklist will add an entry to the blacklist flagged (json) list, and
+    check if the new number exceeds the allowed threshold. If yes, the user
+    is blacklisted and not allowed to continue the battery.
+    :param blacklist: turk.models.Blacklist object
+    :param experiment: experiments.models.Experiment
+    '''
+    new_flag = {"experiment_id":experiment.id,
+                "description":description}
+    if blacklist.flags != None:
+        flags = dict()
+        flags[experiment.template.exp_id] = new_flag
+        blacklist.flags = flags
+    else:
+        blacklist.flags[experiment.template.exp_id] = new_flag
+
+    # If the blacklist count is greater than acceptable count, user is blacklisted
+    if len(blacklist.flags) > blacklist.battery.blacklist_threshold:
+        blacklist.active = True
+        blacklist.blacklist_time = timezone.now()
+    blacklist.save()
 
 def assign_reward(worker_id):
+    '''THIS FUNCTION NOT YET IMPLEMENTED, TESTED, etc.'''
 
     # Look up all result objects for worker
     worker = get_worker(worker_id)
@@ -63,7 +132,7 @@ def assign_reward(worker_id):
                     do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
                     for credit_condition in experiment.credit_conditions.all():
                         variable_name = credit_condition.variable.name
-                        variables = get_variables(result.taskdata,template.exp_id,variable_name)
+                        variables = get_variables(result,variable_name)
                         func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
                         # Needs to be tested for non numeric types
                         for variable in variables:
@@ -96,9 +165,9 @@ def get_unique_experiments(results):
     return numpy.unique(experiments).tolist()
 
 
-def get_variables(taskdata,exp_id,variable_name):
+def get_variables(result,variable_name):
     # First try looking for variable as it is
-    variables = find_variable(taskdata,exp_id,variable_name)
+    variables = find_variable(result,variable_name)
     summary_funcs = {"avg":numpy.mean,
                      "mean":numpy.mean,
                      "average":numpy.mean,
@@ -108,22 +177,29 @@ def get_variables(taskdata,exp_id,variable_name):
                      "total":numpy.sum,
                      "max":numpy.max,
                      "min":numpy.min}
+
+    # Did the user specify a summary statistic?
     if len(variables) == 0:
-        # Did the user specify a summary statistic?
-        if variable_name.split("_")[0].lower() in summary_funcs.keys():
+        summary_func = variable_name.split("_")[0].lower()
+        if summary_func in summary_funcs.keys():
             name = ["_".join(variable_name.split("_")[1:])][0]
-            summary_func = summary_funcs[variable_name.split("_")[0].lower()]
-            variables = find_variable(taskdata,exp_id,name)
+            summary_func = summary_funcs[summary_func]
+            variables = find_variable(result,name)
             variables = [summary_func(variables)]
     return variables
 
-def find_variable(taskdata,exp_id,variable_name):
+def find_variable(result,variable_name):
+
+    # Surveys and games not yet implemented
+    experiment_type = get_experiment_type(result.experiment)
     variables = []
-    for trial in taskdata:
-        if "exp_id" in trial["trialdata"]:
-            if trial["trialdata"]["exp_id"] == exp_id:
-                if variable_name in trial["trialdata"].keys():
-                    variables.append(trial["trialdata"][variable_name])
+
+    # For experiments
+    if experiment_type == "experiments":
+        taskdata = result.taskdata
+        for trial in taskdata:
+            if variable_name in trial["trialdata"].keys():
+                variables.append(trial["trialdata"][variable_name])
     return variables
 
 def get_unique_variables(results):

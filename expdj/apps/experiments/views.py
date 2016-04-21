@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
  ExperimentVariable, CreditCondition
-from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm
+from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm, \
+ BlacklistForm
 from expdj.apps.turk.utils import get_worker_experiments
-from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments
+from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments, check_blacklist
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
   complete_survey_result, select_experiments
@@ -15,12 +16,12 @@ from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
 from django.contrib.auth.decorators import login_required
 from expdj.apps.turk.models import HIT, Result, Assignment
+from expdj.apps.turk.models import get_worker, Blacklist
 from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
 from expdj.apps.main.views import google_auth_view
 from django.forms.models import model_to_dict
 from expfactory.views import embed_experiment
-from expdj.apps.turk.models import get_worker
 from expdj.apps.users.models import User
 from django.shortcuts import render
 import expdj.settings as settings
@@ -454,6 +455,14 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         next_page = "javascript:window.location.reload();"
     context["next_page"] = next_page
 
+    # Check the user blacklist status
+    try:
+        blacklist = Blacklist.objects.get(worker=result.worker,battery=battery)
+        if blacklist.active == True:
+            return render_to_response("experiments/blacklist.html")
+    except:
+        pass
+
     # Get experiment folders
     experiment_folders = [os.path.join(media_dir,experiment_type,x.template.exp_id) for x in task_list]
     context["experiment_load"] = get_load_static(experiment_folders,url_prefix="/")
@@ -534,11 +543,15 @@ def sync(request,rid=None):
 
             # if the worker finished the current experiment
             if djstatus == "FINISHED":
+
                 # Mark experiment as completed
                 result.completed = True
                 result.finishtime = timezone.now()
                 result.version = result.experiment.version
                 result.save()
+
+                # Fire a task to check blacklist status
+                check_blacklist.apply_async([result.id])
 
                 data = dict()
                 data["finished_battery"] = "NOTFINISHED"
@@ -953,6 +966,27 @@ def delete_battery(request, bid):
     return redirect('batteries')
 
 
+@login_required
+def subject_management(request,bid):
+    '''subject_management includes blacklist criteria, etc.
+    :param bid: the battery id
+    '''
+    battery = get_battery(bid,request)
+    blacklists = Blacklist.objects.filter(battery=battery)
+
+    if request.method == "POST":
+        form = BlacklistForm(request.POST, instance=battery)
+
+        if form.is_valid():
+            battery = form.save()
+            return HttpResponseRedirect(battery.get_absolute_url())
+    else:
+        form = BlacklistForm(instance=battery)
+
+    context = {"form": form,
+               "battery":battery,
+               "blacklists":blacklists}
+    return render(request, "experiments/subject_management.html", context)
 
 #### EXPORT #############################################################
 

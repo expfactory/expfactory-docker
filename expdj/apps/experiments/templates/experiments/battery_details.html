@@ -11,10 +11,9 @@
     {% endif %}
             {% if edit_permission %}
                 <a class='btn-default btn-lg' href='{% url 'edit_battery' battery.id %}'>Edit Battery</a>
-                {% if has_results %}
-                <a class='btn-default btn-lg' href='{% url 'export_battery' battery.id %}'>Export Results</a>
-                {% endif %}
                 <a class='btn-default btn-lg' target="_blank" href='{% url 'preview_battery' battery.id %}'>Preview</a>
+                <a class='btn-default btn-lg' href='{% url 'subject_management' battery.id %}'>Subject Management</a>
+
                     {% if battery.experiments.all %}
                     <span class="dropdown">
                         <button class="btn-default btn-lg dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -39,15 +38,8 @@
                     </span>
                     {% endif %}
             {% else %}
-                {% if mturk_permission %}
-                {% if hits %}
                 <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
                 <a href='{% url 'preview_battery' battery.id %}' target="_blank">preview</a> it.</div>
-                {% endif %}
-                {% else %}
-                <div class="alert alert-info" role="alert">You do not have permission to edit this battery, but you can
-                <a href='{% url 'preview_battery' battery.id %}' target="_blank">preview</a> it.</div>
-                {% endif %}
             {% endif %}
 
             <div class="float_right">
@@ -86,6 +78,7 @@
           <tr><td>Max Time</td><td>{{ battery.maximum_time }}</td></tr>
           <tr><td>Max Experiments</td><td>{{ battery.number_of_experiments }}</td></tr>
           <tr><td>Active</td><td>{{ battery.active }}</td></tr>
+          <tr><td><a href="{% url 'subject_management' battery.id %}">Blacklist Active</a></td><td>{{ battery.blacklist_active }}</td></tr>
       </tbody>
     </table>
 
@@ -136,9 +129,6 @@
                    </td>
                    <td><a href="http://www.cognitiveatlas.org/term/id/{{ experiment.template.cognitive_atlas_task.cog_atlas_id }}" target="_blank">{{ experiment.template.cognitive_atlas_task }}</a></td>
                    <td>
-                      {% if edit_permission %}
-                      <a class="btn btn-default" title="export experiment results" href="{% url 'export_experiment' experiment.id %}"><i class="fa fa-download"></i></a>
-                      {% endif %}
                       {% if delete_permission %}
                       <a class="btn btn-danger" title="remove experiment from battery" href="{% url 'remove_experiment' battery.id experiment.id %}" id="delete_experiment"><i class="fa fa-trash"></i></a>
                       {% endif %}

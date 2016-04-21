@@ -518,13 +518,17 @@ class Result(models.Model):
 
 class Blacklist(models.Model):
     '''A blacklist prevents a user from continuing a battery'''
-    worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who was blacklisted")
+    worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who is or is pending blacklising")
     blacklist_time = models.DateTimeField(null=True,blank=True,help_text=("Time of blacklist"))
     battery = models.ForeignKey(Battery, help_text="Battery blacklisted from", verbose_name="Battery of experiments", null=False, blank=False)
     flags = JSONField(null=True,blank=True,help_text="dictionary of experiments with violations",load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    active = models.BooleanField(choices=((False, 'Not Blacklisted'),
+                                          (True, 'Blacklisted')),
+                                           default=False,help_text="Participant blacklist status",verbose_name="blacklist status")
+
 
     def __unicode__(self):
-        return "<%s_%s>" (self.battery,self.worker)
+        return "<%s_%s>" %(self.battery,self.worker)
 
     class Meta:
         verbose_name = "Blacklist"

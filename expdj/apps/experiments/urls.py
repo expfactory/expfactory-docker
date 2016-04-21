@@ -7,7 +7,7 @@ remove_condition, preview_battery, serve_battery, serve_battery_anon, \
 generate_battery_user, sync, experiment_results_dashboard, \
 battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
 save_survey_template, add_survey_template, add_game_template, save_game_template, \
-enable_cookie_view, change_experiment_order, serve_battery_gmail
+enable_cookie_view, change_experiment_order, serve_battery_gmail, subject_management
 from expdj import settings
 from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
@@ -52,6 +52,7 @@ urlpatterns = patterns('',
     url(r'^batteries/new$',edit_battery,name='new_battery'),
     url(r'^batteries/add$',add_battery,name='add_battery'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/edit$',edit_battery,name='edit_battery'),
+    url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/subjects$',subject_management,name='subject_management'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/user$',generate_battery_user,name='generate_battery_user'),
     #url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/results$',battery_results_dashboard,name='battery_results_dashboard'),
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/$',view_battery, name='battery_details'),
