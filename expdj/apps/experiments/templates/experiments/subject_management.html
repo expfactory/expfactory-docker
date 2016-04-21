@@ -28,6 +28,7 @@
                 <div class="tab-pane fade in" id="blacklist">
                     <h4>Blacklist Conditions</h4>
 
+                  {% if battery.blacklist_active %}
                     {% if blacklists %}
                     <table class="table table-condensed table-striped table-hover" id="blacklist-table">
                         <thead>
@@ -55,6 +56,9 @@
                     {% else %}
                     <div class="alert alert-info" role="alert">No subjects have been flagged for blacklist.</div>
                     {% endif %}
+               {% else %}
+               <div class="alert alert-info" role="alert">Blacklist is currently disabled for this battery</div>
+               {% endif %}
                </div>
             </div>
 </div>
