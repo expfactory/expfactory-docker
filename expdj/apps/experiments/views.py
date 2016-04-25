@@ -358,7 +358,7 @@ def dummy_battery(request,bid):
     task_list = battery.experiments.filter(template=experimentTemplate)
     result = None
     context = {"worker_id": "Dummy Worker"}
-    if experiment_type == "games":
+    if experiment_type in ["games","surveys"]:
         template = "%s/serve_battery_preview.html" %(experiment_type)
     else:
         template = "%s/serve_battery.html" %(experiment_type)
