@@ -142,6 +142,7 @@ def get_app_url():
 def get_worker_experiments(worker,battery,completed=False):
     '''get_worker_experiments returns a list of experiment objects that
     a worker has/has not completed for a particular battery
+    :param completed: boolean, default False to return uncompleted experiments
     '''
     from expdj.apps.turk.models import Result
     battery_tags = [x.template.exp_id for x in battery.experiments.all()]

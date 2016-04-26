@@ -551,6 +551,7 @@ def sync(request,rid=None):
                 data["finished_battery"] = "NOTFINISHED"
                 data["djstatus"] = djstatus
                 completed_experiments = get_worker_experiments(result.worker,battery,completed=True)
+                completed_experiments = numpy.unique([x.template.exp_id for x in completed_experiments]).tolist()
                 if len(completed_experiments) == battery.experiments.count():
                     assign_experiment_credit.apply_async([result.worker.id],countdown=60)
                     data["finished_battery"] = "FINISHED"
