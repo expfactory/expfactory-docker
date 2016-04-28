@@ -30,6 +30,7 @@ MANAGERS = ADMINS
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 DEBUG = False
+MTURK_ALLOW = True # Allow users to deploy to real Mturk (not just sandbox)
 TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ["*"]
 

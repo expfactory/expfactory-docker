@@ -19,8 +19,11 @@ def update_assignments(hit_id):
     '''update_assignments updates all assignment (status, etc) from Amazon given a hit_id
     :param hit_id: HIT id from turk.models
     '''
-    hit = HIT.objects.get(id=hit_id)
-    hit.update_assignments()
+    try:
+        hit = HIT.objects.get(id=hit_id)
+        hit.update_assignments()
+    except:
+        pass
 
 @shared_task
 def assign_experiment_credit(worker_id):

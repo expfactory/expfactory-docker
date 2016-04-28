@@ -1,8 +1,8 @@
 from expdj.apps.experiments.models import Experiment
 from boto.mturk.connection import MTurkConnection
+from expdj.settings import BASE_DIR, MTURK_ALLOW
 from boto.mturk.question import ExternalQuestion
 from boto.mturk.price import Price
-from expdj.settings import BASE_DIR
 import ConfigParser
 import datetime
 import pandas
@@ -27,16 +27,6 @@ PRODUCTION_WORKER_URL = u'https://www.mturk.com'
 SANDBOX_WORKER_URL = u'https://workersandbox.mturk.com'
 
 
-class InvalidTurkSettings(Exception):
-    """Connection settings for Turk are invalid"""
-    def __init__(self, value):
-        self.parameter = value
-
-    def __unicode__(self):
-        return repr(self.parameter)
-    __str__ = __unicode__
-
-
 def amazon_string_to_datetime(amazon_string):
     """Return datetime from passed Amazon format datestring"""
 
@@ -45,49 +35,34 @@ def amazon_string_to_datetime(amazon_string):
             amazon_string,
             amazon_iso_format)
 
-def get_host():
-    """Read configuration file and get proper host
-
-    The host returned will be the contents of either PRODUCTION_HOST or
-    PRODUCTION_HOST as defined in this module. Because the host
-    parameter is optional, if it is omitted, the PRODUCTION_HOST is
-    returned. Therefore, to use the sandbox, one has to explicitly set
-    the host parameter to 'mechanicalturk.sandbox.amazonaws.com' in
-    either the TURK or TURK_CONFIG_FILE parmeters/files.
+def get_host(hit):
+    """get_host returns correct amazon url depending on if HIT is specified
+    for sandbox or not. The variable MTURK_ALLOW is specified in the settings
+    as a global control for deployment permissions
+    :param hit: the HIT object to check sandbox status for
     """
-    host = PRODUCTION_HOST
-
-    if hasattr(settings, 'TURK') and settings.TURK is not None:
-
-        # Determine if we are in debug mode, set host appropriately
-        if "debug" in settings.TURK:
-            if settings.TURK["debug"] == 1:
-                if "sandbox_host" in settings.TURK:
-                    host = settings.TURK["sandbox_host"]
+    if MTURK_ALLOW == True:
+        if hit != None:
+            if hit.sandbox == True:
+                return SANDBOX_HOST
             else:
-                if 'host' in settings.TURK:
-                    host = settings.TURK['host']
+                return PRODUCTION_HOST
+        else:
+            return PRODUCTION_HOST
+    else:
+        return SANDBOX_HOST
 
-
-    # A settings file will just be used in production, no debug option
-    elif hasattr(settings, 'TURK_CONFIG_FILE') and\
-                          settings.TURK_CONFIG_FILE is not None:
-        config = ConfigParser.ConfigParser()
-        config.read(settings.TURK_CONFIG_FILE)
-        if config.has_option('Connection', 'host'):
-            host = config.get('Connection', 'host')
-
-    # We don't want any custom URL addresses
-    if host.startswith('http://'):
-        host = host.replace('http://', '', 1)
-
-    if host.startswith('https://'):
-        host = host.replace('https://', '', 1)
-
-    # This will trigger error if user is not using external submit
-    assert host in [SANDBOX_HOST, PRODUCTION_HOST]
-
-    return host
+def get_debug(hit):
+    """get_debug returns 1 or 0 to specify if creating a HIT is in debug mode
+    :param hit: the HIT object to check sandbox status for
+    """
+    if MTURK_ALLOW == True:
+        if hit.sandbox == True:
+            return 1
+        else:
+            return 0
+    else:
+        return 1
 
 
 def is_sandbox():
@@ -114,17 +89,11 @@ def get_credentials(battery):
     AWS_SECRET_ACCESS_KEY_ID=credentials.loc["AWS_SECRET_ACCESS_KEY_ID"][1]
     return AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID
 
-def get_connection(aws_access_key_id,aws_secret_access_key):
+def get_connection(aws_access_key_id,aws_secret_access_key,hit=None):
     """Create connection based upon settings/configuration parameters"""
 
-    host = get_host()
-    debug = 1
-
-    if hasattr(settings, 'TURK') and settings.TURK is not None:
-        if 'debug' in settings.TURK:
-            debug = settings.TURK['debug']
-    else:
-        raise InvalidTurkSettings("Turk settings not found")
+    host = get_host(hit)
+    debug = get_debug(hit)
 
     return MTurkConnection(
         aws_access_key_id=aws_access_key_id,

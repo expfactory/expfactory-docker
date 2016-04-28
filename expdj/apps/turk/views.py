@@ -83,7 +83,7 @@ def serve_hit(request,hid):
         worker = get_worker(aws["worker_id"])
 
         # This is the submit URL, either external or sandbox
-        host = get_host()
+        host = get_host(hit)
 
         # Only supporting chrome
         if request.user_agent.browser.family != "Chrome":
@@ -185,7 +185,7 @@ def finished_view(request):
 def survey_submit(request,rid,hid):
     '''survey_submit redirects user to a page to submit a result to amazon'''
     result = Result.objects.filter(id=rid)[0]
-    amazon_host = get_host()
+    amazon_host = get_host(result.assignment.hit)
     context = {"assignment_id":result.assignment.mturk_id,
                "worker_id":result.worker.id,
                "hit_id":hid,

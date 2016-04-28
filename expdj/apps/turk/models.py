@@ -29,7 +29,7 @@ def init_connection_callback(sender, **signal_args):
     sender.args = sender
     object_args = signal_args['kwargs']
     AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery=sender.battery)
-    sender.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
+    sender.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID,sender)
 
 
 class DisposeException(Exception):
@@ -162,6 +162,12 @@ class HIT(models.Model):
     qualification_locale = models.CharField(max_length=255,choices=LOCALE_CHOICES,default='None',help_text="Worker Qualification: location requirement",verbose_name="worker qualification locale")
     qualification_custom = models.CharField(max_length=255,default=None,help_text="Worker Qualification: custom qualification ID",verbose_name="worker qualification custom",null=True,blank=True)
 
+    # Deployment specification
+    sandbox = models.BooleanField(choices=((False, 'Amazon Mechanical Turk'),
+                                           (True, 'Amazon Mechanical Turk Sandbox')),
+                                           default=True,verbose_name="Deployment to Amazon Mechanical Turk, or Test on Sandbox")
+
+
     def disable(self):
         """Disable/Destroy HIT that is no longer needed
         """
@@ -234,7 +240,7 @@ class HIT(models.Model):
     def generate_connection(self):
         # Get the aws access id from the credentials file
         AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery=self.battery)
-        self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID)
+        self.connection = get_connection(AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY_ID,hit=self)
 
     def has_connection(self):
         if "turk.HIT.connection" in [x.__str__() for x in self._meta.fields]:
