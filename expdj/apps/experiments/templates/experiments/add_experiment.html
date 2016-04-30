@@ -137,7 +137,7 @@ $(document).ready(function() {
 
         // Operations and values available depend on the variable type
         if (selection.variable_options!=null){ // boolean or string with choices
-          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid + "'><option value='EQUALTO'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
+          var variable_operators = "<select class='form-control' name='oper" + uid + "' id='oper" + uid + "'><option value='EQUALS'>equal to</option><option value='NOTEQUALTO'>NOT equal to</option></select>"
           if ((selection.variable_options == true) || (selection.variable_options == false)){ // boolean
             var variable_options = "<select class='form-control' name='val" + uid + "' id='val"+ uid +"'><option value='True'>True</option><option value='False'>False</option></select>"
           } else {

@@ -200,9 +200,9 @@ def find_variable(result,variable_name):
     # For experiments
     if experiment_type == "experiments":
         taskdata = result.taskdata
-        for trial in taskdata:
-            if variable_name in trial["trialdata"].keys():
-                variables.append(trial["trialdata"][variable_name])
+        for trial in taskdata[0]["trialdata"]:
+            if variable_name in trial.keys():
+                variables.append(trial[variable_name])
     return variables
 
 def get_unique_variables(results):
