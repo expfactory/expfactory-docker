@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
 from django.views.decorators.csrf import ensure_csrf_cookie
 from expdj.apps.turk.forms import HITForm
+from datetime import timedelta, datetime
 from optparse import make_option
 from numpy.random import choice
 import requests
@@ -73,6 +74,12 @@ def serve_hit(request,hid):
     if request.user_agent.is_pc:
 
         hit =  get_hit(hid,request)
+
+        # Update the hit, only allow to continue if HIT is valid
+        hit.update()
+        if hit.status in ["U","D"]:
+            return render_to_response("turk/hit_expired.html")
+
         battery = hit.battery
         aws = get_amazon_variables(request)
 
@@ -97,11 +104,12 @@ def serve_hit(request,hid):
         assignment,already_created = Assignment.objects.get_or_create(mturk_id=aws["assignment_id"],
                                                                       worker=worker,
                                                                       hit=hit)
-
+                                                                      
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
         if already_created == False:
-            assign_experiment_credit.apply_async([worker.id],countdown=hit.assignment_duration_in_hours-60)
-        assignment.save()
+            if hit.assignment_duration_in_hours != None:
+                assign_experiment_credit.apply_async([worker.id],countdown=60*(hit.assignment_duration_in_hours)-60)
+            assignment.save()
 
         # Does the worker have experiments remaining for the hit?
         uncompleted_experiments = get_worker_experiments(worker,hit.battery)
