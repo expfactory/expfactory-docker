@@ -77,7 +77,7 @@ def serve_hit(request,hid):
 
         # Update the hit, only allow to continue if HIT is valid
         hit.update()
-        if hit.status in ["U","D"]:
+        if hit.status in ["D"]:
             return render_to_response("turk/hit_expired.html")
 
         battery = hit.battery
@@ -104,7 +104,7 @@ def serve_hit(request,hid):
         assignment,already_created = Assignment.objects.get_or_create(mturk_id=aws["assignment_id"],
                                                                       worker=worker,
                                                                       hit=hit)
-                                                                      
+
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
         if already_created == False:
             if hit.assignment_duration_in_hours != None:
