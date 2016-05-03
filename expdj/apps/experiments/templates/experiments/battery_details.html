@@ -174,7 +174,11 @@
                                          <th>reward</th>
                                      </thead>
                                      <tbody>
-                                         <tr><td>{{ hit.title }}</td>
+                                         {% if hit.sandbox = True %}
+                                         <tr><td><a href="https://requestersandbox.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a></td>
+                                         {% else %}
+                                         <tr><td><a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a></td>
+                                         {% endif %}
                                          <td>{{ hit.keywords }}</td>
                                          <td>{{ hit.description }}</td>
                                          <td>{{ hit.reward }}</td></tr>
