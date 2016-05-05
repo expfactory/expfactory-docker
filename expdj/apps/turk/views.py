@@ -14,6 +14,7 @@ from django.core.management.base import BaseCommand
 from django.views.decorators.csrf import ensure_csrf_cookie
 from expdj.apps.turk.forms import HITForm
 from datetime import timedelta, datetime
+from django.utils import timezone
 from optparse import make_option
 from numpy.random import choice
 import requests
@@ -57,6 +58,43 @@ def get_amazon_variables(request):
             "assignment_id": assignment_id,
             "hit_id": hit_id,
             "turk_submit_to":turk_submit_to}
+
+@login_required
+def manage_hit(request,bid,hid):
+    '''manage_hit shows details about workers that have completed / not completed a HIT
+    :param hid: the hit id
+    '''
+    hit =  get_hit(hid,request)
+    hit.update()
+    battery = hit.battery
+
+    # Get different groups of assignments
+    context = dict()
+    context["assignments_approved"] = Assignment.objects.filter(status="A")
+    context["assignments_rejected"] = Assignment.objects.filter(status="R")
+    context["assignments_submit"] = Assignment.objects.filter(status="S")
+    context["hit"] = hit
+    assignments_remaining = Assignment.objects.filter(status=None)
+
+    # Which of the HITS have time run out, but not submit?
+    assignments_attention = []
+    assignments_inprogress = []
+    for assignment in assignments_remaining:
+        needs_attention = False
+        if assignment.accept_time != None:
+            time_difference = timezone.now() - (assignment.accept_time + timedelta(hours=hit.assignment_duration_in_hours))
+            # If the workers ending time has passed:
+            if (assignment.accept_time + timedelta(hours=hit.assignment_duration_in_hours)) < timezone.now():
+                assignments_attention.append(assignment)
+                needs_attention = True
+
+        if needs_attention == False:
+            assignments_inprogress.append(assignment)
+
+    context["assignments_inprogress"] = assignments_inprogress
+    context["assignments_attention"] = assignments_attention
+
+    return render(request, "turk/manage_hit.html", context)
 
 
 def serve_hit(request,hid):
