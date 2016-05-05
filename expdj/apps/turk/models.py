@@ -143,7 +143,7 @@ class HIT(models.Model):
     status = models.CharField("HIT Status",max_length=1,choices=STATUS_CHOICES,null=True,blank=True,help_text="The status of the HIT and its assignments")
     reward = models.DecimalField(max_digits=5,decimal_places=3,null=False,blank=False,help_text=("The amount of money the requester will pay a worker for successfully completing the HIT"))
     lifetime_in_hours = models.FloatField(null=True,blank=True,help_text=("The amount of time, in hours, after which the HIT is no longer available for users to accept."))
-    assignment_duration_in_hours = models.FloatField(null=True,blank=True,help_text=("The length of time, in hours, that a worker has to complete the HIT after accepting it."),validators = [MinValueValidator(0.0)])
+    assignment_duration_in_hours = models.FloatField(null=False,blank=False,help_text=("The length of time, in hours, that a worker has to complete the HIT after accepting it."),validators = [MinValueValidator(0.0)])
     max_assignments = models.PositiveIntegerField(null=True,blank=True,default=1,help_text=("The number of times the HIT can be accepted and  completed before the HIT becomes unavailable."),validators = [MinValueValidator(0.0)])
     auto_approval_delay_in_seconds = models.PositiveIntegerField(null=True,blank=True,help_text=("The amount of time, in seconds after the worker submits an assignment for the HIT that the results are automatically approved by the requester."))
     requester_annotation = models.TextField(null=True,blank=True,help_text=("An arbitrary data field the Requester who created the HIT can use. This field is visible only to the creator of the HIT."))
