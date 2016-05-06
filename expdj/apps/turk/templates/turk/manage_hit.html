@@ -13,7 +13,172 @@
                 <h2>Manage {{ hit.title }}</h2>
             </header>
 
+        {% if assignments_attention %}
+        <a class="btn btn-danger" role="button" data-toggle="collapse" href="#collapseAttention" aria-expanded="false" aria-controls="collapseAttention">Attention {{assignments_attention|length}}</a>
+        {% endif %}
+        {% if assignments_inprogress %}
+        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#collapseInProgress" aria-expanded="false" aria-controls="collapseInProgress">In Progress {{assignments_inprogress|length}}</a>
+        {% endif %}
+        {% if assignments_rejected %}
+        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#collapseRejected" aria-expanded="false" aria-controls="collapseRejected">Rejected {{assignments_rejected|length}}</a>
+        {% endif %}
+        {% if assignments_submit %}
+        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#collapseSubmit" aria-expanded="false" aria-controls="collapseSubmit">Submit {{assignments_submit|length}}</a>
+        {% endif %}
+        {% if assignments_approved %}
+        <a class="btn btn-primary" role="button" data-toggle="collapse" href="#collapseApproved" aria-expanded="false" aria-controls="collapseApproved">Approved {{assignments_approved|length}}</a>
+        {% endif %}
+        <a class="btn btn-default" role="button" id="showall">Show All</a>
+        <a  class="btn btn-default" role="button" id="hideall">Hide All</a>
+        <div style="padding-bottom:25px"></div>
+
+<!-- panels -->
+{% if assignments_attention %}
+<div class="collapse" id="collapseAttention">
+  <div class="well">
+      <h2>Attention</h2>
+      <table class="table table-condensed table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Assignment ID</th>
+              <th>Worker ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for assignment in assignments_attention %}
+          <tr>
+            <td>{{ assignment.mturk_id }}</td>
+            <td>{{ assignment.worker }}</td>
+            <td>{{ assignment.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  </div>
+</div>
+{% endif %}
+
+{% if assignments_inprogress %}
+<div class="collapse" id="collapseInProgress">
+  <div class="well">
+    <h2>In Progress</h2>
+    <table class="table table-condensed table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Assignment ID</th>
+            <th>Worker ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for assignment in assignments_inprogress %}
+        <tr>
+          <td>{{ assignment.mturk_id }}</td>
+          <td>{{ assignment.worker }}</td>
+          <td>{{ assignment.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if assignments_rejected %}
+<div class="collapse" id="collapseRejected">
+  <div class="well">
+    <h2>In Rejected</h2>
+    <table class="table table-condensed table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Assignment ID</th>
+            <th>Worker ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for assignment in assignments_rejected %}
+        <tr>
+          <td>{{ assignment.mturk_id }}</td>
+          <td>{{ assignment.worker }}</td>
+          <td>{{ assignment.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if assignments_submit %}
+<div class="collapse" id="collapseSubmit">
+  <div class="well">
+    <h2>Submit</h2>
+    <table class="table table-condensed table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Assignment ID</th>
+            <th>Worker ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for assignment in assignments_submit %}
+        <tr>
+          <td>{{ assignment.mturk_id }}</td>
+          <td>{{ assignment.worker }}</td>
+          <td>{{ assignment.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if assignments_approved %}
+<div class="collapse" id="collapseApproved">
+  <div class="well">
+    <h2>Approved</h2>
+
+    <table class="table table-condensed table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Assignment ID</th>
+            <th>Worker ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for assignment in assignments_approved %}
+        <tr>
+          <td>{{ assignment.mturk_id }}</td>
+          <td>{{ assignment.worker }}</td>
+          <td>{{ assignment.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
         </article>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+$(document).ready(function(){
+
+$("#showall").click(function(){
+  $('.collapse').collapse('show');
+})
+
+$("#hideall").click(function(){
+  $('.collapse').collapse('hide');
+})
+
+})
+</script>
 {% endblock %}
