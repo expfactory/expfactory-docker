@@ -703,7 +703,7 @@ def edit_experiment(request,bid,eid):
         if form.is_valid():
             experiment = form.save(commit=False)
             experiment.save()
-            for cc in experiment.credit_conditions:
+            for cc in experiment.credit_conditions.all():
                 update_credits(experiment,cc.id)
             return HttpResponseRedirect(battery.get_absolute_url())
     else:

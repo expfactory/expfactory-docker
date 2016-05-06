@@ -76,7 +76,7 @@ def check_blacklist(result_id):
                 comparator = credit_condition.value
                 if isinstance(variable,float) or isinstance(variable,int):
                     variable = float(variable)
-                    comparator = float(comparator)
+                if isinstance(comparator,float) or isinstance(comparator,int):                      comparator = float(comparator)
 
                 # If the variable passes criteria and it's a rejection variable
                 if func(comparator,variable):
