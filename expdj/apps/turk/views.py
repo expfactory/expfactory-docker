@@ -70,11 +70,11 @@ def manage_hit(request,bid,hid):
 
     # Get different groups of assignments
     context = dict()
-    context["assignments_approved"] = Assignment.objects.filter(status="A")
-    context["assignments_rejected"] = Assignment.objects.filter(status="R")
-    context["assignments_submit"] = Assignment.objects.filter(status="S")
+    context["assignments_approved"] = Assignment.objects.filter(status="A",hit=hit)
+    context["assignments_rejected"] = Assignment.objects.filter(status="R",hit=hit)
+    context["assignments_submit"] = Assignment.objects.filter(status="S",hit=hit)
     context["hit"] = hit
-    assignments_remaining = Assignment.objects.filter(status=None)
+    assignments_remaining = Assignment.objects.filter(status=None,hit=hit)
 
     # Which of the HITS have time run out, but not submit?
     assignments_attention = []
