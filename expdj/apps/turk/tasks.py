@@ -39,8 +39,12 @@ def assign_experiment_credit(worker_id):
     results = Result.objects.filter(worker=worker)
     if len(results)>0:
         if results[0].assignment != None:
+            results[0].assignment.hit.generate_connection()
+            results[0].assignment.update()
             if results[0].assignment.status == "S":
                 results[0].assignment.approve()
+                results[0].assignment.completed = True
+                results[0].assignment.save()
 
 @shared_task
 def check_blacklist(result_id):
