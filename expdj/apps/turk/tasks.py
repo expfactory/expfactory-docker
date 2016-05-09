@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 from expdj.apps.turk.models import Result, Assignment, get_worker, HIT, Blacklist, Bonus
 from expdj.apps.experiments.utils import get_experiment_type
-from expdj.apps.experiments.models import ExperimentTemplate
+from expdj.apps.experiments.models import ExperimentTemplate, Battery
+from boto.mturk.price import Price
 from celery import shared_task, Celery
 from django.utils import timezone
 from django.conf import settings
@@ -38,13 +39,17 @@ def assign_experiment_credit(worker_id):
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
     if len(results)>0:
-        if results[0].assignment != None:
-            results[0].assignment.hit.generate_connection()
-            results[0].assignment.update()
-            if results[0].assignment.status == "S":
-                results[0].assignment.approve()
-                results[0].assignment.completed = True
-                results[0].assignment.save()
+        result = results[0]
+        if results.assignment != None:
+            results.assignment.hit.generate_connection()
+            results.assignment.update()
+            if results.assignment.status == "S":
+                # Approve and grant bonus
+                results.assignment.approve()
+                results.assignment.completed = True
+                results.assignment.save()
+                grant_bonus(result.id)
+
 
 @shared_task
 def check_blacklist(result_id):
@@ -116,6 +121,38 @@ def add_blacklist(blacklist,experiment,description):
         blacklist.blacklist_time = timezone.now()
     blacklist.save()
 
+
+def get_bonus_reason(bonus):
+    '''get_bonus_reason parses through worker bonus amounts, and returns a message to the worker for the reason
+    :param bonus: expdj.apps.turk.models.Bonus object
+    '''
+    amounts = dict(bonus.amounts)
+    reason = ""
+    for experiment_name,record in amounts.iteritems():
+        new_reason = "%s: granted $%s because %s\n" %(experiment_name,record["amount"],record["description"])
+        reason = "%s%s" %(reason,new_reason)
+    return reason
+
+def grant_bonus(result_id):
+    '''grant_bonus will calculate and grant a total bonus for a worker
+    :param result_id: the id the result to grant the bonus for
+    '''
+    result = Result.objects.get(id=result_id)
+    worker = result.worker
+    battery = result.battery
+    result.assignment.hit.generate_connection()
+    try:
+        bonus = Bonus.objects.get(worker=worker,battery=battery)
+        amount = bonus.calculate_total()
+        price = Price(amount)
+        reason = get_bonus_reason(bonus)
+        result.assignment.hit.connection.grant_bonus(worker.id,result.assignment.mturk_id,price,reason)
+        bonus.granted = True
+        bonus.save()
+    except Bonus.DoesNotExist:
+        pass
+
+@shared_task
 def experiment_reward(result_id):
     '''experiment_reward will record bonus based on satisfying some criteria
     The final bonus will be allocated at the end of the battery, after
@@ -126,9 +163,9 @@ def experiment_reward(result_id):
     '''
 
     # Look up all result objects for worker
-    worker = get_worker(worker_id)
     result = Result.objects.get(id=result_id)
     battery = result.battery
+    worker = result.worker
     experiment_template = result.experiment
     experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
 

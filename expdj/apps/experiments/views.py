@@ -4,7 +4,8 @@ from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Batter
 from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm, \
  BlacklistForm
 from expdj.apps.turk.utils import get_worker_experiments
-from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments, check_blacklist
+from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments, check_blacklist, \
+  experiment_reward
 from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
   update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
   complete_survey_result, select_experiments
@@ -544,8 +545,9 @@ def sync(request,rid=None):
                 result.version = result.experiment.version
                 result.save()
 
-                # Fire a task to check blacklist status
+                # Fire a task to check blacklist status, add bonus
                 check_blacklist.apply_async([result.id])
+                experiment_reward.apply_async([result.id])
 
                 data = dict()
                 data["finished_battery"] = "NOTFINISHED"
