@@ -40,14 +40,14 @@ def assign_experiment_credit(worker_id):
     results = Result.objects.filter(worker=worker)
     if len(results)>0:
         result = results[0]
-        if results.assignment != None:
-            results.assignment.hit.generate_connection()
-            results.assignment.update()
-            if results.assignment.status == "S":
+        if result.assignment != None:
+            result.assignment.hit.generate_connection()
+            result.assignment.update()
+            if result.assignment.status == "S":
                 # Approve and grant bonus
-                results.assignment.approve()
-                results.assignment.completed = True
-                results.assignment.save()
+                result.assignment.approve()
+                result.assignment.completed = True
+                result.assignment.save()
                 grant_bonus(result.id)
 
 
