@@ -527,9 +527,29 @@ class Bonus(models.Model):
     worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who is receiving bonus")
     battery = models.ForeignKey(Battery, help_text="Battery reciving bonuses for", verbose_name="Battery of experiments for bonus", null=False, blank=False)
     amounts = JSONField(null=True,blank=True,help_text="dictionary of experiments with bonus amounts",load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    # {u'test_task': {'description': u'performance_var True EQUALS True', 'experiment_id': 113, 'amount': 3.0} # amount in dollars/cents
     granted = models.BooleanField(choices=((False, 'Not bonused'),
                                           (True, 'Bonus granted')),
                                            default=False,help_text="Participant bonus status",verbose_name="bonus status")
+
+    def __unicode__(self):
+        return "<%s_%s>" %(self.battery,self.worker)
+
+    def calculate_bonus(self):
+        if amounts != None:
+            amounts = dict(self.amounts)
+            total = 0
+            for experiment_id,record in amounts.iteritems():
+                if "amount" in record:
+                    total = bonus + record["amount"]
+            return total
+        return 0
+
+    class Meta:
+        verbose_name = "Bonus"
+        verbose_name_plural = "Bonuses"
+        unique_together = ("worker","battery")
+
 
 
 class Blacklist(models.Model):
@@ -538,6 +558,7 @@ class Blacklist(models.Model):
     blacklist_time = models.DateTimeField(null=True,blank=True,help_text=("Time of blacklist"))
     battery = models.ForeignKey(Battery, help_text="Battery blacklisted from", verbose_name="Battery of experiments", null=False, blank=False)
     flags = JSONField(null=True,blank=True,help_text="dictionary of experiments with violations",load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    # {u'test_task': {'description': u'credit_var True EQUALS True', 'experiment_id': 113}
     active = models.BooleanField(choices=((False, 'Not Blacklisted'),
                                           (True, 'Blacklisted')),
                                            default=False,help_text="Participant blacklist status",verbose_name="blacklist status")
