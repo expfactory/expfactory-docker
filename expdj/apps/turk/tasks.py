@@ -78,15 +78,18 @@ def check_blacklist(result_id):
             # Look through variables and determine if in violation of condition
             for variable in variables:
                 comparator = credit_condition.value
-                if isinstance(variable,float) or isinstance(variable,int):
+                if isinstance(variable,bool):
+                    comparator = bool(comparator)
+                elif isinstance(variable,float) or isinstance(variable,int):
                     variable = float(variable)
-                if isinstance(comparator,float) or isinstance(comparator,int):                      comparator = float(comparator)
+                if not isinstance(comparator,bool) and (isinstance(comparator,float) or isinstance(comparator,int)):
+                    comparator = float(comparator)
 
                 # If the variable passes criteria and it's a rejection variable
                 if func(comparator,variable):
                     if credit_condition.variable == experiment_template.rejection_variable and found_violation == False:
                         found_violation = True
-                        description = "%s %s %s" %(variable,func_description,comparator)
+                        description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
                         blacklist,_ = Blacklist.objects.get_or_create(worker=worker,battery=battery)
                         add_blacklist(blacklist,experiment,description)
 
@@ -100,7 +103,7 @@ def add_blacklist(blacklist,experiment,description):
     '''
     new_flag = {"experiment_id":experiment.id,
                 "description":description}
-    if blacklist.flags != None:
+    if blacklist.flags == None:
         flags = dict()
         flags[experiment.template.exp_id] = new_flag
         blacklist.flags = flags
@@ -113,8 +116,10 @@ def add_blacklist(blacklist,experiment,description):
         blacklist.blacklist_time = timezone.now()
     blacklist.save()
 
-def assign_reward(worker_id):
-    '''THIS FUNCTION NOT YET IMPLEMENTED, TESTED, etc.'''
+def assign_reward(result_id):
+    '''assign_reward will grant bonus based on satisfying some criteria
+    :result_id: the id of the result object, turk.models.Result
+    '''
 
     # Look up all result objects for worker
     worker = get_worker(worker_id)
@@ -122,7 +127,6 @@ def assign_reward(worker_id):
 
     # rejection criteria
     additional_dollars = 0.0
-    rejection = False
 
     for result in results:
         if result.completed == True:

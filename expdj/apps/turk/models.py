@@ -522,6 +522,16 @@ class Result(models.Model):
         return to_dict(self.taskdata)
 
 
+class Bonus(models.Model):
+    '''A bonus object keeps track of a users bonuses for a battery'''
+    worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who is receiving bonus")
+    battery = models.ForeignKey(Battery, help_text="Battery reciving bonuses for", verbose_name="Battery of experiments for bonus", null=False, blank=False)
+    amounts = JSONField(null=True,blank=True,help_text="dictionary of experiments with bonus amounts",load_kwargs={'object_pairs_hook': collections.OrderedDict})
+    granted = models.BooleanField(choices=((False, 'Not bonused'),
+                                          (True, 'Bonus granted')),
+                                           default=False,help_text="Participant bonus status",verbose_name="bonus status")
+
+
 class Blacklist(models.Model):
     '''A blacklist prevents a user from continuing a battery'''
     worker = models.ForeignKey(Worker,null=False,blank=False,help_text="The ID of the Worker who is or is pending blacklising")
