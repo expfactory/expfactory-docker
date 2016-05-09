@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from expdj.apps.turk.models import Result, Assignment, get_worker, HIT, Blacklist
+from expdj.apps.turk.models import Result, Assignment, get_worker, HIT, Blacklist, Bonus
 from expdj.apps.experiments.utils import get_experiment_type
 from expdj.apps.experiments.models import ExperimentTemplate
 from celery import shared_task, Celery
@@ -86,7 +86,7 @@ def check_blacklist(result_id):
                     comparator = float(comparator)
 
                 # If the variable passes criteria and it's a rejection variable
-                if func(comparator,variable):
+                if func(variable,comparator):
                     if credit_condition.variable == experiment_template.rejection_variable and found_violation == False:
                         found_violation = True
                         description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
@@ -116,55 +116,71 @@ def add_blacklist(blacklist,experiment,description):
         blacklist.blacklist_time = timezone.now()
     blacklist.save()
 
-def assign_reward(result_id):
-    '''assign_reward will grant bonus based on satisfying some criteria
+def experiment_reward(result_id):
+    '''experiment_reward will record bonus based on satisfying some criteria
+    The final bonus will be allocated at the end of the battery, after
+    a result is submit, with grant_bonus. This function currently has code
+    similar to check_blacklist, and the two are separate as this is expected
+    to change
     :result_id: the id of the result object, turk.models.Result
     '''
 
     # Look up all result objects for worker
     worker = get_worker(worker_id)
-    results = Result.objects.filter(worker=worker)
+    result = Result.objects.get(id=result_id)
+    battery = result.battery
+    experiment_template = result.experiment
+    experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
 
-    # rejection criteria
-    additional_dollars = 0.0
+    do_bonus = True if experiment_template.performance_variable != None and experiment.include_bonus == True else False 
+    bonus_active = battery.bonus_active
+    
+    if result.completed == True and do_bonus == True and bonus_active == True:
+        for credit_condition in experiment.credit_conditions.all():
+            variable_name = credit_condition.variable.name
+            variables = get_variables(result,variable_name)
+            func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]            
 
-    for result in results:
-        if result.completed == True:
-            # Get all experiments
-            battery_experiments = result.assignment.hit.battery.experiments.all()
-            experiment_ids = get_unique_experiments([result])
-            experiments = ExperimentTemplate.objects.filter(exp_id__in=experiment_ids)
-            for template in experiments:
-                experiment = [b for b in battery_experiments if b.template == template]
-                # If an experiment is deleted from battery, we have no way to know to reject/bonus
-                if len(experiment)>0:
-                    experiment = experiment[0]
-                    do_catch = True if template.rejection_variable != None and experiment.include_catch == True else False
-                    do_bonus = True if template.performance_variable != None and experiment.include_bonus == True else False
-                    for credit_condition in experiment.credit_conditions.all():
-                        variable_name = credit_condition.variable.name
-                        variables = get_variables(result,variable_name)
-                        func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-                        # Needs to be tested for non numeric types
-                        for variable in variables:
-                            comparator = credit_condition.value
-                            if isinstance(variable,float) or isinstance(variable,int):
-                                variable = float(variable)
-                                comparator = float(comparator)
-                            if func(comparator,variable):
-                                # For credit conditions, add to bonus!
-                                if credit_condition.variable == template.performance_variable and do_bonus:
-                                    additional_dollars = additional_dollars + credit_condition.amount
-                                if credit_condition.variable == template.rejection_variable and do_catch:
-                                    rejection = True
-            # We remember granting credit on the level of results
-            result.credit_granted = True
-            result.save()
+            # Look through variables and determine if passes condition
+            for variable in variables:
+                comparator = credit_condition.value
+                if isinstance(variable,bool):
+                    comparator = bool(comparator)
+                elif isinstance(variable,float) or isinstance(variable,int):
+                    variable = float(variable)
+                    comparator = float(comparator)
 
-    if len(results) > 0:
-        # Update HIT assignments - all results point to the same hit, so use the last one
-        result.assignment.hit.update_assignments()
-        assignment = Assignment.objects.filter(id=result.assignment.id)[0]
+                # If the variable passes criteria and it's a performance variable
+                if func(variable,comparator):
+                    if credit_condition.variable == experiment_template.performance_variable:
+                        description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
+                        bonus,_ = Bonus.objects.get_or_create(worker=worker,battery=battery)
+                        if credit_condition.amount != None:
+                            add_bonus(bonus,experiment,description,credit_condition.amount)
+                            result.credit_granted = True
+                            result.save()
+
+
+def add_bonus(bonus,experiment,description,amount):
+    '''add_bonus will add an entry to the bonus (json) list
+    :param bonus: turk.models.Bonus object
+    :param experiment: experiments.models.Experiment
+    :param description: eg 'performance_var 556.333333333 GREATERTHAN 400.0'
+    :param amount: the amount, in dollars to be given to the worker
+    '''
+    new_bonus = {"experiment_id":experiment.id,
+                 "description":description,
+                 "amount":amount}
+
+    if bonus.amounts == None:
+        amounts = dict()
+        amounts[experiment.template.exp_id] = new_bonus
+        bonus.amounts = amounts
+    else:
+        bonus.amounts[experiment.template.exp_id] = new_bonus
+
+    bonus.save()
 
 
 # EXPERIMENT RESULT PARSING helper functions

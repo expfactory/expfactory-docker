@@ -536,12 +536,12 @@ class Bonus(models.Model):
         return "<%s_%s>" %(self.battery,self.worker)
 
     def calculate_bonus(self):
-        if amounts != None:
+        if self.amounts != None:
             amounts = dict(self.amounts)
             total = 0
             for experiment_id,record in amounts.iteritems():
                 if "amount" in record:
-                    total = bonus + record["amount"]
+                    total = total + record["amount"]
             return total
         return 0
 

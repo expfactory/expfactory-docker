@@ -19,6 +19,7 @@
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#settings" data-toggle="tab">Settings</a></li>
                 <li><a href="#blacklist" data-toggle="tab">Blacklist</a></li>
+                <li><a href="#bonus" data-toggle="tab">Bonus</a></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade in active" id="settings">
@@ -43,10 +44,10 @@
                             <tr>
                                <td>{{ blacklist.worker.id }}</td>
                                <td>{{ blacklist.flags|length }}</td>
-                               <td>{% if blacklist.active %}
-                                    <span color="red">blacklisted</span>
+                               <td>{% if blacklist.active = True %}
+                                    <span style="color:red;">blacklisted</span>
                                     {% else %}
-                                    <span color="orangered">pending</span>
+                                    <span style="color:orangered;">pending</span>
                                     {% endif %}
                                </td>
                             </tr>
@@ -60,6 +61,44 @@
                <div class="alert alert-info" role="alert">Blacklist is currently disabled for this battery</div>
                {% endif %}
                </div>
+
+                <div class="tab-pane fade in" id="bonus">
+                    <h4>Bonus Conditions</h4>
+
+                  {% if battery.bonus_active %}
+                    {% if bonuses %}
+                    <table class="table table-condensed table-striped table-hover" id="bonus-table">
+                        <thead>
+                            <tr>
+                                <th>Worker</th>
+                                <th>Total</th>
+                                <th>Granted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                           {% for bonus in bonuses %}
+                            <tr>
+                               <td>{{ bonus.worker.id }}</td>
+                               <td>{{ bonus.calculate_bonus }}</td>
+			       <td>{% if bonus.granted = False %}
+                                   <span style="color:orangered;">not granted</span>
+                                   {% else %}
+                                   <span style="color:green">granted</span>
+                                   {% endif %}
+                               </td>
+                            </tr>
+                           {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="alert alert-info" role="alert">No subjects have been credited for bonus</div>
+                    {% endif %}
+               {% else %}
+               <div class="alert alert-info" role="alert">Bonus is currently disabled for this battery</div>
+               {% endif %}
+                </div>
+
+
             </div>
 </div>
 {% endblock %}

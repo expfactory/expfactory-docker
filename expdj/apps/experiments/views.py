@@ -16,7 +16,7 @@ from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
 from django.contrib.auth.decorators import login_required
 from expdj.apps.turk.models import HIT, Result, Assignment
-from expdj.apps.turk.models import get_worker, Blacklist
+from expdj.apps.turk.models import get_worker, Blacklist, Bonus
 from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
 from expdj.apps.main.views import google_auth_view
@@ -968,6 +968,7 @@ def subject_management(request,bid):
     '''
     battery = get_battery(bid,request)
     blacklists = Blacklist.objects.filter(battery=battery)
+    bonuses = Bonus.objects.filter(battery=battery)
 
     if request.method == "POST":
         form = BlacklistForm(request.POST, instance=battery)
@@ -980,7 +981,9 @@ def subject_management(request,bid):
 
     context = {"form": form,
                "battery":battery,
-               "blacklists":blacklists}
+               "blacklists":blacklists,
+               "bonuses":bonuses}
+
     return render(request, "experiments/subject_management.html", context)
 
 #### EXPORT #############################################################
