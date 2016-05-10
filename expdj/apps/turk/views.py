@@ -147,7 +147,7 @@ def serve_hit(request,hid):
         if already_created == False:
             assignment.accept_time = datetime.now()
             if hit.assignment_duration_in_hours != None:
-                assign_experiment_credit.apply_async([worker.id],countdown=60*(hit.assignment_duration_in_hours)-60)
+                assign_experiment_credit.apply_async([worker.id],countdown=360*(hit.assignment_duration_in_hours))
             assignment.save()
 
         # Does the worker have experiments remaining for the hit?

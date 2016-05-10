@@ -143,7 +143,7 @@ def grant_bonus(result_id):
     result.assignment.hit.generate_connection()
     try:
         bonus = Bonus.objects.get(worker=worker,battery=battery)
-        amount = bonus.calculate_total()
+        amount = bonus.calculate_bonus()
         price = Price(amount)
         reason = get_bonus_reason(bonus)
         result.assignment.hit.connection.grant_bonus(worker.id,result.assignment.mturk_id,price,reason)
