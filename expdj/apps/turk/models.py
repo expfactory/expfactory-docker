@@ -455,12 +455,13 @@ class Assignment(models.Model):
                     # That's this record. Hold onto so we can update below
                     assignment = a
                 else:
-                    other_assignment = Assignment.objects.get(
-                            mturk_id=a.AssignmentId)
-                    other_assignment.update(a)
+                    other_assignments = Assignment.objects.filter(mturk_id=a.AssignmentId)
+                    # Amazon can reuse Assignment ids, so there is an occasional duplicate
+                    for other_assignment in other_assignments:
+                        if other_assignment.worker_id == a.WorkerId:
+                            other_assignment.update(a)
         else:
-            assert isinstance(mturk_assignment,
-                              boto.mturk.connection.Assignment)
+            assert isinstance(mturk_assignment,boto.mturk.connection.Assignment)
             assignment = mturk_assignment
 
         if assignment != None:
