@@ -64,39 +64,42 @@ def check_blacklist(result_id):
     worker = result.worker
     battery = result.battery
     experiment_template = result.experiment
-    experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
+    experiment = [b for b in battery.experiments.all() if b.template == experiment_template]
 
-    # rejection criteria
-    do_catch = True if experiment_template.rejection_variable != None and experiment.include_catch == True else False
-    do_blacklist = battery.blacklist_active
-    found_violation = False
+    if len(experiment) > 0:
+        experiment = experiment[0]
 
-    if result.completed == True and do_catch == True and do_blacklist == True:
+        # rejection criteria
+        do_catch = True if experiment_template.rejection_variable != None and experiment.include_catch == True else False
+        do_blacklist = battery.blacklist_active
+        found_violation = False
 
-        # A credit condition can be for reward or rejection
-        for credit_condition in experiment.credit_conditions.all():
-            variable_name = credit_condition.variable.name
-            variables = get_variables(result,variable_name)
-            func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+        if result.completed == True and do_catch == True and do_blacklist == True:
 
-            # Look through variables and determine if in violation of condition
-            for variable in variables:
-                comparator = credit_condition.value
-                if isinstance(variable,bool):
-                    comparator = bool(comparator)
-                elif isinstance(variable,float) or isinstance(variable,int):
-                    variable = float(variable)
-                if not isinstance(comparator,bool) and (isinstance(comparator,float) or isinstance(comparator,int)):
-                    comparator = float(comparator)
+            # A credit condition can be for reward or rejection
+            for credit_condition in experiment.credit_conditions.all():
+                variable_name = credit_condition.variable.name
+                variables = get_variables(result,variable_name)
+                func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+                func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
 
-                # If the variable passes criteria and it's a rejection variable
-                if func(variable,comparator):
-                    if credit_condition.variable == experiment_template.rejection_variable and found_violation == False:
-                        found_violation = True
-                        description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
-                        blacklist,_ = Blacklist.objects.get_or_create(worker=worker,battery=battery)
-                        add_blacklist(blacklist,experiment,description)
+                # Look through variables and determine if in violation of condition
+                for variable in variables:
+                    comparator = credit_condition.value
+                    if isinstance(variable,bool):
+                        comparator = bool(comparator)
+                    elif isinstance(variable,float) or isinstance(variable,int):
+                        variable = float(variable)
+                    if not isinstance(comparator,bool) and (isinstance(comparator,float) or isinstance(comparator,int)):
+                        comparator = float(comparator)
+
+                    # If the variable passes criteria and it's a rejection variable
+                    if func(variable,comparator):
+                        if credit_condition.variable == experiment_template.rejection_variable and found_violation == False:
+                            found_violation = True
+                            description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
+                            blacklist,_ = Blacklist.objects.get_or_create(worker=worker,battery=battery)
+                            add_blacklist(blacklist,experiment,description)
 
 
 def add_blacklist(blacklist,experiment,description):
@@ -169,15 +172,15 @@ def experiment_reward(result_id):
     experiment_template = result.experiment
     experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
 
-    do_bonus = True if experiment_template.performance_variable != None and experiment.include_bonus == True else False 
+    do_bonus = True if experiment_template.performance_variable != None and experiment.include_bonus == True else False
     bonus_active = battery.bonus_active
-    
+
     if result.completed == True and do_bonus == True and bonus_active == True:
         for credit_condition in experiment.credit_conditions.all():
             variable_name = credit_condition.variable.name
             variables = get_variables(result,variable_name)
             func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]            
+            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
 
             # Look through variables and determine if passes condition
             for variable in variables:
