@@ -170,36 +170,39 @@ def experiment_reward(result_id):
     battery = result.battery
     worker = result.worker
     experiment_template = result.experiment
-    experiment = [b for b in battery.experiments.all() if b.template == experiment_template][0]
+    experiment = [b for b in battery.experiments.all() if b.template == experiment_template]
 
-    do_bonus = True if experiment_template.performance_variable != None and experiment.include_bonus == True else False
-    bonus_active = battery.bonus_active
+    if len(experiment)>0:
+        experiment=experiment[0]
 
-    if result.completed == True and do_bonus == True and bonus_active == True:
-        for credit_condition in experiment.credit_conditions.all():
-            variable_name = credit_condition.variable.name
-            variables = get_variables(result,variable_name)
-            func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
-            func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+        do_bonus = True if experiment_template.performance_variable != None and experiment.include_bonus == True else False
+        bonus_active = battery.bonus_active
 
-            # Look through variables and determine if passes condition
-            for variable in variables:
-                comparator = credit_condition.value
-                if isinstance(variable,bool):
-                    comparator = bool(comparator)
-                elif isinstance(variable,float) or isinstance(variable,int):
-                    variable = float(variable)
-                    comparator = float(comparator)
+        if result.completed == True and do_bonus == True and bonus_active == True:
+            for credit_condition in experiment.credit_conditions.all():
+                variable_name = credit_condition.variable.name
+                variables = get_variables(result,variable_name)
+                func = [x[1] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
+                func_description = [x[0] for x in credit_condition.OPERATOR_CHOICES if x[0] == credit_condition.operator][0]
 
-                # If the variable passes criteria and it's a performance variable
-                if func(variable,comparator):
-                    if credit_condition.variable == experiment_template.performance_variable:
-                        description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
-                        bonus,_ = Bonus.objects.get_or_create(worker=worker,battery=battery)
-                        if credit_condition.amount != None:
-                            add_bonus(bonus,experiment,description,credit_condition.amount)
-                            result.credit_granted = True
-                            result.save()
+                # Look through variables and determine if passes condition
+                for variable in variables:
+                    comparator = credit_condition.value
+                    if isinstance(variable,bool):
+                        comparator = bool(comparator)
+                    elif isinstance(variable,float) or isinstance(variable,int):
+                        variable = float(variable)
+                        comparator = float(comparator)
+
+                    # If the variable passes criteria and it's a performance variable
+                    if func(variable,comparator):
+                        if credit_condition.variable == experiment_template.performance_variable:
+                            description = "%s %s %s %s" %(variable_name,variable,func_description,comparator)
+                            bonus,_ = Bonus.objects.get_or_create(worker=worker,battery=battery)
+                            if credit_condition.amount != None:
+                                add_bonus(bonus,experiment,description,credit_condition.amount)
+                                result.credit_granted = True
+                                result.save()
 
 
 def add_bonus(bonus,experiment,description,amount):
