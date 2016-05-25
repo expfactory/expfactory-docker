@@ -751,9 +751,9 @@ def save_experiment(request,bid):
             credit_conditions.append(credit_condition)
 
         # Create the experiment to add to the battery
-        experiment,_ = Experiment.objects.get_or_create(template=template,
-                                                        include_bonus=include_bonus,
-                                                        include_catch=include_catch)
+        experiment = Experiment.objects.create(template=template,
+                                               include_bonus=include_bonus,
+                                               include_catch=include_catch)
         experiment.save()
         experiment.credit_conditions=credit_conditions
         experiment.save()
