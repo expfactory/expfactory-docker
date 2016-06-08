@@ -1,14 +1,16 @@
-from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models.signals import m2m_changed
-from polymorphic.models import PolymorphicModel
-from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User
-from django.db.models import Q, DO_NOTHING
-from jsonfield import JSONField
-from django.db import models
 import collections
 import operator
+
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from jsonfield import JSONField
+from polymorphic.models import PolymorphicModel
+
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import Q, DO_NOTHING
+from django.db.models.signals import m2m_changed
 
 class CognitiveAtlasConcept(models.Model):
     name = models.CharField(max_length=1000, null=False, blank=False)
@@ -133,6 +135,12 @@ class Experiment(models.Model):
 
 class Battery(models.Model):
     '''A battery is a collection of experiment templates'''
+
+    ORDER_CHOICES = (
+        ("random", "random"),
+        ("specified", "specified"),
+    )
+
     # Name must be unique because anonymous link is generated from hash
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of battery")
     description = models.TextField(blank=True, null=True)
@@ -150,19 +158,28 @@ class Battery(models.Model):
     active = models.BooleanField(choices=((False, 'Inactive'),
                                           (True, 'Active')),
                                            default=True,verbose_name="Active")
-    ORDER_CHOICES = (
-        ("random", "random"),
-        ("specified", "specified"),
-    )
-
     presentation_order = models.CharField("order function for presentation of experiments",max_length=200,choices=ORDER_CHOICES,default="random",help_text="Select experiments randomly, or in a custom specified order.")
-    blacklist_active = models.BooleanField(choices=((False, 'Off'),
-                                                    (True, 'On')),
-                                                    default=False,verbose_name="Blacklist based on rejection criteria")
+    blacklist_active = models.BooleanField(
+        choices=((False, 'Off'), (True, 'On')),
+        default=False,
+        verbose_name="Blacklist based on rejection criteria"
+    )
     blacklist_threshold = models.PositiveIntegerField(null=True,blank=True,default=10,help_text="Number of experiments to fail reject condition to add participant to blacklist",validators = [MinValueValidator(0.0)])
-    bonus_active = models.BooleanField(choices=((False, 'Off'),
-                                                (True, 'On')),
-                                                default=False,verbose_name="Bonus based on reward criteria")
+    bonus_active = models.BooleanField(
+        choices=((False, 'Off'), (True, 'On')),
+        default=False,
+        verbose_name="Bonus based on reward criteria"
+    )
+    required_batteries = models.ManyToManyField(
+        Battery, 
+        help_text=("Batteries which must be completed for this battery to be "
+                  "attempted")
+    )
+    restricted_batteries = models.ManyToManyField(
+        Battery,
+        help_text=("Batteries that must not be completed in order for "
+                   "this battery to be attempted")
+    )
 
     def get_absolute_url(self):
         return_cid = self.id
