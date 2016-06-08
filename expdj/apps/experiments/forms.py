@@ -57,8 +57,8 @@ class ExperimentForm(ModelForm):
 class BatteryForm(ModelForm):
 
     class Meta:
-        exclude = ('owner','contributors','experiments','bonus_active'
-                   'blacklist_active','blacklist_threshold')
+        exclude = ('owner', 'contributors', 'experiments',' bonus_active'
+                   'blacklist_active', 'blacklist_threshold')
         model = Battery
 
     def clean(self):

@@ -171,12 +171,16 @@ class Battery(models.Model):
         verbose_name="Bonus based on reward criteria"
     )
     required_batteries = models.ManyToManyField(
-        Battery, 
+        "Battery",
+        blank=True,
+        related_name='required_batteries_mtm',
         help_text=("Batteries which must be completed for this battery to be "
                   "attempted")
     )
     restricted_batteries = models.ManyToManyField(
-        Battery,
+        "Battery",
+        blank=True,
+        related_name='restricted_batteries_mtm',
         help_text=("Batteries that must not be completed in order for "
                    "this battery to be attempted")
     )
