@@ -392,6 +392,29 @@ def serve_battery(request,bid,userid=None):
     if isinstance(worker,list): # no id means returning []
         return render_to_response("turk/invalid_id_sorry.html")
 
+    worker_results = Result.objects.filter(worker=worker, completed=True)
+    worker_completed_batteries = []
+    for result in worker_results:
+        worker_completed_batteries.append(result.battery)
+
+    missing_batteries = []
+    for required_battery in battery.required_battery_set.all():
+        if required_battery not in worker_completed_batteries:
+            missing_batteries.append(required_battery)
+
+    blocking_batteries = []
+    for restricted_battery in battery.restricted_battery_set.all():
+        if restricted_battery in worker_completed_batteries:
+            blocking_battery.append(required_battery)
+
+    if missing_batteries or blocking_batteries:
+        return render_to_response(
+            "turk/battery_requirements_not_met.html",
+            context={'missing_batteries': missing_batteries,
+                     'blocking_batteries': blocking_batteries}
+        )
+
+
     # Try to get some info about browser, language, etc.
     browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
     platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
