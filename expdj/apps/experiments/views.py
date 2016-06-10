@@ -405,21 +405,7 @@ def serve_battery(request,bid,userid=None):
     if isinstance(worker,list): # no id means returning []
         return render_to_response("turk/invalid_id_sorry.html")
 
-    worker_results = Result.objects.filter(worker=worker, completed=True)
-    worker_completed_batteries = []
-    for result in worker_results:
-        worker_completed_batteries.append(result.battery)
-
-    missing_batteries = []
-    for required_battery in battery.required_batteries.all():
-        if required_battery not in worker_completed_batteries:
-            missing_batteries.append(required_battery)
-
-    blocking_batteries = []
-    for restricted_battery in battery.restricted_batteries.all():
-        if restricted_battery in worker_completed_batteries:
-            blocking_battery.append(required_battery)
-
+    missing_batteries, blocking_batteries = battery.check_battery_dependencies(userid)
     if missing_batteries or blocking_batteries:
         return render_to_response(
             "experiments/battery_requirements_not_met.html",

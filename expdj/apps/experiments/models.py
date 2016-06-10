@@ -12,6 +12,10 @@ from django.db import models
 from django.db.models import Q, DO_NOTHING
 from django.db.models.signals import m2m_changed
 
+#  trying to import Result object directly from models was giving an import 
+#  error here, even though the import matched views.py exactly.
+from expdj.apps import turk
+
 class CognitiveAtlasConcept(models.Model):
     name = models.CharField(max_length=1000, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
@@ -196,6 +200,25 @@ class Battery(models.Model):
         super(Battery, self).save(*args, **kwargs)
         assign_perm('del_battery', self.owner, self)
         assign_perm('edit_battery', self.owner, self)
+
+    def check_battery_dependencies(self, worker_id):
+        worker_results = turk.models.Result.objects.filter(worker_id=worker_id,
+                                               completed=True)
+        worker_completed_batteries = []
+        for result in worker_results:
+            worker_completed_batteries.append(result.battery)
+
+        missing_batteries = []
+        for required_battery in self.required_batteries.all():
+            if required_battery not in worker_completed_batteries:
+                missing_batteries.append(required_battery)
+
+        blocking_batteries = []
+        for restricted_battery in self.restricted_batteries.all():
+            if restricted_battery in worker_completed_batteries:
+                blocking_battery.append(required_battery)
+
+        return missing_batteries, blocking_batteries
 
     class Meta:
         ordering = ["name"]
