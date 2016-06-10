@@ -127,7 +127,7 @@ def serve_hit(request,hid):
         # Get Experiment Factory objects for each
         worker = get_worker(aws["worker_id"])
 
-        missing_batteries, blocking_batteries = battery.check_battery_dependencies(worker_id)
+        missing_batteries, blocking_batteries = battery.check_battery_dependencies(aws["worker_id"])
         if missing_batteries or blocking_batteries:
             return render_to_response(
                 "experiments/battery_requirements_not_met.html",
