@@ -1,0 +1,49 @@
+{% load staticfiles %}
+<html>
+<head>
+    <title>The Experiment Factory: Thank you</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+</head>
+<body>
+<style>
+div {
+    width: 400px;
+    height: 400px;
+    font-family: 'Roboto', sans-serif;
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    margin: auto;
+}
+</style>
+<body>
+    <div>
+        <h3>Some Requirements Have Not Been Met.</h3>
+        {% if missing_batteries %}
+            The following batteries need to be completed before the current one may be attempted: <br>
+            <ul>
+            {% for battery in missing_batteries %}
+                <li>
+                    {{ battery.name }}
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %} 
+        {% if missing_batteries %}
+            The following batteries conflict with the current battery. Their completion is preventing the current battery from being attempted: <br>
+            <ul>
+            {% for battery in blocking_batteries %}
+                <li>
+                    {{ battery.name }}
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %} 
+    </div>
+</body>
+</html>
