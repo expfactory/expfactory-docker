@@ -208,6 +208,14 @@ def preview_hit(request,hid):
         hit =  get_hit(hid,request)
         battery = hit.battery
         context = get_amazon_variables(request)
+        missing_batteries, blocking_batteries = battery.check_battery_dependencies(userid)
+        if missing_batteries or blocking_batteries:
+            return render_to_response(
+                "experiments/battery_requirements_not_met.html",
+                context={'missing_batteries': missing_batteries,
+                         'blocking_batteries': blocking_batteries}
+            )
+ 
         context["instruction_forms"] = get_battery_intro(battery)
         context["hit_uid"] = hid
         context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" %(hid,
