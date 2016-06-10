@@ -127,6 +127,13 @@ def serve_hit(request,hid):
         # Get Experiment Factory objects for each
         worker = get_worker(aws["worker_id"])
 
+        missing_batteries, blocking_batteries = battery.check_battery_dependencies(worker_id)
+        if missing_batteries or blocking_batteries:
+            return render_to_response(
+                "experiments/battery_requirements_not_met.html",
+                context={'missing_batteries': missing_batteries,
+                         'blocking_batteries': blocking_batteries}
+            )
         # This is the submit URL, either external or sandbox
         host = get_host(hit)
 
@@ -208,7 +215,8 @@ def preview_hit(request,hid):
         hit =  get_hit(hid,request)
         battery = hit.battery
         context = get_amazon_variables(request)
-        missing_batteries, blocking_batteries = battery.check_battery_dependencies(userid)
+
+        missing_batteries, blocking_batteries = battery.check_battery_dependencies(context["worker_id"])
         if missing_batteries or blocking_batteries:
             return render_to_response(
                 "experiments/battery_requirements_not_met.html",
