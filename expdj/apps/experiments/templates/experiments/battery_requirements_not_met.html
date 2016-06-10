@@ -34,7 +34,7 @@ div {
             {% endfor %}
             </ul>
         {% endif %} 
-        {% if missing_batteries %}
+        {% if blocking_batteries %}
             The following batteries conflict with the current battery. Their completion is preventing the current battery from being attempted: <br>
             <ul>
             {% for battery in blocking_batteries %}
