@@ -1,43 +1,56 @@
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
- ExperimentVariable, CreditCondition
-from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm, \
- BlacklistForm
-from expdj.apps.turk.utils import get_worker_experiments
-from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments, check_blacklist, \
-  experiment_reward
-from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
-  complete_survey_result, select_experiments
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
-from django.core.exceptions import PermissionDenied, ValidationError
+import datetime
+import csv
+import hashlib
+import json
+import numpy
+import os
+import pandas
+import re
+import shutil
+import uuid
+
 from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
-from django.contrib.auth.decorators import login_required
-from expdj.apps.turk.models import HIT, Result, Assignment
-from expdj.apps.turk.models import get_worker, Blacklist, Bonus
-from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
-from expdj.apps.main.views import google_auth_view
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms.models import model_to_dict
-from expfactory.views import embed_experiment
-from expdj.apps.users.models import User
-from django.shortcuts import render
-import expdj.settings as settings
+from django.http import HttpResponse, JsonResponse
+from django.http.response import (
+    HttpResponseRedirect, HttpResponseForbidden, Http404
+)
+from django.shortcuts import (
+    get_object_or_404, render_to_response, render, redirect
+)
 from django.utils import timezone
-import datetime
-import uuid
-import shutil
-import hashlib
-import numpy
-import pandas
-import uuid
-import json
-import csv
-import re
-import os
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+
+from expdj.apps.main.views import google_auth_view
+from expdj.apps.experiments.forms import (
+    ExperimentForm, ExperimentTemplateForm, BatteryForm, BlacklistForm
+)
+from expdj.apps.experiments.models import (
+    ExperimentTemplate, Experiment, Battery, ExperimentVariable, 
+    CreditCondition
+)
+from expdj.apps.experiments.utils import (
+    get_experiment_selection, install_experiments, update_credits, 
+    make_results_df, get_battery_results, get_experiment_type, remove_keys, 
+    complete_survey_result, select_experiments
+)
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
+import expdj.settings as settings
+from expdj.apps.turk.models import (
+    HIT, Result, Assignment, get_worker, Blacklist, Bonus
+)
+from expdj.apps.turk.tasks import (
+    assign_experiment_credit, update_assignments, check_blacklist, 
+    experiment_reward
+)
+from expdj.apps.turk.utils import get_worker_experiments
+from expdj.apps.users.models import User
+
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
@@ -398,18 +411,18 @@ def serve_battery(request,bid,userid=None):
         worker_completed_batteries.append(result.battery)
 
     missing_batteries = []
-    for required_battery in battery.required_battery_set.all():
+    for required_battery in battery.required_batteries.all():
         if required_battery not in worker_completed_batteries:
             missing_batteries.append(required_battery)
 
     blocking_batteries = []
-    for restricted_battery in battery.restricted_battery_set.all():
+    for restricted_battery in battery.restricted_batteries.all():
         if restricted_battery in worker_completed_batteries:
             blocking_battery.append(required_battery)
 
     if missing_batteries or blocking_batteries:
         return render_to_response(
-            "turk/battery_requirements_not_met.html",
+            "experiments/battery_requirements_not_met.html",
             context={'missing_batteries': missing_batteries,
                      'blocking_batteries': blocking_batteries}
         )
