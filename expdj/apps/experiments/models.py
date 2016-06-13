@@ -227,11 +227,12 @@ class Battery(models.Model):
                 worker_result_assignments[result.assignment_id].append(result)
 
         worker_completed_batteries = []
-        for result in worker_result_assignments:
+        for assignment_id in worker_result_assignments:
+            result = worker_result_assignments[assignment_id]
             all_experiments_complete = True
-            result_expirment_list = [x.experiment_id for x in result]
+            result_experiment_list = [x.experiment_id for x in result]
             try:
-                battery_experiments = Battery.objects.get(id=result.battery_id).experiments
+                battery_experiments = Battery.objects.get(id=result[0].battery_id).experiments.all()
             except ObjectDoesNotExist:
                 #  battery may have been removed.
                 continue
