@@ -220,7 +220,7 @@ class Battery(models.Model):
         
         worker_result_assignments = {}
         for result in worker_results:
-            if worker_result_assignments.get(result.assignment_id)
+            if worker_result_assignments.get(result.assignment_id):
                 worker_result_assignments[result.assignment_id].append(result)
             else:
                 worker_result_assignments[result.assignment_id] = []
