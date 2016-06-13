@@ -232,12 +232,13 @@ class Battery(models.Model):
             all_experiments_complete = True
             result_experiment_list = [x.experiment_id for x in result]
             try:
+                battery = result[0].battery_id
                 battery_experiments = Battery.objects.get(id=result[0].battery_id).experiments.all()
             except ObjectDoesNotExist:
                 #  battery may have been removed.
                 continue
             for experiment in battery_experiments:
-                if experiment.id not in result_experiment_list:
+                if experiment.template_id not in result_experiment_list:
                     all_experiments_complete = False
                     break
             if all_experiments_complete:
@@ -246,12 +247,12 @@ class Battery(models.Model):
 
         missing_batteries = []
         for required_battery in self.required_batteries.all():
-            if required_battery not in worker_completed_batteries:
+            if required_battery.id not in worker_completed_batteries:
                 missing_batteries.append(required_battery)
 
         blocking_batteries = []
         for restricted_battery in self.restricted_batteries.all():
-            if restricted_battery in worker_completed_batteries:
+            if restricted_battery.id in worker_completed_batteries:
                 blocking_battery.append(required_battery)
 
         return missing_batteries, blocking_batteries
