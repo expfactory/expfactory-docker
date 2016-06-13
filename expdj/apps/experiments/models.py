@@ -6,6 +6,7 @@ from jsonfield import JSONField
 from polymorphic.models import PolymorphicModel
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -202,11 +203,35 @@ class Battery(models.Model):
         assign_perm('edit_battery', self.owner, self)
 
     def check_battery_dependencies(self, worker_id):
-        worker_results = turk.models.Result.objects.filter(worker_id=worker_id,
-                                               completed=True)
-        worker_completed_batteries = []
+        worker_results = turk.models.Result.objects.filter(
+            worker_id = worker_id,
+            completed=True
+        )
+        
+        worker_result_assignments = {}
         for result in worker_results:
-            worker_completed_batteries.append(result.battery)
+            if worker_result_assignments.get(result.assignment_id)
+                worker_result_assignments[result.assignment_id].append(result)
+            else:
+                worker_result_assignments[result.assignment_id] = []
+                worker_result_assignments[result.assignment_id].append(result)
+
+        worker_completed_batteries = []
+        for result in worker_result_assignments:
+            all_experiments_complete = True
+            result_expirment_list = [x.experiment_id for x in result]
+            try:
+                battery_experiments = Battery.objects.get(id=result.battery_id).experiments
+            except ObjectDoesNotExist:
+                #  battery may have been removed.
+                continue
+            for experiment in battery_experiments:
+                if experiment.id not in result_experiment_list:
+                    all_experiments_complete = False
+                    break
+            if all_experiments_complete:
+                worker_completed_batteries.append(battery)
+                continue
 
         missing_batteries = []
         for required_battery in self.required_batteries.all():
