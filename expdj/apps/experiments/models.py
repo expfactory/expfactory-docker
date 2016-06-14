@@ -202,61 +202,6 @@ class Battery(models.Model):
         assign_perm('del_battery', self.owner, self)
         assign_perm('edit_battery', self.owner, self)
 
-    def check_battery_dependencies(self, worker_id):
-        '''
-        check_battery_dependencies looks up all of a workers completed 
-        experiments in a result object and places them in a dictionary 
-        organized by assignment_id. Each of these buckets of results is
-        iterated through to check that every experiment in a battery has
-        been completed. In this way a list of batteries that a worker has 
-        completed is built. This list is then compared to the lists of 
-        required and restricted batteries to determine if the worker is 
-        eligible to attempt the current(self) battery.
-        '''
-        worker_results = turk.models.Result.objects.filter(
-            worker_id = worker_id,
-            completed=True
-        )
-        
-        worker_result_assignments = {}
-        for result in worker_results:
-            if worker_result_assignments.get(result.assignment_id):
-                worker_result_assignments[result.assignment_id].append(result)
-            else:
-                worker_result_assignments[result.assignment_id] = []
-                worker_result_assignments[result.assignment_id].append(result)
-
-        worker_completed_batteries = []
-        for assignment_id in worker_result_assignments:
-            result = worker_result_assignments[assignment_id]
-            all_experiments_complete = True
-            result_experiment_list = [x.experiment_id for x in result]
-            try:
-                battery = result[0].battery_id
-                battery_experiments = Battery.objects.get(id=result[0].battery_id).experiments.all()
-            except ObjectDoesNotExist:
-                #  battery may have been removed.
-                continue
-            for experiment in battery_experiments:
-                if experiment.template_id not in result_experiment_list:
-                    all_experiments_complete = False
-                    break
-            if all_experiments_complete:
-                worker_completed_batteries.append(battery)
-                continue
-
-        missing_batteries = []
-        for required_battery in self.required_batteries.all():
-            if required_battery.id not in worker_completed_batteries:
-                missing_batteries.append(required_battery)
-
-        blocking_batteries = []
-        for restricted_battery in self.restricted_batteries.all():
-            if restricted_battery.id in worker_completed_batteries:
-                blocking_battery.append(required_battery)
-
-        return missing_batteries, blocking_batteries
-
     class Meta:
         ordering = ["name"]
         app_label = 'experiments'
