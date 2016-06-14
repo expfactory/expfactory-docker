@@ -430,7 +430,11 @@ def check_battery_view(battery, worker_id):
     missing_batteries, blocking_batteries = check_battery_dependencies(battery, worker_id)
     if missing_batteries or blocking_batteries:
         return render_to_response(
+<<<<<<< 8571014e1c3c573e51dbd07431c19b29866dcc88
             "turk/battery_requirements_not_met.html",
+=======
+            "experiments/battery_requirements_not_met.html",
+>>>>>>> moved check_battery_dependency from battery model to turk/tasks.py. Added check_battery_view to turk views to not repeat myself
             context={'missing_batteries': missing_batteries,
                      'blocking_batteries': blocking_batteries}
         )
