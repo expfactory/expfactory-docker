@@ -1,8 +1,12 @@
 from rest_framework import serializers
 
+<<<<<<< 196fd120cdff656f6b5111cb9b9998a9e84fcf11
 from expdj.apps.experiments.models import (
     Battery, CognitiveAtlasTask, ExperimentTemplate
 )
+=======
+from expdj.apps.experiments.models import Battery
+>>>>>>> added url, view, and serializers for a listing of batteries with ownership checks
 
 class BatterySerializer(serializers.ModelSerializer):
     owner = serializers.StringRelatedField()
