@@ -301,8 +301,8 @@ def check_battery_dependencies(current_battery, worker_id):
     iterated through to check that every experiment in a battery has
     been completed. In this way a list of batteries that a worker has 
     completed is built. This list is then compared to the lists of 
-    required and restriected batteries to determine if the worker is 
-    elidgble to attempt the current battery.
+    required and restricted batteries to determine if the worker is 
+    eligible to attempt the current battery.
     '''
     worker_results = turk.models.Result.objects.filter(
         worker_id = worker_id,
