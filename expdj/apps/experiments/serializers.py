@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from expdj.apps.experiments.models import Battery
+from expdj.apps.experiments.models import (
+    Battery, CognitiveAtlasTask, ExperimentTemplate
+)
 
 class BatterySerializer(serializers.ModelSerializer):
     owner = serializers.StringRelatedField()
@@ -23,3 +25,17 @@ class BatteryDescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Battery
         fields = ['name', 'description']
+
+class CognitiveAtlasTaskSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = CognitiveAtlasTask
+        fields = ('name','cog_atlas_id')
+
+class ExperimentTemplateSerializer(serializers.HyperlinkedModelSerializer):
+    cognitive_atlas_task = CognitiveAtlasTaskSerializer()
+    class Meta:
+        model = ExperimentTemplate
+        fields = [
+            'exp_id','name','cognitive_atlas_task','reference','version',
+            'template'
+        ]
