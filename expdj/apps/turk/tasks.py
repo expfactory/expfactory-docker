@@ -297,8 +297,8 @@ def check_battery_dependencies(current_battery, worker_id):
     '''
     check_battery_dependencies looks up all of a workers completed 
     experiments in a result object and places them in a dictionary 
-    organized by assignment_id. Each of these buckets of results is
-    iterated through to check that every experiment in a battery has
+    organized by battery_id. Each of these buckets of results is
+    iterated through to check that every experiment in that battery has
     been completed. In this way a list of batteries that a worker has 
     completed is built. This list is then compared to the lists of 
     required and restricted batteries to determine if the worker is 
@@ -309,21 +309,20 @@ def check_battery_dependencies(current_battery, worker_id):
         completed=True
     )
     
-    worker_result_assignments = {}
+    worker_result_batteries = {}
     for result in worker_results:
-        if worker_result_assignments.get(result.assignment_id):
-            worker_result_assignments[result.assignment_id].append(result)
+        if worker_result_batteries.get(result.battery.id):
+            worker_result_batteries[result.battery.id].append(result)
         else:
-            worker_result_assignments[result.assignment_id] = []
-            worker_result_assignments[result.assignment_id].append(result)
+            worker_result_batteries[result.battery.id] = []
+            worker_result_batteries[result.battery.id].append(result)
 
     worker_completed_batteries = []
-    for assignment_id in worker_result_assignments:
-        result = worker_result_assignments[assignment_id]
+    for battery_id in worker_result_batteries:
+        result = worker_result_batteries[battery_id]
         all_experiments_complete = True
         result_experiment_list = [x.experiment_id for x in result]
         try:
-            battery_id = result[0].battery_id
             battery_experiments = Battery.objects.get(id=battery_id).experiments.all()
         except ObjectDoesNotExist:
             #  battery may have been removed.
