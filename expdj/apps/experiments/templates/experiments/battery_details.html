@@ -178,6 +178,7 @@
                           <td>
                             {% if edit_permission %}
                             <a class='btn btn-xs btn-default' href='{% url 'manage_hit' battery.id hit.id %}'> Manage Hit</a>
+                            <a class='btn btn-xs btn-default' href='{% url 'clone_hit' battery.id hit.id %}'> Clone Hit</a>
                             <a class='btn btn-xs btn-default' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
                             {% if hit.status = "D" %}
                             <button class='btn btn-xs btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>

@@ -5,7 +5,8 @@ from expdj.apps.experiments.views import sync
 from expdj.apps.turk.api_views import ResultAPIList, BatteryResultAPIList
 from expdj.apps.turk.views import (
     edit_hit, delete_hit, expire_hit, preview_hit, serve_hit, multiple_new_hit,
-    end_assignment, finished_view, not_consent_view, survey_submit, manage_hit
+    end_assignment, finished_view, not_consent_view, survey_submit, manage_hit,
+    clone_hit
 )
 
 
@@ -13,6 +14,7 @@ urlpatterns = patterns('',
     # HITS
     url(r'^hits/(?P<bid>\d+|[A-Z]{8})/new$',edit_hit,name='new_hit'),
     url(r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/manage$',manage_hit,name='manage_hit'),
+    url(r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/clone$',clone_hit,name='clone_hit'),
     url(r'^hits/(?P<bid>\d+|[A-Z]{8})/multiple$',multiple_new_hit,name='multiple_new_hit'),
     url(r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/edit$',edit_hit,name='edit_hit'),
     url(r'^hits/(?P<hid>\d+|[A-Z]{8})/delete$',delete_hit,name='delete_hit'),
