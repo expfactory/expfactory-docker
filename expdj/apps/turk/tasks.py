@@ -297,13 +297,9 @@ def check_battery_dependencies(current_battery, worker_id):
     '''
     check_battery_dependencies looks up all of a workers completed 
     experiments in a result object and places them in a dictionary 
-<<<<<<< 8571014e1c3c573e51dbd07431c19b29866dcc88
+
     organized by battery_id. Each of these buckets of results is
     iterated through to check that every experiment in that battery has
-=======
-    organized by assignment_id. Each of these buckets of results is
-    iterated through to check that every experiment in a battery has
->>>>>>> moved check_battery_dependency from battery model to turk/tasks.py. Added check_battery_view to turk views to not repeat myself
     been completed. In this way a list of batteries that a worker has 
     completed is built. This list is then compared to the lists of 
     required and restricted batteries to determine if the worker is 
