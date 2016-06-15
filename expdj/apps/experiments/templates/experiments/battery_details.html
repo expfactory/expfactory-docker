@@ -263,7 +263,8 @@ $(document).ready(function() {
        ]
     });
     $('#hits_table').dataTable({
-      responsive: true
+      responsive: true,
+      "order": [[ 1, "desc" ]]
     });
     $('#delete_experiment').click(function(e) {
       return confirm("This will remove the experiment from the battery, and not delete it from the application. Are you sure you want to do this?");
