@@ -157,6 +157,7 @@
                 <table class="table table-condensed table-striped table-hover" id="hits_table">
                     <thead>
                         <th>title</th>
+                        <th>creation time</th>
                         <th>keywords</th>
                         <th>description</th>
                         <th>reward</th>
@@ -170,6 +171,7 @@
                           {% else %}
                           <tr><td><a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a></td>
                           {% endif %}
+                          <td>{{ hit.creation_time|date:"m/d/y G:H" }}</td>
                           <td>{{ hit.keywords }}</td>
                           <td>{{ hit.description }}</td>
                           <td>{{ hit.reward }}</td>
