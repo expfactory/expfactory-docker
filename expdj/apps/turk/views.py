@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
 from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
     HttpResponse, Http404, HttpResponseNotAllowed)
+from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -300,6 +301,26 @@ def multiple_new_hit(request, bid):
     else:
         return HttpResponseForbidden()
 
+@login_required
+def clone_hit(request, bid, hid):
+    mturk_permission = check_mturk_access(request)
+    if mturk_permission != True:
+        return HttpResponseForbidden()
+
+    new_hit = get_object_or_404(HIT, pk=hid)
+    new_hit.pk = None
+    form = HITForm(instance=new_hit)
+    form.helper.form_action = reverse('new_hit',args=[bid])
+
+    battery = Battery.objects.get(pk=bid)
+    header_text = "%s HIT" %(battery.name)
+
+    context = {"form": form,
+               "is_owner": True,
+               "header_text":header_text}
+
+    return render(request, "turk/new_hit.html", context)
+
 
 @login_required
 def edit_hit(request, bid, hid=None):
@@ -430,11 +451,7 @@ def check_battery_view(battery, worker_id):
     missing_batteries, blocking_batteries = check_battery_dependencies(battery, worker_id)
     if missing_batteries or blocking_batteries:
         return render_to_response(
-<<<<<<< 8571014e1c3c573e51dbd07431c19b29866dcc88
             "turk/battery_requirements_not_met.html",
-=======
-            "experiments/battery_requirements_not_met.html",
->>>>>>> moved check_battery_dependency from battery model to turk/tasks.py. Added check_battery_view to turk views to not repeat myself
             context={'missing_batteries': missing_batteries,
                      'blocking_batteries': blocking_batteries}
         )

@@ -10,7 +10,8 @@ from expdj.apps.experiments.views import sync
 from expdj.apps.turk.api_views import ResultAPIList, BatteryResultAPIList
 from expdj.apps.turk.views import (
     edit_hit, delete_hit, expire_hit, preview_hit, serve_hit, multiple_new_hit,
-    end_assignment, finished_view, not_consent_view, survey_submit, manage_hit
+    end_assignment, finished_view, not_consent_view, survey_submit, manage_hit,
+    clone_hit
 )
 
 
