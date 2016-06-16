@@ -422,7 +422,8 @@ def serve_battery(request,bid,userid=None):
 
     # Does the worker have experiments remaining?
     uncompleted_experiments = get_worker_experiments(worker,battery)
-    if len(uncompleted_experiments) == 0:
+    experiments_left = len(uncompleted_experiments)
+    if  experiments_left == 0:
         # Thank you for your participation - no more experiments!
         return render_to_response("turk/worker_sorry.html")
 
@@ -442,22 +443,27 @@ def serve_battery(request,bid,userid=None):
                "uniqueId":result.id}
 
     # If this is the last experiment, the finish button will link to a thank you page.
-    if len(uncompleted_experiments) == 1:
+    if experiments_left == 1:
         next_page = "/finished"
 
     # Determine template name based on template_type
     template = "%s/serve_battery.html" %(experiment_type)
 
-    return deploy_battery(deployment="docker-local",
-                          battery=battery,
-                          experiment_type=experiment_type,
-                          context=context,
-                          task_list=task_list,
-                          template=template,
-                          next_page=next_page,
-                          result=result)
+    return deploy_battery(
+        deployment="docker-local",
+        battery=battery,
+        experiment_type=experiment_type,
+        context=context,
+        task_list=task_list,
+        template=template,
+        next_page=next_page,
+        result=result,
+        experiments_left=experiments_left-1
+    )
 
-def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,next_page=None,last_experiment=False):
+def deploy_battery(deployment, battery, experiment_type, context, task_list, 
+                   template, result, next_page=None, last_experiment=False, 
+                   experiments_left=None):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
     :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
@@ -494,6 +500,10 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         if result != None:
             runcode = runcode.replace("{{result.id}}",str(result.id))
         runcode = runcode.replace("{{next_page}}",next_page)
+        if experiments_left:
+            expleft_msg = "</p><p>Experiments left in battery: {0:d}</p>"
+            expleft_msg = expleft_msg.format(experiments_left)
+            runcode = runcode.replace("</p>", expleft_msg)
     elif experiment_type in ["games"]:
         experiment = load_experiment(experiment_folders[0])
         runcode = experiment[0]["deployment_variables"]["run"]
