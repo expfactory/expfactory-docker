@@ -451,6 +451,7 @@ def deploy_battery(deployment, battery, experiment_type, context, task_list,
     :param template: html template to render
     :param result: the result object, turk.models.Result
     :param last_experiment: boolean if true will redirect the user to a page to submit the result (for surveys)
+    :param experiments_left: integer indicating how many experiments are left in battery.
     '''
     if next_page == None:
         next_page = "javascript:window.location.reload();"
