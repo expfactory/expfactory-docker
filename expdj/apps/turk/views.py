@@ -152,13 +152,14 @@ def serve_hit(request,hid):
 
         # Does the worker have experiments remaining for the hit?
         uncompleted_experiments = get_worker_experiments(worker,hit.battery)
-        if len(uncompleted_experiments) == 0:
+        experiments_left = len(uncompleted_experiments)  
+        if experiments_left == 0:
             # Thank you for your participation - no more experiments!
             return render_to_response("turk/worker_sorry.html")
 
         # if it's the last experiment, we will submit the result to amazon (only for surveys)
         last_experiment = False
-        if len(uncompleted_experiments) == 1:
+        if experiments_left == 1:
             last_experiment = True
 
         task_list = select_experiments(battery,uncompleted_experiments)
@@ -180,18 +181,21 @@ def serve_hit(request,hid):
         aws["uniqueId"] = result.id
 
         # If this is the last experiment, the finish button will link to a thank you page.
-        if len(uncompleted_experiments) == 1:
+        if experiments_left == 1:
             next_page = "/finished"
 
-        return deploy_battery(deployment="docker-mturk",
-                              battery=battery,
-                              experiment_type=experiment_type,
-                              context=aws,
-                              task_list=task_list,
-                              template=template,
-                              next_page=None,
-                              result=result,
-                              last_experiment=last_experiment)
+        return deploy_battery(
+            deployment="docker-mturk",
+            battery=battery,
+            experiment_type=experiment_type,
+            context=aws,
+            task_list=task_list,
+            template=template,
+            next_page=None,
+            result=result,
+            last_experiment=last_experiment,
+            experiments_left=experiments_left-1
+        )
 
     else:
         return render_to_response("turk/error_sorry.html")
