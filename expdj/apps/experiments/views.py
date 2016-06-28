@@ -46,7 +46,7 @@ from expdj.apps.turk.models import (
 )
 from expdj.apps.turk.tasks import (
     assign_experiment_credit, update_assignments, check_blacklist, 
-    experiment_reward
+    experiment_reward, check_battery_dependencies
 )
 from expdj.apps.turk.utils import get_worker_experiments
 from expdj.apps.users.models import User
@@ -405,7 +405,7 @@ def serve_battery(request,bid,userid=None):
     if isinstance(worker,list): # no id means returning []
         return render_to_response("turk/invalid_id_sorry.html")
 
-    missing_batteries, blocking_batteries = battery.check_battery_dependencies(userid)
+    missing_batteries, blocking_batteries = check_battery_dependencies(battery, userid)
     if missing_batteries or blocking_batteries:
         return render_to_response(
             "experiments/battery_requirements_not_met.html",
