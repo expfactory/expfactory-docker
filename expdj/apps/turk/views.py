@@ -220,6 +220,7 @@ def preview_hit(request,hid):
 
         check_battery_response = check_battery_view(battery, context["worker_id"])
         if (check_battery_response):
+            check_battery_response['x-frame-options'] = 'nobody_ever_goes_in_nobody_ever_goes_out'
             return check_battery_response
 
         context["instruction_forms"] = get_battery_intro(battery)
