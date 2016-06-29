@@ -407,7 +407,6 @@ class Assignment(models.Model):
                                              (True, 'Completed')),
                                               default=False,verbose_name="participant completed the entire assignment")
 
-
     def create(self):
         init_connection_callback(sender=self.hit)
 
@@ -479,6 +478,18 @@ class Assignment(models.Model):
                 self.approval_time = amazon_string_to_datetime(assignment.ApprovalTime)
 
         self.save()
+
+    def contact_worker(self, subject, msg):
+        '''contact_worker uses the boto function notify_workers to send a
+            message a specific worker.
+        :subject: Subject of the message to send.
+        :msg: Contents of the message to send.
+        '''
+        self.hit.generate_connection()
+        try:
+            self.hit.connection.notify_workers(self.worker.id, subject, msg)
+        except MTurkRequestError:
+            pass
 
     def __unicode__(self):
         return self.mturk_id
