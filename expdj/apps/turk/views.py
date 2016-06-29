@@ -1,25 +1,32 @@
-from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
-get_battery_intro, deploy_battery
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
-from expdj.apps.experiments.utils import get_experiment_type, select_experiments
-from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
-from expdj.apps.experiments.models import Battery, ExperimentTemplate
-from expfactory.battery import get_load_static, get_experiment_run
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
-from django.contrib.auth.decorators import login_required
-from django.core.management.base import BaseCommand
-from django.views.decorators.csrf import ensure_csrf_cookie
-from expdj.apps.turk.forms import HITForm
 from datetime import timedelta, datetime
-from django.utils import timezone
-from optparse import make_option
-from numpy.random import choice
-import requests
 import json
 import os
+import requests
+
+from expfactory.battery import get_load_static, get_experiment_run
+from numpy.random import choice
+from optparse import make_option
+
+from django.contrib.auth.decorators import login_required
+from django.core.management.base import BaseCommand
+from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
+    HttpResponse, Http404, HttpResponseNotAllowed)
+from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+from expdj.apps.experiments.models import (Assignment, Battery, 
+    ExperimentTemplate)
+from expdj.apps.experiments.views import (check_battery_edit_permission, 
+    check_mturk_access, get_battery_intro, deploy_battery)
+from expdj.apps.experiments.utils import get_experiment_type, select_experiments
+from expdj.apps.turk.forms import HITForm, WorkerContactForm
+from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
+from expdj.apps.turk.tasks import (assign_experiment_credit,
+    check_battery_dependencies, get_unique_experiments)
+from expdj.apps.turk.utils import (get_connection, get_host, get_worker_url,
+    get_worker_experiments)
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
@@ -328,6 +335,32 @@ def edit_hit(request, bid, hid=None):
         return render(request, "turk/new_hit.html", context)
     else:
         return HttpResponseForbidden()
+
+@login_required
+def contact_worker(request, aid):
+    mturk_permission = check_mturk_access(request)
+
+    if mturk_permission == False:
+        return HttpResponseForbidden()
+
+    assignment = Assignments.objects.get(aid)
+    if request.method == "GET":
+        form = WorkerContactForm()
+        worker = assignment.worker
+        context = {
+            "form": form,
+            "worker": worker
+        }
+        return(request, "contact_worker_modal.html", context)
+    elif request.method == "POST":
+        form = WorkerContactForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            assignment.contact_worker(subject, message)
+            return manage_hit(assignment.hit.battery.id, assignment.hit.id)
+    else:
+        return HttpResponseNotAllowed()
 
 # Expire a hit
 @login_required
