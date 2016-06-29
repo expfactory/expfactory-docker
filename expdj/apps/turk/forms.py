@@ -31,3 +31,12 @@ class HITForm(ModelForm):
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         self.helper.add_input(Submit("submit", "Save"))
+
+class WorkerContactForm(forms.Form):
+    subject = forms.CharField(label="Subject")
+    message = forms.CharField(label="Message")
+
+    def __init__(self, *args, **kwargs):
+        super(ContactForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.add_input(Submit("submit", "Send"))
