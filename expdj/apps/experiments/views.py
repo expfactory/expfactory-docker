@@ -12,6 +12,7 @@ import uuid
 from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
 from expfactory.experiment import load_experiment
+from expfactory.views import embed_experiment
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
