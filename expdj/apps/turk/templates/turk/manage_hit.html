@@ -168,7 +168,7 @@
           <td>{{ assignment.worker }}</td>
           <td>{{ assignment.status }}</td>
           <td>{{ assignment.accept_time | localize }}</td>
-          <td><a class='btn btn-xs btn-default' href='{% url 'contact_worker' %}'> Contact Worker</a></td>
+          <td><a class='btn btn-xs btn-default contact_worker' href='{% url 'contact_worker' %}'> Contact Worker</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -177,6 +177,8 @@
 </div>
 {% endif %}
         </article>
+        <div id="contact_modal" class="modal fade" tabindex="-1" role="dialog">
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -191,6 +193,11 @@ $("#showall").click(function(){
 $("#hideall").click(function(){
   $('.collapse').collapse('hide');
 })
+
+$('.contact_worker').on("click", function(e) {
+    e.preventDefault();
+    $('#contact_modal').modal("show").load(this.href);
+});
 
 })
 </script>
