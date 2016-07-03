@@ -1,15 +1,18 @@
-from expdj.apps.experiments.models import Experiment
-from boto.mturk.connection import MTurkConnection
-from expdj.settings import BASE_DIR, MTURK_ALLOW
-from boto.mturk.question import ExternalQuestion
-from boto.mturk.price import Price
 import ConfigParser
 import datetime
-import pandas
 import json
 import os
 
+from boto.mturk.connection import MTurkConnection
+from boto.mturk.price import Price
+from boto.mturk.question import ExternalQuestion
+import pandas
+
 from django.conf import settings
+
+from expdj.apps.experiments.models import Experiment
+from expdj.settings import BASE_DIR, MTURK_ALLOW
+
 
 
 # RESULTS UTILS
@@ -132,3 +135,6 @@ def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
     if isinstance(d2,str):
         d2 = datetime.datetime.strptime(d2, format)
     return (d2 - d1).total_seconds() / 60
+
+
+
