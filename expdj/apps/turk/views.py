@@ -342,7 +342,7 @@ def contact_worker(request, aid):
     if mturk_permission == False:
         return HttpResponseForbidden()
 
-    assignment = Assignments.objects.get(aid)
+    assignment = Assignment.objects.get(id=aid)
     if request.method == "GET":
         form = WorkerContactForm()
         worker = assignment.worker
@@ -350,7 +350,7 @@ def contact_worker(request, aid):
             "form": form,
             "worker": worker
         }
-        return(request, "contact_worker_modal.html", context)
+        return render(request, "turk/contact_worker_modal.html", context)
     elif request.method == "POST":
         form = WorkerContactForm(request.POST)
         if form.is_valid():
