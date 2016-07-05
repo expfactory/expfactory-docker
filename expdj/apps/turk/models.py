@@ -479,18 +479,6 @@ class Assignment(models.Model):
 
         self.save()
 
-    def contact_worker(self, subject, msg):
-        '''contact_worker uses the boto function notify_workers to send a
-            message a specific worker.
-        :subject: Subject of the message to send.
-        :msg: Contents of the message to send.
-        '''
-        self.hit.generate_connection()
-        try:
-            self.hit.connection.notify_workers(self.worker.id, subject, msg)
-        except MTurkRequestError:
-            pass
-
     def __unicode__(self):
         return self.mturk_id
 
