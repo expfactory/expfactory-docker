@@ -7,7 +7,7 @@
         </div>
         <div class="modal-body">
             <div>
-                <form method="post">
+                <form method="post" action="{% url 'contact_worker' assignment.id %}">
                     {% crispy form %}
                 </form>
             </div>

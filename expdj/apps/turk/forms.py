@@ -39,4 +39,5 @@ class WorkerContactForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(WorkerContactForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.layout = Layout()
         self.helper.add_input(Submit("submit", "Send"))
