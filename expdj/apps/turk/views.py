@@ -366,8 +366,8 @@ def contact_worker(request, aid):
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
             conn.notify_workers([worker.id], subject, message)
-            return manage_hit(request, assignment.hit.battery.id, 
-                              assignment.hit.id)
+            return redirect('manage_hit', bid=assignment.hit.battery.id, 
+                            hid=assignment.hit.id)
     else:
         return HttpResponseNotAllowed()
 
