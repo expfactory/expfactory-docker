@@ -23,8 +23,8 @@ from expdj.apps.turk.forms import HITForm, WorkerContactForm
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.turk.tasks import (assign_experiment_credit,
     get_unique_experiments)
-from expdj.apps.turk.utils import (get_connection, get_host, get_worker_url,
-    get_worker_experiments)
+from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
+    get_worker_url, get_worker_experiments)
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
@@ -348,20 +348,29 @@ def contact_worker(request, aid):
         return HttpResponseForbidden()
 
     assignment = Assignment.objects.get(id=aid)
+    worker = assignment.worker
     if request.method == "GET":
         form = WorkerContactForm()
-        worker = assignment.worker
         context = {
             "form": form,
-            "worker": worker
+            "worker": worker,
+            "assignment": assignment
         }
         return render(request, "turk/contact_worker_modal.html", context)
     elif request.method == "POST":
         form = WorkerContactForm(request.POST)
         if form.is_valid():
+            AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID = get_credentials(
+                battery=assignment.hit.battery
+            )
+            conn = get_connection(
+                AWS_ACCESS_KEY_ID,
+                AWS_SECRET_ACCESS_KEY_ID,
+                hit=assignment.hit
+            )
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
-            assignment.contact_worker(subject, message)
+            conn.notify_workers([worker.id], subject, message)
             return manage_hit(request, assignment.hit.battery.id, 
                               assignment.hit.id)
     else:
