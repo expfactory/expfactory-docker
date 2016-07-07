@@ -397,12 +397,16 @@ def check_battery_view(battery, worker_id, hit):
             "{host}/mturk/return?requesterId={worker_id}&hitId={hit_id}&"
             "groupId={group_id}&canAccept=&externalHit=true"
         )
-        return_hit_url.format({
-            'host': get_host(),
+	worker_url = get_worker_url()
+	format_data = {
+            'host': worker_url,
             'worker_id': worker_id,
             'hit_id': hit.mturk_id,
             'group_id': hit.hit_type_id,
-        })
+        }
+	print(format_data)
+        return_hit_url = return_hit_url.format(**format_data)
+	print(return_hit_url)
         return render_to_response(
             "experiments/battery_requirements_not_met.html",
             context={'missing_batteries': missing_batteries,
