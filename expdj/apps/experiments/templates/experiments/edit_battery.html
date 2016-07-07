@@ -1,6 +1,8 @@
 {% extends "main/base.html" %}
+{% load static %}
 {% load crispy_forms_tags %}
 {% block head %}
+<link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
 {% endblock %}
 {% block content %}
 
@@ -21,4 +23,11 @@
         </article>
     </div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static "js/select2.min.js"%}" type="text/javascript"></script>
+<script>
+    $("#id_required_batteries").select2();
+    $("#id_restricted_batteries").select2();
+</script>
 {% endblock %}
