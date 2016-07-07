@@ -75,7 +75,7 @@ def is_sandbox():
 def get_worker_url():
     """Get proper URL depending upon sandbox settings"""
 
-    if is_sandbox():
+    if settings.MTURK_ALLOW == False:
         return SANDBOX_WORKER_URL
     else:
         return PRODUCTION_WORKER_URL
