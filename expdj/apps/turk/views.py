@@ -132,8 +132,7 @@ def serve_hit(request,hid):
         # Get Experiment Factory objects for each
         worker = get_worker(aws["worker_id"])
 
-        check_battery_response = check_battery_view(battery, aws["worker_id"],
-                                                    hit)
+        check_battery_response = check_battery_view(battery, aws["worker_id"])
         if (check_battery_response):
             return check_battery_response
 
@@ -390,28 +389,13 @@ def get_flagged_questions(number=None):
         return questions
     return choice(questions,int(number))
 
-def check_battery_view(battery, worker_id, hit):
+def check_battery_view(battery, worker_id):
     missing_batteries, blocking_batteries = check_battery_dependencies(battery, worker_id)
     if missing_batteries or blocking_batteries:
-        return_hit_url = (
-            "{host}/mturk/return?requesterId={worker_id}&hitId={hit_id}&"
-            "groupId={group_id}&canAccept=&externalHit=true"
-        )
-	worker_url = get_worker_url()
-	format_data = {
-            'host': worker_url,
-            'worker_id': worker_id,
-            'hit_id': hit.mturk_id,
-            'group_id': hit.hit_type_id,
-        }
-	print(format_data)
-        return_hit_url = return_hit_url.format(**format_data)
-	print(return_hit_url)
         return render_to_response(
-            "experiments/battery_requirements_not_met.html",
+            "turk/battery_requirements_not_met.html",
             context={'missing_batteries': missing_batteries,
-                     'blocking_batteries': blocking_batteries,
-                     'return_hit_url': return_hit_url}
+                     'blocking_batteries': blocking_batteries}
         )
     else:
         return None
