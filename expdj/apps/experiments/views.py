@@ -502,8 +502,9 @@ def deploy_battery(deployment, battery, experiment_type, context, task_list,
             runcode = runcode.replace("{{result.id}}",str(result.id))
         runcode = runcode.replace("{{next_page}}",next_page)
         if experiments_left:
-            expleft_msg = "</p><p>Experiments left in battery: {0:d}</p>"
-            expleft_msg = expleft_msg.format(experiments_left)
+            total_experiments = battery.number_of_experiments
+            expleft_msg = "</p><p>Experiments left in battery {0:d} out of {1:d}</p>"
+            expleft_msg = expleft_msg.format(experiments_left, total_experiments)
             runcode = runcode.replace("</p>", expleft_msg)
     elif experiment_type in ["games"]:
         experiment = load_experiment(experiment_folders[0])
