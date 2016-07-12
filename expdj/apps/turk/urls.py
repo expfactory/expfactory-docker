@@ -53,7 +53,7 @@ urlpatterns = patterns('',
     url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
     url(r'^sync/$',sync,name='sync_data'),
     url(r'^finished$', finished_view, name="finished_view"),
-    url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker')
+    url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker'),
 
     #  API
     url(r'^api_/results/$', ResultAPIList.as_view(), name='result_api_list'),
