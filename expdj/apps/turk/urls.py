@@ -53,12 +53,7 @@ urlpatterns = patterns('',
     url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
     url(r'^sync/$',sync,name='sync_data'),
     url(r'^finished$', finished_view, name="finished_view"),
-<<<<<<< HEAD
-<<<<<<< e44430d1d3b46deb4c2e4ef6e37c175d82e2d8c9
     url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker')
-=======
-=======
->>>>>>> 06c7613c978ec6fce165e217a0378e77bb7c177c
 
     #  API
     url(r'^api_/results/$', ResultAPIList.as_view(), name='result_api_list'),
@@ -67,9 +62,4 @@ urlpatterns = patterns('',
         BatteryResultAPIList.as_view(),
         name='battery_result_api_list'
     )
-
-<<<<<<< HEAD
->>>>>>> copied over old serializers from base url conf to new experiments and turk serializers files, added result list views to view all results owned by a user and all results for a given battery that are owned by a user
-=======
->>>>>>> 06c7613c978ec6fce165e217a0378e77bb7c177c
 )
