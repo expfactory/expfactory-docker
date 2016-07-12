@@ -9,21 +9,22 @@ from optparse import make_option
 
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
+from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
+    HttpResponse, Http404, HttpResponseNotAllowed)
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from expdj.apps.experiments.models import Battery, ExperimentTemplate
-from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
-get_battery_intro, deploy_battery
+from expdj.apps.experiments.models import (Battery, ExperimentTemplate)
+from expdj.apps.experiments.views import (check_battery_edit_permission, 
+    check_mturk_access, get_battery_intro, deploy_battery)
 from expdj.apps.experiments.utils import get_experiment_type, select_experiments
-from expdj.apps.turk.forms import HITForm
+from expdj.apps.turk.forms import HITForm, WorkerContactForm
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.turk.tasks import (assign_experiment_credit,
-    check_battery_dependencies, get_unique_experiments)
-from expdj.apps.turk.utils import (get_connection, get_host, get_worker_url,
-    get_worker_experiments)
+    get_unique_experiments)
+from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
+    get_worker_url, get_worker_experiments)
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
@@ -338,6 +339,42 @@ def edit_hit(request, bid, hid=None):
         return render(request, "turk/new_hit.html", context)
     else:
         return HttpResponseForbidden()
+
+@login_required
+def contact_worker(request, aid):
+    mturk_permission = check_mturk_access(request)
+
+    if mturk_permission == False:
+        return HttpResponseForbidden()
+
+    assignment = Assignment.objects.get(id=aid)
+    worker = assignment.worker
+    if request.method == "GET":
+        form = WorkerContactForm()
+        context = {
+            "form": form,
+            "worker": worker,
+            "assignment": assignment
+        }
+        return render(request, "turk/contact_worker_modal.html", context)
+    elif request.method == "POST":
+        form = WorkerContactForm(request.POST)
+        if form.is_valid():
+            AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID = get_credentials(
+                battery=assignment.hit.battery
+            )
+            conn = get_connection(
+                AWS_ACCESS_KEY_ID,
+                AWS_SECRET_ACCESS_KEY_ID,
+                hit=assignment.hit
+            )
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            conn.notify_workers([worker.id], subject, message)
+            return redirect('manage_hit', bid=assignment.hit.battery.id, 
+                            hid=assignment.hit.id)
+    else:
+        return HttpResponseNotAllowed()
 
 # Expire a hit
 @login_required
