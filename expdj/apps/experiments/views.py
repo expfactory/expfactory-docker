@@ -409,7 +409,7 @@ def serve_battery(request,bid,userid=None):
     missing_batteries, blocking_batteries = check_battery_dependencies(battery, userid)
     if missing_batteries or blocking_batteries:
         return render_to_response(
-            "experiments/battery_requirements_not_met.html",
+            "turk/battery_requirements_not_met.html",
             context={'missing_batteries': missing_batteries,
                      'blocking_batteries': blocking_batteries}
         )
