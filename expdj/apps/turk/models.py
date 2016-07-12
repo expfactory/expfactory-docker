@@ -407,7 +407,6 @@ class Assignment(models.Model):
                                              (True, 'Completed')),
                                               default=False,verbose_name="participant completed the entire assignment")
 
-
     def create(self):
         init_connection_callback(sender=self.hit)
 
