@@ -1,25 +1,30 @@
-from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
-get_battery_intro, deploy_battery
-from expdj.apps.turk.utils import get_connection, get_worker_url, get_host, get_worker_experiments
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.turk.tasks import assign_experiment_credit, get_unique_experiments
-from expdj.apps.experiments.utils import get_experiment_type, select_experiments
-from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
-from expdj.apps.experiments.models import Battery, ExperimentTemplate
-from expfactory.battery import get_load_static, get_experiment_run
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
-from django.contrib.auth.decorators import login_required
-from django.core.management.base import BaseCommand
-from django.views.decorators.csrf import ensure_csrf_cookie
-from expdj.apps.turk.forms import HITForm
 from datetime import timedelta, datetime
-from django.utils import timezone
-from optparse import make_option
-from numpy.random import choice
-import requests
 import json
 import os
+import requests
+
+from expfactory.battery import get_load_static, get_experiment_run
+from numpy.random import choice
+from optparse import make_option
+
+from django.contrib.auth.decorators import login_required
+from django.core.management.base import BaseCommand
+from django.http.response import HttpResponseRedirect, HttpResponseForbidden, HttpResponse, Http404
+from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+from expdj.apps.experiments.models import Battery, ExperimentTemplate
+from expdj.apps.experiments.views import check_battery_edit_permission, check_mturk_access, \
+get_battery_intro, deploy_battery
+from expdj.apps.experiments.utils import get_experiment_type, select_experiments
+from expdj.apps.turk.forms import HITForm
+from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
+from expdj.apps.turk.tasks import (assign_experiment_credit,
+    check_battery_dependencies, get_unique_experiments)
+from expdj.apps.turk.utils import (get_connection, get_host, get_worker_url,
+    get_worker_experiments)
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
@@ -127,6 +132,10 @@ def serve_hit(request,hid):
         # Get Experiment Factory objects for each
         worker = get_worker(aws["worker_id"])
 
+        check_battery_response = check_battery_view(battery, aws["worker_id"])
+        if (check_battery_response):
+            return check_battery_response
+
         # This is the submit URL, either external or sandbox
         host = get_host(hit)
 
@@ -152,13 +161,14 @@ def serve_hit(request,hid):
 
         # Does the worker have experiments remaining for the hit?
         uncompleted_experiments = get_worker_experiments(worker,hit.battery)
-        if len(uncompleted_experiments) == 0:
+        experiments_left = len(uncompleted_experiments)  
+        if experiments_left == 0:
             # Thank you for your participation - no more experiments!
             return render_to_response("turk/worker_sorry.html")
 
         # if it's the last experiment, we will submit the result to amazon (only for surveys)
         last_experiment = False
-        if len(uncompleted_experiments) == 1:
+        if experiments_left == 1:
             last_experiment = True
 
         task_list = select_experiments(battery,uncompleted_experiments)
@@ -180,18 +190,21 @@ def serve_hit(request,hid):
         aws["uniqueId"] = result.id
 
         # If this is the last experiment, the finish button will link to a thank you page.
-        if len(uncompleted_experiments) == 1:
+        if experiments_left == 1:
             next_page = "/finished"
 
-        return deploy_battery(deployment="docker-mturk",
-                              battery=battery,
-                              experiment_type=experiment_type,
-                              context=aws,
-                              task_list=task_list,
-                              template=template,
-                              next_page=None,
-                              result=result,
-                              last_experiment=last_experiment)
+        return deploy_battery(
+            deployment="docker-mturk",
+            battery=battery,
+            experiment_type=experiment_type,
+            context=aws,
+            task_list=task_list,
+            template=template,
+            next_page=None,
+            result=result,
+            last_experiment=last_experiment,
+            experiments_left=experiments_left-1
+        )
 
     else:
         return render_to_response("turk/error_sorry.html")
@@ -208,6 +221,7 @@ def preview_hit(request,hid):
         hit =  get_hit(hid,request)
         battery = hit.battery
         context = get_amazon_variables(request)
+
         context["instruction_forms"] = get_battery_intro(battery)
         context["hit_uid"] = hid
         context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" %(hid,
@@ -378,3 +392,14 @@ def get_flagged_questions(number=None):
     if number == None:
         return questions
     return choice(questions,int(number))
+
+def check_battery_view(battery, worker_id):
+    missing_batteries, blocking_batteries = check_battery_dependencies(battery, worker_id)
+    if missing_batteries or blocking_batteries:
+        return render_to_response(
+            "turk/battery_requirements_not_met.html",
+            context={'missing_batteries': missing_batteries,
+                     'blocking_batteries': blocking_batteries}
+        )
+    else:
+        return None
