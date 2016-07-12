@@ -34,7 +34,7 @@ class HITForm(ModelForm):
 
 class WorkerContactForm(forms.Form):
     subject = forms.CharField(label="Subject")
-    message = forms.TextArea(label="Message")
+    message = forms.Textarea(label="Message")
 
     def __init__(self, *args, **kwargs):
         super(WorkerContactForm, self).__init__(*args, **kwargs)
