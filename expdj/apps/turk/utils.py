@@ -125,7 +125,8 @@ def get_worker_experiments(worker,battery,completed=False):
         experiment_selection = [e for e in battery_tags if e not in worker_tags]
     else:
         experiment_selection = [e for e in worker_tags if e in battery_tags]
-    return Experiment.objects.filter(template__exp_id__in=experiment_selection)
+    return Experiment.objects.filter(template__exp_id__in=experiment_selection,
+                                     battery_experiments__id=battery.id)
 
 
 def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
