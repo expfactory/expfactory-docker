@@ -297,6 +297,7 @@ def check_battery_dependencies(current_battery, worker_id):
     '''
     check_battery_dependencies looks up all of a workers completed 
     experiments in a result object and places them in a dictionary 
+
     organized by battery_id. Each of these buckets of results is
     iterated through to check that every experiment in that battery has
     been completed. In this way a list of batteries that a worker has 

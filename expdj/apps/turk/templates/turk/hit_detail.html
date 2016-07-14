@@ -1,0 +1,30 @@
+{% extends "main/base.html" %}
+{% block title %}
+    Details for {{ hit.title }}
+{% endblock %}
+{% block content %}
+<b>Battery:</b> {{ hit.battery }}<br>
+<b>Owner:</b> {{ hit.owner }}<br>
+<b>Mturk ID:</b> {{ hit.mturk_id }}<br>
+<b>HIT Type ID:</b> {{ hit.hit_type_id }}<br>
+<b>Creation Time:</b> {{ hit.creation_time }}<br>
+<b>Description:</b> {{ hit.description }}<br>
+<b>Keywords:</b> {{ hit.keywords }}<br> 
+<b>Reward:</b> {{ hit.reward }}<br>
+<b>Lifetime in Hours:</b> {{ hit.lifetime_in_hours }}<br>
+<b>Assignment Duration in Hours:</b> {{ hit.assignment_duration_in_hours }}<br>
+<b>Max Assignments:</b> {{ hit.max_assignments }}<br>
+<b>Auto Approval Delay in Seconds:</b> {{ hit.auto_approval_delay_in_seconds }}<br>
+<b>Requester Annotation:</b> {{ hit.requester_annotation }}<br>
+<b>Number of Similar Hits:</b> {{ hit.number_of_similar_hits }}<br>
+<b>Review Status:</b> {{ hit.review_status }}<br>
+<b>Number of Pending Assignments:</b> {{ hit.number_of_assignments_pending }}<br>
+<b>Number of Available Assignments:</b> {{ hit.number_of_assignments_available }}<br>
+<b>Number of Completed Assignments:</b> {{ hit.number_of_assignments_completed }}<br>
+<b>Qualification for Number of Approved HITs:</b> {{ hit.qualification_number_hits_approved }}<br>
+<b>Qualification for Percent of Assignments Approved:</b> {{ hit.qualification_percent_assignments_approved }}<br>
+<b>Qualification Adult:</b> {{ hit.qualification_adult }}<br>
+<b>Qualification Locale:</b> {{ hit.qualification_locale }}<br>
+<b>Qualification Custom:</b> {{ hit.qualification_custom }}<br>
+<b>Sandbox Only:</b> {{ hit.sandbox }}<br>
+{% endblock %}

@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
 from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
     HttpResponse, Http404, HttpResponseNotAllowed)
+from django.core.urlresolvers import reverse
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -304,6 +305,26 @@ def multiple_new_hit(request, bid):
     else:
         return HttpResponseForbidden()
 
+@login_required
+def clone_hit(request, bid, hid):
+    mturk_permission = check_mturk_access(request)
+    if mturk_permission != True:
+        return HttpResponseForbidden()
+
+    new_hit = get_object_or_404(HIT, pk=hid)
+    new_hit.pk = None
+    form = HITForm(instance=new_hit)
+    form.helper.form_action = reverse('new_hit',args=[bid])
+
+    battery = Battery.objects.get(pk=bid)
+    header_text = "%s HIT" %(battery.name)
+
+    context = {"form": form,
+               "is_owner": True,
+               "header_text":header_text}
+
+    return render(request, "turk/new_hit.html", context)
+
 
 @login_required
 def edit_hit(request, bid, hid=None):
@@ -416,6 +437,11 @@ def delete_hit(request, hid):
         return redirect(hit.battery.get_absolute_url())
     else:
         return HttpResponseForbidden()
+
+@login_required
+def hit_detail(request, hid):
+    hit = get_object_or_404(HIT, pk=hid)
+    return render(request, "turk/hit_detail.html", {'hit': hit})
 
 def get_flagged_questions(number=None):
     """get_flagged_questions

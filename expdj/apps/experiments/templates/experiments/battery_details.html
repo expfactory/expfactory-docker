@@ -157,25 +157,32 @@
                 <table class="table table-condensed table-striped table-hover" id="hits_table">
                     <thead>
                         <th>title</th>
+                        <th>creation time</th>
                         <th>keywords</th>
                         <th>description</th>
                         <th>reward</th>
-                        <th><i data-toggle="tooltip" title="EXPIRING a HIT means it will no longer appear on the Mechanical Turk web site, and no new Workers will be allowed to accept the HIT. The record will remain here. DELETING a hit means expiring it and removing the link to it from the Experiment Factory." style="padding-left:10px;padding-top:5px" class="fa fa-2x fa-question-circle"></i>
+                        <th> <i data-toggle="tooltip" title="EXPIRING a HIT means it will no longer appear on the Mechanical Turk web site, and no new Workers will be allowed to accept the HIT. The record will remain here. DELETING a hit means expiring it and removing the link to it from the Experiment Factory." style="padding-left:10px;padding-top:5px" class="fa fa-2x fa-question-circle"></i>
 </th>
                     </thead>
                     <tbody>
                       {% for hit in hits %}
+                          <tr id="hit_info_{{ hit.id }}">  
+                          <td>
                           {% if hit.sandbox = True %}
-                          <tr><td><a href="https://requestersandbox.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a></td>
+                          <a href="https://requestersandbox.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>
                           {% else %}
-                          <tr><td><a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a></td>
+                          <a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>
                           {% endif %}
+                          (<a href={% url 'hit_detail' hit.id %}>Details</a>)
+                          </td>
+                          <td>{{ hit.creation_time|date:"m/d/y G:H" }}</td>
                           <td>{{ hit.keywords }}</td>
                           <td>{{ hit.description }}</td>
                           <td>{{ hit.reward }}</td>
                           <td>
                             {% if edit_permission %}
                             <a class='btn btn-xs btn-default' href='{% url 'manage_hit' battery.id hit.id %}'> Manage Hit</a>
+                            <a class='btn btn-xs btn-default' href='{% url 'clone_hit' battery.id hit.id %}'> Clone Hit</a>
                             <a class='btn btn-xs btn-default' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
                             {% if hit.status = "D" %}
                             <button class='btn btn-xs btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>
@@ -185,7 +192,7 @@
                             {% endif %}
                           </td>
                         </tr>
-                        {% endfor %}
+                      {% endfor %}
                     </tbody>
                 </table>
                {% else %}
@@ -261,7 +268,8 @@ $(document).ready(function() {
        ]
     });
     $('#hits_table').dataTable({
-      responsive: true
+      responsive: true,
+      "order": [[ 1, "desc" ]]
     });
     $('#delete_experiment').click(function(e) {
       return confirm("This will remove the experiment from the battery, and not delete it from the application. Are you sure you want to do this?");
