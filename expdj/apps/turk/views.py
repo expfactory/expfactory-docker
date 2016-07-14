@@ -434,6 +434,11 @@ def delete_hit(request, hid):
     else:
         return HttpResponseForbidden()
 
+@login_required
+def hit_detail(request, hid):
+    hit = get_object_or_404(HIT, pk=hid)
+    return render(request, "turk/hit_detail.html", {'hit': hit})
+
 def get_flagged_questions(number=None):
     """get_flagged_questions
     return questions that are flagged for curation

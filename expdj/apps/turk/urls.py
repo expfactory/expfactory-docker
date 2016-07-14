@@ -11,7 +11,7 @@ from expdj.apps.turk.api_views import ResultAPIList, BatteryResultAPIList
 from expdj.apps.turk.views import (
     edit_hit, delete_hit, expire_hit, preview_hit, serve_hit, multiple_new_hit,
     end_assignment, finished_view, not_consent_view, survey_submit, manage_hit,
-    clone_hit
+    clone_hit, hit_detail
 )
 
 
@@ -32,6 +32,16 @@ urlpatterns = patterns('',
         r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/edit$',
         edit_hit,
         name='edit_hit'
+    ),
+    url(
+        r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/clone$',
+        clone_hit,
+        name='clone_hit'
+    ),
+    url(
+        r'hits/(?P<hid>\d+|[A-Z]{8})/detail$',
+        hit_detail,
+        name='hit_detail'
     ),
     url(r'^hits/(?P<hid>\d+|[A-Z]{8})/delete$',delete_hit,name='delete_hit'),
     url(r'^hits/(?P<hid>\d+|[A-Z]{8})/expire$',expire_hit,name='expire_hit'),
