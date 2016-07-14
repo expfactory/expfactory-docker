@@ -501,11 +501,16 @@ def deploy_battery(deployment, battery, experiment_type, context, task_list,
         if result != None:
             runcode = runcode.replace("{{result.id}}",str(result.id))
         runcode = runcode.replace("{{next_page}}",next_page)
-        if experiments_left:
-            total_experiments = battery.number_of_experiments
+        if experiments_left is not None:
+            total_experiments = battery.experiments.count()
             expleft_msg = "</p><p>Experiments left in battery {0:d} out of {1:d}</p>"
             expleft_msg = expleft_msg.format(experiments_left, total_experiments)
             runcode = runcode.replace("</p>", expleft_msg)
+        if experiments_left == 0:
+            runcode = runcode.replace("<h1>Experiment Complete</h1>", "<h1>All Experiments Complete</h1>")
+            runcode = runcode.replace("You have completed the experiment", "You have completed all experiments")
+            runcode = runcode.replace("Click \"Next Experiment\" to keep your result, and progress to the next task", "Click \"Finised\" to keep your result.")
+            runcode = runcode.replace(">Next Experiment</button>", ">Finished</button>")
     elif experiment_type in ["games"]:
         experiment = load_experiment(experiment_folders[0])
         runcode = experiment[0]["deployment_variables"]["run"]
