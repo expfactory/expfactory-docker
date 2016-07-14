@@ -23,7 +23,7 @@ from expdj.apps.experiments.utils import get_experiment_type, select_experiments
 from expdj.apps.turk.forms import HITForm, WorkerContactForm
 from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
 from expdj.apps.turk.tasks import (assign_experiment_credit,
-    get_unique_experiments)
+    get_unique_experiments, check_battery_dependencies)
 from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
     get_worker_url, get_worker_experiments)
 from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
