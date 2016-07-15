@@ -127,7 +127,7 @@ def add_blacklist(blacklist,experiment,description):
         blacklist.flags[experiment.template.exp_id] = new_flag
 
     # If the blacklist count is greater than acceptable count, user is blacklisted
-    if len(blacklist.flags) >= blacklist.battery.blacklist_threshold:
+    if len(blacklist.flags) > blacklist.battery.blacklist_threshold:
         blacklist.active = True
         blacklist.blacklist_time = timezone.now()
     blacklist.save()
