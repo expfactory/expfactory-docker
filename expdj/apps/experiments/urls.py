@@ -2,7 +2,6 @@ from django.conf.urls import patterns, url
 from django.views.generic.base import TemplateView
 
 from expdj import settings
-from expdj.apps.experiments.api_views import BatteryAPIList
 from expdj.apps.experiments.views import (
     experiments_view, edit_experiment_template, delete_experiment_template,
     add_experiment_template, save_experiment_template, view_experiment,
@@ -71,10 +70,7 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve/gmail$',serve_battery_gmail,name='serve_battery_gmail'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',sync,name='local'),
     url(r'^local/$',sync,name='local'), # local sync of data
-    url(r'^cookie/$',enable_cookie_view,name='enable_cookie_view'),
-
-    #  API
-    url(r'^api_/battery/$', BatteryAPIList.as_view(), name='battery_api_list'),
+    url(r'^cookie/$',enable_cookie_view,name='enable_cookie_view')
 )
 
 if settings.DEBUG:
