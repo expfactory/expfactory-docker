@@ -125,7 +125,7 @@ $(document).ready(function() {
         var selected_experiment = $("#experiment").find(":selected").val();
         var experiment = allexperimentsjson[selected_experiment]
         var selected_variable = parseInt($("#variable_selection").find(":selected").val());
-        if (selected_variable == experiment.performance_variable.id){
+        if (experiment.performance_variable != null && selected_variable == experiment.performance_variable.id) {
             var selection = experiment.performance_variable
             var color = "green"
             var uid = selection.id
