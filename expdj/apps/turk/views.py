@@ -145,6 +145,11 @@ def serve_hit(request,hid):
         if request.user_agent.browser.family != "Chrome":
             return render_to_response("turk/browser_sorry.html")
 
+        #  Check if worker is on a blacklist.
+        blacklist_count = Blacklist.objects.filter(worker=worker, battery=battery).count()
+        if ((blacklist_count > 0) && battery.blacklist_active):
+            return render_to_response("turk/worker_blacklisted.html")
+
         # Try to get some info about browser, language, etc.
         browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
         platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
