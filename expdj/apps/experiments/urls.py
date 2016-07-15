@@ -1,16 +1,20 @@
-from expdj.apps.experiments.views import experiments_view, edit_experiment_template, \
-delete_experiment_template, add_experiment_template, save_experiment_template, \
-view_experiment, preview_experiment, batteries_view, add_battery, \
-edit_battery, view_battery, delete_battery, remove_experiment, \
-add_experiment, edit_experiment, save_experiment, update_experiment_template, \
-remove_condition, preview_battery, serve_battery, serve_battery_anon, \
-generate_battery_user, sync, experiment_results_dashboard, \
-battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery, \
-save_survey_template, add_survey_template, add_game_template, save_game_template, \
-enable_cookie_view, change_experiment_order, serve_battery_gmail, subject_management
-from expdj import settings
-from django.views.generic.base import TemplateView
 from django.conf.urls import patterns, url
+from django.views.generic.base import TemplateView
+
+from expdj import settings
+from expdj.apps.experiments.views import (
+    experiments_view, edit_experiment_template, delete_experiment_template,
+    add_experiment_template, save_experiment_template, view_experiment,
+    preview_experiment, batteries_view, add_battery, edit_battery,
+    view_battery, delete_battery, remove_experiment, add_experiment,
+    edit_experiment, save_experiment, update_experiment_template,
+    remove_condition, preview_battery, serve_battery, serve_battery_anon,
+    generate_battery_user, sync, experiment_results_dashboard,
+    battery_results_dashboard, dummy_battery ,modify_experiment, intro_battery,
+    save_survey_template, add_survey_template, add_game_template,
+    save_game_template, enable_cookie_view, change_experiment_order,
+    serve_battery_gmail, subject_management
+)
 
 urlpatterns = patterns('',
 
@@ -66,11 +70,12 @@ urlpatterns = patterns('',
     url(r'^batteries/(?P<bid>\d+|[A-Z]{8})/serve/gmail$',serve_battery_gmail,name='serve_battery_gmail'),
     url(r'^local/(?P<rid>\d+|[A-Z]{8})/$',sync,name='local'),
     url(r'^local/$',sync,name='local'), # local sync of data
-    url(r'^cookie/$',enable_cookie_view,name='enable_cookie_view'))
+    url(r'^cookie/$',enable_cookie_view,name='enable_cookie_view')
+)
 
 if settings.DEBUG:
     urlpatterns += patterns('',
         url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {
             'document_root': settings.MEDIA_ROOT,
         }),
-   )
+)

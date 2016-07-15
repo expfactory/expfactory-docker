@@ -1,15 +1,18 @@
-from expdj.apps.experiments.models import Experiment
-from boto.mturk.connection import MTurkConnection
-from expdj.settings import BASE_DIR, MTURK_ALLOW
-from boto.mturk.question import ExternalQuestion
-from boto.mturk.price import Price
 import ConfigParser
 import datetime
-import pandas
 import json
 import os
 
+from boto.mturk.connection import MTurkConnection
+from boto.mturk.price import Price
+from boto.mturk.question import ExternalQuestion
+import pandas
+
 from django.conf import settings
+
+from expdj.apps.experiments.models import Experiment
+from expdj.settings import BASE_DIR, MTURK_ALLOW
+
 
 
 # RESULTS UTILS
@@ -75,7 +78,7 @@ def is_sandbox():
 def get_worker_url():
     """Get proper URL depending upon sandbox settings"""
 
-    if is_sandbox():
+    if settings.MTURK_ALLOW == False:
         return SANDBOX_WORKER_URL
     else:
         return PRODUCTION_WORKER_URL
@@ -122,7 +125,8 @@ def get_worker_experiments(worker,battery,completed=False):
         experiment_selection = [e for e in battery_tags if e not in worker_tags]
     else:
         experiment_selection = [e for e in worker_tags if e in battery_tags]
-    return Experiment.objects.filter(template__exp_id__in=experiment_selection)
+    return Experiment.objects.filter(template__exp_id__in=experiment_selection,
+                                     battery_experiments__id=battery.id)
 
 
 def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
@@ -132,3 +136,6 @@ def get_time_difference(d1,d2,format='%Y-%m-%d %H:%M:%S'):
     if isinstance(d2,str):
         d2 = datetime.datetime.strptime(d2, format)
     return (d2 - d1).total_seconds() / 60
+
+
+

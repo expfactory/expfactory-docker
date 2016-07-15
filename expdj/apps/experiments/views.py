@@ -1,43 +1,57 @@
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from expdj.apps.experiments.models import ExperimentTemplate, Experiment, Battery, \
- ExperimentVariable, CreditCondition
-from expdj.apps.experiments.forms import ExperimentForm, ExperimentTemplateForm, BatteryForm, \
- BlacklistForm
-from expdj.apps.turk.utils import get_worker_experiments
-from expdj.apps.turk.tasks import assign_experiment_credit, update_assignments, check_blacklist, \
-  experiment_reward
-from expdj.apps.experiments.utils import get_experiment_selection, install_experiments, \
-  update_credits, make_results_df, get_battery_results, get_experiment_type, remove_keys, \
-  complete_survey_result, select_experiments
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
-from django.core.exceptions import PermissionDenied, ValidationError
+import datetime
+import csv
+import hashlib
+import json
+import numpy
+import os
+import pandas
+import re
+import shutil
+import uuid
+
 from expfactory.battery import get_load_static, get_experiment_run
 from expfactory.survey import generate_survey
-from django.contrib.auth.decorators import login_required
-from expdj.apps.turk.models import HIT, Result, Assignment
-from expdj.apps.turk.models import get_worker, Blacklist, Bonus
-from django.http import HttpResponse, JsonResponse
 from expfactory.experiment import load_experiment
-from expdj.apps.main.views import google_auth_view
-from django.forms.models import model_to_dict
 from expfactory.views import embed_experiment
-from expdj.apps.users.models import User
-from django.shortcuts import render
-import expdj.settings as settings
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.forms.models import model_to_dict
+from django.http import HttpResponse, JsonResponse
+from django.http.response import (
+    HttpResponseRedirect, HttpResponseForbidden, Http404
+)
+from django.shortcuts import (
+    get_object_or_404, render_to_response, render, redirect
+)
 from django.utils import timezone
-import datetime
-import uuid
-import shutil
-import hashlib
-import numpy
-import pandas
-import uuid
-import json
-import csv
-import re
-import os
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+
+from expdj.apps.main.views import google_auth_view
+from expdj.apps.experiments.forms import (
+    ExperimentForm, ExperimentTemplateForm, BatteryForm, BlacklistForm
+)
+from expdj.apps.experiments.models import (
+    ExperimentTemplate, Experiment, Battery, ExperimentVariable, 
+    CreditCondition
+)
+from expdj.apps.experiments.utils import (
+    get_experiment_selection, install_experiments, update_credits, 
+    make_results_df, get_battery_results, get_experiment_type, remove_keys, 
+    complete_survey_result, select_experiments
+)
+from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT,DOMAIN_NAME
+import expdj.settings as settings
+from expdj.apps.turk.models import (
+    HIT, Result, Assignment, get_worker, Blacklist, Bonus
+)
+from expdj.apps.turk.tasks import (
+    assign_experiment_credit, update_assignments, check_blacklist, 
+    experiment_reward, check_battery_dependencies
+)
+from expdj.apps.turk.utils import get_worker_experiments
+from expdj.apps.users.models import User
+
 
 media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 
@@ -392,6 +406,15 @@ def serve_battery(request,bid,userid=None):
     if isinstance(worker,list): # no id means returning []
         return render_to_response("turk/invalid_id_sorry.html")
 
+    missing_batteries, blocking_batteries = check_battery_dependencies(battery, userid)
+    if missing_batteries or blocking_batteries:
+        return render_to_response(
+            "turk/battery_requirements_not_met.html",
+            context={'missing_batteries': missing_batteries,
+                     'blocking_batteries': blocking_batteries}
+        )
+
+
     # Try to get some info about browser, language, etc.
     browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
     platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
@@ -399,7 +422,8 @@ def serve_battery(request,bid,userid=None):
 
     # Does the worker have experiments remaining?
     uncompleted_experiments = get_worker_experiments(worker,battery)
-    if len(uncompleted_experiments) == 0:
+    experiments_left = len(uncompleted_experiments)
+    if  experiments_left == 0:
         # Thank you for your participation - no more experiments!
         return render_to_response("turk/worker_sorry.html")
 
@@ -419,22 +443,27 @@ def serve_battery(request,bid,userid=None):
                "uniqueId":result.id}
 
     # If this is the last experiment, the finish button will link to a thank you page.
-    if len(uncompleted_experiments) == 1:
+    if experiments_left == 1:
         next_page = "/finished"
 
     # Determine template name based on template_type
     template = "%s/serve_battery.html" %(experiment_type)
 
-    return deploy_battery(deployment="docker-local",
-                          battery=battery,
-                          experiment_type=experiment_type,
-                          context=context,
-                          task_list=task_list,
-                          template=template,
-                          next_page=next_page,
-                          result=result)
+    return deploy_battery(
+        deployment="docker-local",
+        battery=battery,
+        experiment_type=experiment_type,
+        context=context,
+        task_list=task_list,
+        template=template,
+        next_page=next_page,
+        result=result,
+        experiments_left=experiments_left-1
+    )
 
-def deploy_battery(deployment,battery,experiment_type,context,task_list,template,result,next_page=None,last_experiment=False):
+def deploy_battery(deployment, battery, experiment_type, context, task_list, 
+                   template, result, next_page=None, last_experiment=False, 
+                   experiments_left=None):
     '''deploy_battery is a general function for returning the final view to deploy a battery, either local or MTurk
     :param deployment: either "docker-mturk" or "docker-local"
     :param battery: models.Battery object
@@ -445,6 +474,7 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
     :param template: html template to render
     :param result: the result object, turk.models.Result
     :param last_experiment: boolean if true will redirect the user to a page to submit the result (for surveys)
+    :param experiments_left: integer indicating how many experiments are left in battery.
     '''
     if next_page == None:
         next_page = "javascript:window.location.reload();"
@@ -471,6 +501,16 @@ def deploy_battery(deployment,battery,experiment_type,context,task_list,template
         if result != None:
             runcode = runcode.replace("{{result.id}}",str(result.id))
         runcode = runcode.replace("{{next_page}}",next_page)
+        if experiments_left is not None:
+            total_experiments = battery.experiments.count()
+            expleft_msg = "</p><p>Experiments left in battery {0:d} out of {1:d}</p>"
+            expleft_msg = expleft_msg.format(experiments_left, total_experiments)
+            runcode = runcode.replace("</p>", expleft_msg)
+        if experiments_left == 0:
+            runcode = runcode.replace("<h1>Experiment Complete</h1>", "<h1>All Experiments Complete</h1>")
+            runcode = runcode.replace("You have completed the experiment", "You have completed all experiments")
+            runcode = runcode.replace("Click \"Next Experiment\" to keep your result, and progress to the next task", "Click \"Finised\" to keep your result.")
+            runcode = runcode.replace(">Next Experiment</button>", ">Finished</button>")
     elif experiment_type in ["games"]:
         experiment = load_experiment(experiment_folders[0])
         runcode = experiment[0]["deployment_variables"]["run"]
