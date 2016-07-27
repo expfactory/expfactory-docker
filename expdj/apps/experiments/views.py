@@ -762,11 +762,11 @@ def save_experiment(request,bid):
     save experiment and custom details for battery
     '''
     if request.method == "POST":
-        vars = request.POST.keys()
+        post_vars = request.POST.keys()
         battery = get_battery(bid,request)
         template = get_experiment_template(request.POST["experiment"],request)
         expression = re.compile("[0-9]+")
-        experiment_vids = numpy.unique([expression.findall(x)[0] for x in vars if expression.search(x)]).tolist()
+        experiment_vids = numpy.unique([expression.findall(x)[0] for x in post_vars if expression.search(x)]).tolist()
 
         # Create a credit condition for each experiment variable
         credit_conditions = []
@@ -775,14 +775,14 @@ def save_experiment(request,bid):
 
         for vid in experiment_vids:
             # Assume that adding the credit condition means the user wants them turned on
-            if int(vid) == template.performance_variable.id:
+            if ((template.performance_variable != None) and (int(vid) == template.performance_variable.id)):
                 include_bonus = True
-            if int(vid) == template.rejection_variable.id:
+            if ((template.rejection_variable != None) and (int(vid) == template.rejection_variable.id)):
                 include_catch = True
             experiment_variable = ExperimentVariable.objects.filter(id=vid)[0]
-            variable_value = request.POST["val%s" %(vid)] if "val%s" %(vid) in vars else None
-            variable_operator = request.POST["oper%s" %(vid)] if "oper%s" %(vid) in vars else None
-            variable_amount = request.POST["amt%s" %(vid)] if "amt%s" %(vid) in vars else None
+            variable_value = request.POST["val%s" %(vid)] if "val%s" %(vid) in post_vars else None
+            variable_operator = request.POST["oper%s" %(vid)] if "oper%s" %(vid) in post_vars else None
+            variable_amount = request.POST["amt%s" %(vid)] if "amt%s" %(vid) in post_vars else None
             credit_condition,_ = CreditCondition.objects.update_or_create(variable=experiment_variable,
                                                                           value=variable_value,
                                                                           operator=variable_operator,
