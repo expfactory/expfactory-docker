@@ -155,7 +155,7 @@ def serve_hit(request,hid):
                                                                       hit=hit)
 
         # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
-        if already_created == False:
+        if already_created == True:
             assignment.accept_time = datetime.now()
             if hit.assignment_duration_in_hours != None:
                 assign_experiment_credit.apply_async([worker.id],countdown=360*(hit.assignment_duration_in_hours))
