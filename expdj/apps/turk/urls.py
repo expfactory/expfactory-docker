@@ -12,6 +12,7 @@ from expdj.apps.turk.views import (
     end_assignment, finished_view, not_consent_view, survey_submit, manage_hit,
     clone_hit, hit_detail
 )
+from expdj.apps.turk.api_views import BatteryResultAPIList
 
 
 urlpatterns = patterns('',
@@ -62,5 +63,11 @@ urlpatterns = patterns('',
     url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
     url(r'^sync/$',sync,name='sync_data'),
     url(r'^finished$', finished_view, name="finished_view"),
-    url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker')
+    url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker'),
+
+    # New API
+    url(r'^new_api/results/(?P<bid>\d+)/$',
+        BatteryResultAPIList.as_view(),
+        name='battery_result_api_list'
+    )
 )
