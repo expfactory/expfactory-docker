@@ -138,8 +138,8 @@ class HIT(models.Model):
         ("GreaterThanOrEqualTo", "Greater Than Or Equal To"),
         ("EqualTo", "Equal To"),
         ("NotEqualTo", "Not Equal To"),
-        ("Exists", Exists),
-        ("DoesNotExist")
+        ("Exists", "Exists"),
+        ("DoesNotExist", "Does Not Exist")
     )
 
     # Convenience lookup dictionaries for the above lists
