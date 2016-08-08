@@ -15,7 +15,8 @@ class HITForm(ModelForm):
                   "assignment_duration_in_hours","max_assignments",
                   "auto_approval_delay_in_seconds","qualification_number_hits_approved",
                   "qualification_percent_assignments_approved","qualification_adult",
-                  "qualification_locale","qualification_custom")
+                  "qualification_locale","qualification_custom", "qualification_custom_operator",
+                  "qualification_custom_value")
 
     def clean(self):
         cleaned_data = super(HITForm, self).clean()

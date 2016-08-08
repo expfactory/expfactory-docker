@@ -1,23 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from expdj.apps.turk.utils import amazon_string_to_datetime, get_connection, \
-get_credentials, to_dict, get_time_difference
-from django.core.validators import MaxValueValidator, MinValueValidator
-from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
-from boto.mturk.qualification import AdultRequirement, NumberHitsApprovedRequirement, \
- LocaleRequirement, PercentAssignmentsApprovedRequirement, Qualifications, Requirement
-from boto.mturk.question import ExternalQuestion
-from expdj.settings import DOMAIN_NAME, BASE_DIR
-from django.db.models.signals import pre_init
-from django.contrib.auth.models import User
-from django.db.models import Q, DO_NOTHING
-from boto.mturk.price import Price
-from django.utils import timezone
-from jsonfield import JSONField
-from django.db import models
+import boto
 import collections
 import datetime
-import boto
+from jsonfield import JSONField
+
+from boto.mturk.price import Price
+from boto.mturk.qualification import (AdultRequirement, NumberHitsApprovedRequirement, 
+    LocaleRequirement, PercentAssignmentsApprovedRequirement, Qualifications, Requirement)
+from boto.mturk.question import ExternalQuestion
+
+from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import Q, DO_NOTHING
+from django.db.models.signals import pre_init
+from django.utils import timezone
+
+from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery
+from expdj.apps.turk.utils import (amazon_string_to_datetime, get_connection, get_credentials, 
+    to_dict, get_time_difference)
+from expdj.settings import DOMAIN_NAME, BASE_DIR
+
 
 def init_connection_callback(sender, **signal_args):
     """Mechanical Turk connection signal callback
@@ -127,6 +131,15 @@ class HIT(models.Model):
                      ('CA', 'Canada'),
                      ('IN', 'India'))
 
+    OPERATOR_CHOICES = (
+        ("LessThan", "Less Than"),
+        ("LessThanOrEqualTo", "Less Than Or Equal To"),
+        ("GreaterThan", "Greater Than"),
+        ("GreaterThanOrEqualTo", "Greater Than Or Equal To"),
+        ("EqualTo", "Equal To"),
+        ("NotEqualTo", "Not Equal To")
+    )
+
     # Convenience lookup dictionaries for the above lists
     reverse_status_lookup = dict((v, k) for k, v in STATUS_CHOICES)
     reverse_review_lookup = dict((v, k) for k, v in REVIEW_CHOICES)
@@ -160,7 +173,23 @@ class HIT(models.Model):
                                                        (True, 'Adult')),
                                                         default=True,help_text="Worker Qualification: Adult or Under 18",verbose_name="worker qualification adult")
     qualification_locale = models.CharField(max_length=255,choices=LOCALE_CHOICES,default='None',help_text="Worker Qualification: location requirement",verbose_name="worker qualification locale")
-    qualification_custom = models.CharField(max_length=255,default=None,help_text="Worker Qualification: custom qualification ID",verbose_name="worker qualification custom",null=True,blank=True)
+
+    qualification_custom_operator = models.CharField(
+        "operator to compare variable to value",
+        max_length=200,
+        choices=OPERATOR_CHOICES,
+        null=True,
+        blank=True 
+    )
+    qualification_custom_value = models.IntegerField(null=True, blank=True)
+    qualification_custom = models.CharField(
+        max_length=255,
+        default=None, 
+        help_text="Worker Qualification: custom qualification ID",
+        verbose_name="worker qualification custom",
+        null=True,
+        blank=True
+    )
 
     # Deployment specification
     sandbox = models.BooleanField(choices=((False, 'Amazon Mechanical Turk'),
@@ -256,7 +285,10 @@ class HIT(models.Model):
         else:
             qualifications.add(AdultRequirement("EqualTo",0))
         if self.qualification_custom not in [None,""]:
-            qualifications.add(Requirement(self.qualification_custom, "EqualTo",1, required_to_preview = True))
+            qualifications.add(
+                Requirement(self.qualification_custom, self.qualification_custom_operator,
+                            self.qualification_custom_value, required_to_preview = True)
+        )
         if self.qualification_number_hits_approved != None:
             qual_number_hits = NumberHitsApprovedRequirement("GreaterThan",self.qualification_number_hits_approved)
             qualifications.add(qual_number_hits)
