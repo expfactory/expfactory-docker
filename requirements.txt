@@ -16,7 +16,7 @@ python-social-auth==0.2.7
 requests
 requests-oauthlib
 jsonfield
-expfactory
+expfactory<3
 boto==2.1.1
 django-dbbackup<2.3
 cognitiveatlas
