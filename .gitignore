@@ -22,3 +22,5 @@ static/*
 *migrations*
 
 compose/nginx/ssl*
+
+*.cred
