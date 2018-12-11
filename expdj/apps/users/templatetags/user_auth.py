@@ -1,5 +1,6 @@
 from django import template
 from django.contrib.auth.models import User
+
 from ..forms import UserCreateForm
 
 register = template.Library()

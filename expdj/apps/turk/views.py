@@ -1,41 +1,44 @@
-from datetime import timedelta, datetime
 import json
 import os
-import requests
-
-from expfactory.battery import get_load_static, get_experiment_run
-from numpy.random import choice
+from datetime import datetime, timedelta
 from optparse import make_option
 
+import requests
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
-from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
-    HttpResponse, Http404, HttpResponseNotAllowed)
 from django.core.urlresolvers import reverse
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from django.http.response import (Http404, HttpResponse, HttpResponseForbidden,
+                                  HttpResponseNotAllowed, HttpResponseRedirect)
+from django.shortcuts import (get_object_or_404, redirect, render,
+                              render_to_response)
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
+from expfactory.battery import get_experiment_run, get_load_static
+from numpy.random import choice
 
-from expdj.apps.experiments.models import (Battery, ExperimentTemplate)
-from expdj.apps.experiments.views import (check_battery_edit_permission, 
-    check_mturk_access, get_battery_intro, deploy_battery)
-from expdj.apps.experiments.utils import get_experiment_type, select_experiments
+from expdj.apps.experiments.models import Battery, ExperimentTemplate
+from expdj.apps.experiments.utils import (get_experiment_type,
+                                          select_experiments)
+from expdj.apps.experiments.views import (check_battery_edit_permission,
+                                          check_mturk_access, deploy_battery,
+                                          get_battery_intro)
 from expdj.apps.turk.forms import HITForm, WorkerContactForm
-from expdj.apps.turk.models import Worker, HIT, Assignment, Result, get_worker
+from expdj.apps.turk.models import HIT, Assignment, Result, Worker, get_worker
 from expdj.apps.turk.tasks import (assign_experiment_credit,
-    get_unique_experiments, check_battery_dependencies)
+                                   check_battery_dependencies,
+                                   get_unique_experiments)
 from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
-    get_worker_url, get_worker_experiments)
-from expdj.settings import BASE_DIR,STATIC_ROOT,MEDIA_ROOT
+                                   get_worker_experiments, get_worker_url)
+from expdj.settings import BASE_DIR, MEDIA_ROOT, STATIC_ROOT
 
-media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
+media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
 
 #### GETS #############################################################
 
 # get experiment
-def get_hit(hid,request,mode=None):
-    keyargs = {'pk':hid}
+def get_hit(hid, request, mode=None):
+    keyargs = {'pk': hid}
     try:
         hit = HIT.objects.get(**keyargs)
     except HIT.DoesNotExist:
@@ -45,6 +48,7 @@ def get_hit(hid,request,mode=None):
 
 #### VIEWS ############################################################
 
+
 def get_amazon_variables(request):
     '''get_amazon_variables gets the "GET" variables from the URL,
        returned in a context that can be used across different experiment
@@ -52,50 +56,56 @@ def get_amazon_variables(request):
     '''
 
     # An assignmentID means that the worker has accepted the task
-    assignment_id = request.GET.get("assignmentId","")
-    worker_id = request.GET.get("workerId","")
-    hit_id = request.GET.get("hitId","")
-    turk_submit_to = request.GET.get("turkSubmitTo","")
+    assignment_id = request.GET.get("assignmentId", "")
+    worker_id = request.GET.get("workerId", "")
+    hit_id = request.GET.get("hitId", "")
+    turk_submit_to = request.GET.get("turkSubmitTo", "")
 
     # worker has not accepted the task
-    if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE",""]:
+    if assignment_id in ["ASSIGNMENT_ID_NOT_AVAILABLE", ""]:
         assignment_id = None
 
     return {"worker_id": worker_id,
             "assignment_id": assignment_id,
             "hit_id": hit_id,
-            "turk_submit_to":turk_submit_to}
+            "turk_submit_to": turk_submit_to}
+
 
 @login_required
-def manage_hit(request,bid,hid):
+def manage_hit(request, bid, hid):
     '''manage_hit shows details about workers that have completed / not completed a HIT
     :param hid: the hit id
     '''
-    hit =  get_hit(hid,request)
+    hit = get_hit(hid, request)
     hit.update()
     battery = hit.battery
 
     # Get different groups of assignments
     context = dict()
-    context["assignments_approved"] = Assignment.objects.filter(status="A",hit=hit)
-    context["assignments_rejected"] = Assignment.objects.filter(status="R",hit=hit)
-    context["assignments_submit"] = Assignment.objects.filter(status="S",hit=hit)
+    context["assignments_approved"] = Assignment.objects.filter(
+        status="A", hit=hit)
+    context["assignments_rejected"] = Assignment.objects.filter(
+        status="R", hit=hit)
+    context["assignments_submit"] = Assignment.objects.filter(
+        status="S", hit=hit)
     context["hit"] = hit
-    assignments_remaining = Assignment.objects.filter(status=None,hit=hit)
+    assignments_remaining = Assignment.objects.filter(status=None, hit=hit)
 
     # Which of the HITS have time run out, but not submit?
     assignments_attention = []
     assignments_inprogress = []
     for assignment in assignments_remaining:
         needs_attention = False
-        if assignment.accept_time != None:
-            time_difference = timezone.now() - (assignment.accept_time + timedelta(hours=hit.assignment_duration_in_hours))
+        if assignment.accept_time is not None:
+            time_difference = timezone.now() - (assignment.accept_time +
+                                                timedelta(hours=hit.assignment_duration_in_hours))
             # If the workers ending time has passed:
-            if (assignment.accept_time + timedelta(hours=hit.assignment_duration_in_hours)) < timezone.now():
+            if (assignment.accept_time +
+                    timedelta(hours=hit.assignment_duration_in_hours)) < timezone.now():
                 assignments_attention.append(assignment)
                 needs_attention = True
 
-        if needs_attention == False:
+        if not needs_attention:
             assignments_inprogress.append(assignment)
 
     context["assignments_inprogress"] = assignments_inprogress
@@ -104,7 +114,7 @@ def manage_hit(request,bid,hid):
     return render(request, "turk/manage_hit.html", context)
 
 
-def serve_hit(request,hid):
+def serve_hit(request, hid):
     '''serve_hit runs the experiment after accepting a hit
     :param hid: the hit id
     :param wid: the worker id
@@ -118,7 +128,7 @@ def serve_hit(request,hid):
     # Not allowed on tablet or phone
     if request.user_agent.is_pc:
 
-        hit =  get_hit(hid,request)
+        hit = get_hit(hid, request)
 
         # Update the hit, only allow to continue if HIT is valid
         hit.update()
@@ -128,7 +138,7 @@ def serve_hit(request,hid):
         battery = hit.battery
         aws = get_amazon_variables(request)
 
-        if "" in [aws["worker_id"],aws["hit_id"]]:
+        if "" in [aws["worker_id"], aws["hit_id"]]:
             return render_to_response("turk/error_sorry.html")
 
         # Get Experiment Factory objects for each
@@ -146,52 +156,58 @@ def serve_hit(request,hid):
             return render_to_response("turk/browser_sorry.html")
 
         # Try to get some info about browser, language, etc.
-        browser = "%s,%s" %(request.user_agent.browser.family,request.user_agent.browser.version_string)
-        platform = "%s,%s" %(request.user_agent.os.family,request.user_agent.os.version_string)
+        browser = "%s,%s" % (request.user_agent.browser.family,
+                             request.user_agent.browser.version_string)
+        platform = "%s,%s" % (request.user_agent.os.family,
+                              request.user_agent.os.version_string)
 
         # Initialize Assignment object, obtained from Amazon, and Result
-        assignment,already_created = Assignment.objects.get_or_create(mturk_id=aws["assignment_id"],
-                                                                      worker=worker,
-                                                                      hit=hit)
+        assignment, already_created = Assignment.objects.get_or_create(
+            mturk_id=aws["assignment_id"], worker=worker, hit=hit)
 
-        # if the assignment is new, we need to set up a task to run when the worker time runs out to allocate credit
-        if already_created == True:
+        # if the assignment is new, we need to set up a task to run when the
+        # worker time runs out to allocate credit
+        if already_created:
             assignment.accept_time = datetime.now()
-            if hit.assignment_duration_in_hours != None:
-                assign_experiment_credit.apply_async([worker.id],countdown=360*(hit.assignment_duration_in_hours))
+            if hit.assignment_duration_in_hours is not None:
+                assign_experiment_credit.apply_async(
+                    [worker.id], countdown=360 * (hit.assignment_duration_in_hours))
             assignment.save()
 
         # Does the worker have experiments remaining for the hit?
-        uncompleted_experiments = get_worker_experiments(worker,hit.battery)
-        experiments_left = len(uncompleted_experiments)  
+        uncompleted_experiments = get_worker_experiments(worker, hit.battery)
+        experiments_left = len(uncompleted_experiments)
         if experiments_left == 0:
             # Thank you for your participation - no more experiments!
             return render_to_response("turk/worker_sorry.html")
 
-        # if it's the last experiment, we will submit the result to amazon (only for surveys)
+        # if it's the last experiment, we will submit the result to amazon
+        # (only for surveys)
         last_experiment = False
         if experiments_left == 1:
             last_experiment = True
 
-        task_list = select_experiments(battery,uncompleted_experiments)
-        experimentTemplate = ExperimentTemplate.objects.filter(exp_id=task_list[0].template.exp_id)[0]
+        task_list = select_experiments(battery, uncompleted_experiments)
+        experimentTemplate = ExperimentTemplate.objects.filter(
+            exp_id=task_list[0].template.exp_id)[0]
         experiment_type = get_experiment_type(experimentTemplate)
         task_list = battery.experiments.filter(template=experimentTemplate)
-        template = "%s/mturk_battery.html" %(experiment_type)
+        template = "%s/mturk_battery.html" % (experiment_type)
 
         # Generate a new results object for the worker, assignment, experiment
-        result,_ = Result.objects.update_or_create(worker=worker,
-                                                   experiment=experimentTemplate,
-                                                   assignment=assignment, # assignment has record of HIT
-                                                   battery=hit.battery,
-                                                   defaults={"browser":browser,"platform":platform})
+        result, _ = Result.objects.update_or_create(worker=worker,
+                                                    experiment=experimentTemplate,
+                                                    assignment=assignment,  # assignment has record of HIT
+                                                    battery=hit.battery,
+                                                    defaults={"browser": browser, "platform": platform})
         result.save()
 
         # Add variables to the context
         aws["amazon_host"] = host
         aws["uniqueId"] = result.id
 
-        # If this is the last experiment, the finish button will link to a thank you page.
+        # If this is the last experiment, the finish button will link to a
+        # thank you page.
         if experiments_left == 1:
             next_page = "/finished"
 
@@ -205,13 +221,14 @@ def serve_hit(request,hid):
             next_page=None,
             result=result,
             last_experiment=last_experiment,
-            experiments_left=experiments_left-1
+            experiments_left=experiments_left - 1
         )
 
     else:
         return render_to_response("turk/error_sorry.html")
 
-def preview_hit(request,hid):
+
+def preview_hit(request, hid):
     '''preview_hit is the view for when a worker has not accepted the task'''
 
     # No robots allowed!
@@ -220,17 +237,14 @@ def preview_hit(request,hid):
 
     if request.user_agent.is_pc:
 
-        hit =  get_hit(hid,request)
+        hit = get_hit(hid, request)
         battery = hit.battery
         context = get_amazon_variables(request)
 
         context["instruction_forms"] = get_battery_intro(battery)
         context["hit_uid"] = hid
-        context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" %(hid,
-                                                                                                    context["assignment_id"],
-                                                                                                    context["worker_id"],
-                                                                                                    context["turk_submit_to"],
-                                                                                                    context["hit_id"])
+        context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" % (
+            hid, context["assignment_id"], context["worker_id"], context["turk_submit_to"], context["hit_id"])
 
         response = render_to_response("turk/serve_battery_intro.html", context)
 
@@ -245,39 +259,42 @@ def finished_view(request):
     return render_to_response("turk/worker_sorry.html")
 
 
-def survey_submit(request,rid,hid):
+def survey_submit(request, rid, hid):
     '''survey_submit redirects user to a page to submit a result to amazon'''
     result = Result.objects.filter(id=rid)[0]
     amazon_host = get_host(result.assignment.hit)
-    context = {"assignment_id":result.assignment.mturk_id,
-               "worker_id":result.worker.id,
-               "hit_id":hid,
-               "amazon_host":amazon_host}
+    context = {"assignment_id": result.assignment.mturk_id,
+               "worker_id": result.worker.id,
+               "hit_id": hid,
+               "amazon_host": amazon_host}
     return render(request, "surveys/worker_finished.html", context)
+
 
 def not_consent_view(request):
     '''The worker has previewed the experiment, clicked Start Experiment, but not consented'''
     return render_to_response("turk/mturk_battery_preview.html")
 
-def end_assignment(request,rid):
+
+def end_assignment(request, rid):
     '''end_assignment will change completed variable to True, preventing
     the worker from doing new experiments (if there are any remaining)
     and triggering function to allocate credit for what is completed
     '''
     result = Result.objects.filter(id=rid)[0]
-    if result.assignment != None:
+    if result.assignment is not None:
         assignment = result.assignment
         assignment.completed = True
         assignment.save()
         assign_experiment_credit(result.worker.id)
     return render_to_response("turk/worker_sorry.html")
 
+
 @login_required
 def multiple_new_hit(request, bid):
 
     mturk_permission = check_mturk_access(request)
 
-    if mturk_permission == True:
+    if mturk_permission:
         battery = Battery.objects.get(pk=bid)
         if not request.user.has_perm('battery.edit_battery', battery):
             return HttpResponseForbidden()
@@ -287,41 +304,42 @@ def multiple_new_hit(request, bid):
         if request.method == "POST":
             # A hit is generated for each batch
             for x in range(int(request.POST["id_number_batches"])):
-                hit = HIT(owner=request.user,battery=battery)
-                form = HITForm(request.POST,instance=hit)
+                hit = HIT(owner=request.user, battery=battery)
+                form = HITForm(request.POST, instance=hit)
                 if form.is_valid():
                     hit = form.save(commit=False)
-                    hit.title = "%s #%s" %(hit.title,x)
+                    hit.title = "%s #%s" % (hit.title, x)
                     hit.save()
             return HttpResponseRedirect(battery.get_absolute_url())
         else:
 
             context = {"is_owner": is_owner,
-                      "header_text":battery.name,
-                      "battery":battery,
-                      "mturk_permission":mturk_permission}
+                       "header_text": battery.name,
+                       "battery": battery,
+                       "mturk_permission": mturk_permission}
 
         return render(request, "turk/multiple_new_hit.html", context)
     else:
         return HttpResponseForbidden()
 
+
 @login_required
 def clone_hit(request, bid, hid):
     mturk_permission = check_mturk_access(request)
-    if mturk_permission != True:
+    if not mturk_permission:
         return HttpResponseForbidden()
 
     new_hit = get_object_or_404(HIT, pk=hid)
     new_hit.pk = None
     form = HITForm(instance=new_hit)
-    form.helper.form_action = reverse('new_hit',args=[bid])
+    form.helper.form_action = reverse('new_hit', args=[bid])
 
     battery = Battery.objects.get(pk=bid)
-    header_text = "%s HIT" %(battery.name)
+    header_text = "%s HIT" % (battery.name)
 
     context = {"form": form,
                "is_owner": True,
-               "header_text":header_text}
+               "header_text": header_text}
 
     return render(request, "turk/new_hit.html", context)
 
@@ -331,22 +349,22 @@ def edit_hit(request, bid, hid=None):
 
     mturk_permission = check_mturk_access(request)
 
-    if mturk_permission == True:
+    if mturk_permission:
         battery = Battery.objects.get(pk=bid)
-        header_text = "%s HIT" %(battery.name)
+        header_text = "%s HIT" % (battery.name)
         if not request.user.has_perm('battery.edit_battery', battery):
             return HttpResponseForbidden()
 
         if hid:
-            hit = get_hit(hid,request)
+            hit = get_hit(hid, request)
             is_owner = battery.owner == request.user
             header_text = hit.title
         else:
             is_owner = True
-            hit = HIT(owner=request.user,battery=battery)
+            hit = HIT(owner=request.user, battery=battery)
         if request.method == "POST":
             if is_owner:
-                form = HITForm(request.POST,instance=hit)
+                form = HITForm(request.POST, instance=hit)
             if form.is_valid():
                 hit = form.save(commit=False)
                 hit.save()
@@ -359,17 +377,18 @@ def edit_hit(request, bid, hid=None):
 
         context = {"form": form,
                    "is_owner": is_owner,
-                   "header_text":header_text}
+                   "header_text": header_text}
 
         return render(request, "turk/new_hit.html", context)
     else:
         return HttpResponseForbidden()
 
+
 @login_required
 def contact_worker(request, aid):
     mturk_permission = check_mturk_access(request)
 
-    if mturk_permission == False:
+    if not mturk_permission:
         return HttpResponseForbidden()
 
     assignment = Assignment.objects.get(id=aid)
@@ -396,52 +415,58 @@ def contact_worker(request, aid):
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
             conn.notify_workers([worker.id], subject, message)
-            return redirect('manage_hit', bid=assignment.hit.battery.id, 
+            return redirect('manage_hit', bid=assignment.hit.battery.id,
                             hid=assignment.hit.id)
     else:
         return HttpResponseNotAllowed()
 
 # Expire a hit
+
+
 @login_required
 def expire_hit(request, hid):
 
     mturk_permission = check_mturk_access(request)
-    if mturk_permission == True:
+    if mturk_permission:
 
-        hit = get_hit(hid,request)
+        hit = get_hit(hid, request)
         battery = hit.battery
-        if check_battery_edit_permission(request,hit.battery):
+        if check_battery_edit_permission(request, hit.battery):
             # Remove expired/deleted hits from interface
             try:
                 hit.expire()
-            except:
+            except BaseException:
                 hit.delete()
         return redirect(battery.get_absolute_url())
     else:
         return HttpResponseForbidden()
 
 # Delete a hit
+
+
 @login_required
 def delete_hit(request, hid):
     mturk_permission = check_mturk_access(request)
-    if mturk_permission == True:
-        hit = get_hit(hid,request)
-        if check_battery_edit_permission(request,hit.battery):
+    if mturk_permission:
+        hit = get_hit(hid, request)
+        if check_battery_edit_permission(request, hit.battery):
             # A hit deleted in Amazon cannot be expired
             try:
                 hit.expire()
                 hit.dispose()
-            except:
+            except BaseException:
                 pass
             hit.delete()
         return redirect(hit.battery.get_absolute_url())
     else:
         return HttpResponseForbidden()
 
+
 @login_required
 def hit_detail(request, hid):
     hit = get_object_or_404(HIT, pk=hid)
     return render(request, "turk/hit_detail.html", {'hit': hit})
+
 
 def get_flagged_questions(number=None):
     """get_flagged_questions
@@ -452,12 +477,14 @@ def get_flagged_questions(number=None):
        the number of questions to return. If None, will return all
     """
     questions = QuestionModel.objects.filter(flagged_for_curation=True)
-    if number == None:
+    if number is None:
         return questions
-    return choice(questions,int(number))
+    return choice(questions, int(number))
+
 
 def check_battery_view(battery, worker_id):
-    missing_batteries, blocking_batteries = check_battery_dependencies(battery, worker_id)
+    missing_batteries, blocking_batteries = check_battery_dependencies(
+        battery, worker_id)
     if missing_batteries or blocking_batteries:
         return render_to_response(
             "turk/battery_requirements_not_met.html",

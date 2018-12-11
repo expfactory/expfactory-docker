@@ -1,9 +1,12 @@
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
-from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab, StrictButton
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm
-from django.contrib.auth.models import User
+from crispy_forms.bootstrap import (AppendedText, FormActions, PrependedText,
+                                    StrictButton, Tab, TabHolder)
 from crispy_forms.helper import FormHelper
+from crispy_forms.layout import (HTML, Button, Div, Field, Hidden, Layout, Row,
+                                 Submit)
 from django import forms
+from django.contrib.auth.forms import (PasswordChangeForm, UserChangeForm,
+                                       UserCreationForm)
+from django.contrib.auth.models import User
 
 
 class UserCreateForm(UserCreationForm):
@@ -30,6 +33,7 @@ class UserCreateForm(UserCreationForm):
         self.helper.field_class = 'col-lg-8'
         self.helper.layout = Layout()
         tab_holder = TabHolder()
+
 
 class UserEditForm(UserChangeForm):
     email = forms.EmailField(required=True)

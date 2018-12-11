@@ -1,16 +1,18 @@
 from functools import wraps
 
-from django.http.response import (HttpResponseRedirect, JsonResponse)
-from django.shortcuts import (render, get_object_or_404, render_to_response,
-                              redirect)
-from .models import User
+from django.contrib import auth
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as djUser
 from django.core.urlresolvers import reverse
-from django.contrib import auth
-from .forms import UserEditForm, UserCreateForm
-from django.contrib.auth.decorators import login_required
+from django.http.response import HttpResponseRedirect, JsonResponse
+from django.shortcuts import (get_object_or_404, redirect, render,
+                              render_to_response)
 from django.template.context import RequestContext
 from rest_framework import status
+
+from .forms import UserCreateForm, UserEditForm
+from .models import User
+
 
 def to_json_response(response):
     status_code = response.status_code
@@ -62,8 +64,8 @@ def create_user(request, template_name='registration/signup.html'):
                                          password=request.POST['password1'])
 
             # We now save the user into the Expfactory User object, with a role
-            expfactory_user,_ = User.objects.update_or_create(user=new_user,
-                                                              role="LOCAL")
+            expfactory_user, _ = User.objects.update_or_create(user=new_user,
+                                                               role="LOCAL")
             expfactory_user.save()
             auth.login(request, new_user)
 
