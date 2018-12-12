@@ -24,7 +24,7 @@ from expdj.apps.experiments.models import (CognitiveAtlasConcept,
                                            ExperimentTemplate,
                                            ExperimentVariable)
 from expdj.apps.turk.models import Result
-from expdj.settings import BASE_DIR, MEDIA_ROOT, STATIC_ROOT
+from expdj.settings import BASE_DIR, MEDIA_ROOT, STATIC_ROOT, EXP_REPO
 
 media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
@@ -32,7 +32,8 @@ media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
 
 def get_experiment_selection(repo_type="experiments"):
-    tmpdir = custom_battery_download(repos=[repo_type])
+    # tmpdir = custom_battery_download(repos=[repo_type])
+    tmpdir = os.path.join(EXP_REPO, repo_type)
     experiments = get_experiments(
         "%s/%s" %
         (tmpdir,
@@ -41,12 +42,13 @@ def get_experiment_selection(repo_type="experiments"):
         warning=False,
         repo_type=repo_type)
     experiments = [x[0] for x in experiments]
-    shutil.rmtree(tmpdir)
+    # shutil.rmtree(tmpdir)
     return experiments
 
 
 def get_experiment_type(experiment):
-    '''get_experiment_type returns the installation folder (eg, games, surveys, experiments) based on the template specified in the config.json
+    '''get_experiment_type returns the installation folder (eg, games, surveys,
+        experiments) based on the template specified in the config.json
     :param experiment: the ExperimentTemplate object
     '''
     if experiment.template in ["jspsych"]:
@@ -90,10 +92,13 @@ def install_experiments(experiment_tags=None, repo_type="experiments"):
     # We will return list of experiments that did not install successfully
     errored_experiments = []
 
-    tmpdir = custom_battery_download(repos=[repo_type, "battery"])
+    # tmpdir = custom_battery_download(repos=[repo_type, "battery"])
+    tmpdir = os.path.join(EXP_REPO, repo_type)
+
+    # could catch non existant repos with git.exc.InvalidGitRepositoryError
+    repo = Repo("%s/%s" % (tmpdir, repo_type))
 
     # The git commit is saved with the experiment as the "version"
-    repo = Repo("%s/%s" % (tmpdir, repo_type))
     commit = repo.commit('master').__str__()
 
     experiments = get_experiments("%s/%s" %
@@ -103,7 +108,6 @@ def install_experiments(experiment_tags=None, repo_type="experiments"):
                        ["exp_id"] in experiment_tags]
 
     for experiment in experiments:
-
         try:
             performance_variable = None
             rejection_variable = None
@@ -150,7 +154,7 @@ def install_experiments(experiment_tags=None, repo_type="experiments"):
         except BaseException:
             errored_experiments.append(experiment[0]["exp_id"])
 
-    shutil.rmtree(tmpdir)
+    # shutil.rmtree(tmpdir)
     return errored_experiments
 
 # EXPERIMENTS AND BATTERIES ##############################################

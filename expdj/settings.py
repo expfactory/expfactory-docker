@@ -199,6 +199,8 @@ SESSION_COOKIE_SECURE = False
 # SSL ENABLED
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
+EXP_REPO = './experiment_repo'
+
 # Bogus secret key.
 try:
     from secrets import *

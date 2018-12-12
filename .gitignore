@@ -24,3 +24,5 @@ static/*
 compose/nginx/ssl*
 
 *.cred
+
+/expdj/experiment_repo/*
