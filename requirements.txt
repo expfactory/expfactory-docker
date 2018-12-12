@@ -1,5 +1,5 @@
 Django==1.11.17
-psycopg2
+psycopg2-binary
 markdown
 matplotlib
 decorator==4.0.2
