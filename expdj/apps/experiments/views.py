@@ -640,6 +640,10 @@ def sync(request, rid=None):
                 result.taskdata = complete_survey_result(
                     result.experiment.exp_id, data)
 
+            print("saving")
+            print(request.body)
+            print(result.taskdata)
+            print(data["taskdata"])
             result.save()
 
             # if the worker finished the current experiment
@@ -1074,6 +1078,8 @@ def edit_battery(request, bid=None):
         if request.method == "POST":
             if is_owner:
                 form = BatteryForm(request.POST, instance=battery)
+            else:
+                return HttpResponse('Unauthorized', status=401)
             if form.is_valid():
                 previous_contribs = set()
                 if form.instance.pk is not None:

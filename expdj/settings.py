@@ -24,8 +24,8 @@ ADMINS = (('rblair', 'rosswilsonblair@gmail.com'),)
 
 MANAGERS = ADMINS
 
-DEBUG = False
-MTURK_ALLOW = True  # Allow users to deploy to real Mturk (not just sandbox)
+DEBUG = True
+MTURK_ALLOW = False # Allow users to deploy to real Mturk (not just sandbox)
 TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ["*"]
 
@@ -132,11 +132,10 @@ SITE_ID = 1
 ANONYMOUS_USER_ID = -1  # django-guardian
 
 # Static files (CSS, JavaScript, Images)
-MEDIA_ROOT = './assets'
-MEDIA_URL = '/assets/'
-STATIC_ROOT = './static'
-STATIC_URL = '/static/'
-
+MEDIA_ROOT = './static'
+MEDIA_URL = '/static/'
+STATIC_ROOT = './assets'
+STATIC_URL = '/assets/'
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
@@ -199,7 +198,7 @@ SESSION_COOKIE_SECURE = False
 # SSL ENABLED
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
-EXP_REPO = './experiment_repo'
+EXP_REPO = os.path.join(BASE_DIR, 'expdj/experiment_repo')
 
 # Bogus secret key.
 try:

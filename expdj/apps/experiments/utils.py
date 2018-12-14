@@ -33,11 +33,9 @@ media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
 def get_experiment_selection(repo_type="experiments"):
     # tmpdir = custom_battery_download(repos=[repo_type])
-    tmpdir = os.path.join(EXP_REPO, repo_type)
+    tmpdir = os.path.join(EXP_REPO, 'expfactory-{}'.format(repo_type))
     experiments = get_experiments(
-        "%s/%s" %
-        (tmpdir,
-         repo_type),
+        tmpdir,
         load=True,
         warning=False,
         repo_type=repo_type)
@@ -93,16 +91,16 @@ def install_experiments(experiment_tags=None, repo_type="experiments"):
     errored_experiments = []
 
     # tmpdir = custom_battery_download(repos=[repo_type, "battery"])
-    tmpdir = os.path.join(EXP_REPO, repo_type)
+    tmpdir = os.path.join(EXP_REPO, 'expfactory-{}'.format(repo_type))
 
     # could catch non existant repos with git.exc.InvalidGitRepositoryError
-    repo = Repo("%s/%s" % (tmpdir, repo_type))
+    # repo = Repo("%s/%s" % (tmpdir, repo_type))
+    repo = Repo(tmpdir)
 
     # The git commit is saved with the experiment as the "version"
     commit = repo.commit('master').__str__()
 
-    experiments = get_experiments("%s/%s" %
-                                  (tmpdir, repo_type), load=True, warning=False)
+    experiments = get_experiments(tmpdir, load=True, warning=False)
     if experiment_tags is not None:
         experiments = [e for e in experiments if e[0]
                        ["exp_id"] in experiment_tags]
@@ -144,8 +142,7 @@ def install_experiments(experiment_tags=None, repo_type="experiments"):
             )
 
             new_experiment.save()
-            experiment_folder = "%s/%s/%s" % (tmpdir,
-                                              repo_type, experiment[0]["exp_id"])
+            experiment_folder = "%s/%s" % (tmpdir, experiment[0]["exp_id"])
             output_folder = "%s/%s/%s" % (media_dir,
                                           repo_type, experiment[0]["exp_id"])
             if os.path.exists(output_folder):

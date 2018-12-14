@@ -91,13 +91,14 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
 
 # ViewSets define the view behavior.
 class ResultViewSet(viewsets.ModelViewSet):
-    queryset = Result.objects.all()
     serializer_class = ResultSerializer
+    def get_queryset(self):
+        return Result.objects.filter(battery__owner=request.user)
 
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
-router.register(r'api/results', ResultViewSet)
+router.register(r'api/results', ResultViewSet, base_name='all-results')
 
 admin.autodiscover()
 
@@ -114,7 +115,10 @@ urlpatterns = [url(r'^', include(main_urls)),
 
 
 if settings.DEBUG:
+    '''
     urlpatterns += [
         url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
             'document_root': settings.STATIC_ROOT}),
     ]
+    '''
+    urlpatterns += staticfiles_urlpatterns()
