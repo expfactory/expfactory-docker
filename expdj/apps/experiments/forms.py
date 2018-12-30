@@ -1,20 +1,24 @@
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
-from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
-from expdj.apps.experiments.models import Experiment, ExperimentTemplate, Battery, \
-  CreditCondition
-from crispy_forms.bootstrap import StrictButton
-from crispy_forms.helper import FormHelper
-from django.forms import ModelForm
-from django import forms
-from glob import glob
 import os
+from glob import glob
+
+from crispy_forms.bootstrap import (AppendedText, FormActions, PrependedText,
+                                    StrictButton, Tab, TabHolder)
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import (HTML, Button, Div, Field, Hidden, Layout, Row,
+                                 Submit)
+from django import forms
+from django.forms import ModelForm
+
+from expdj.apps.experiments.models import (Battery, CreditCondition,
+                                           Experiment, ExperimentTemplate)
 from expdj.settings import BASE_DIR
+
 
 class ExperimentTemplateForm(ModelForm):
 
     class Meta:
         model = ExperimentTemplate
-        fields = ("name","publish","cognitive_atlas_task","reference")
+        fields = ("name", "publish", "cognitive_atlas_task", "reference")
 
     def clean(self):
         cleaned_data = super(ExperimentTemplateForm, self).clean()
@@ -36,7 +40,7 @@ class ExperimentForm(ModelForm):
 
     class Meta:
         model = Experiment
-        fields = ("include_bonus","include_catch")
+        fields = ("include_bonus", "include_catch")
 
     def clean(self):
         cleaned_data = super(ExperimentForm, self).clean()
@@ -57,7 +61,7 @@ class ExperimentForm(ModelForm):
 class BatteryForm(ModelForm):
 
     class Meta:
-        exclude = ('owner', 'contributors', 'experiments',' bonus_active'
+        exclude = ('owner', 'contributors', 'experiments', ' bonus_active'
                    'blacklist_active', 'blacklist_threshold')
         model = Battery
 
@@ -70,8 +74,13 @@ class BatteryForm(ModelForm):
         super(BatteryForm, self).__init__(*args, **kwargs)
 
         # Dynamically add available credential files
-        credential_files = [(os.path.basename(x),os.path.basename(x)) for x in glob("%s/expdj/auth/*.cred" %BASE_DIR)]
-        self.fields['credentials'] = forms.ChoiceField(choices=credential_files)
+        credential_files = [
+            (os.path.basename(x),
+             os.path.basename(x)) for x in glob(
+                "%s/expdj/auth/*.cred" %
+                BASE_DIR)]
+        self.fields['credentials'] = forms.ChoiceField(
+            choices=credential_files)
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
@@ -85,7 +94,7 @@ class BatteryForm(ModelForm):
 class BlacklistForm(ModelForm):
 
     class Meta:
-        fields = ('blacklist_active','bonus_active','blacklist_threshold')
+        fields = ('blacklist_active', 'bonus_active', 'blacklist_threshold')
         model = Battery
 
     def clean(self):

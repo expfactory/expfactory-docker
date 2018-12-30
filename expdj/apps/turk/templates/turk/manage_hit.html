@@ -12,7 +12,7 @@
         <article id="content">
             <header>
                 <h2>Manage
-                    {% if hit.sandbox = True %}
+                    {% if hit.sandbox == True %}
                         <a href="https://requestersandbox.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>
                     {% else %}
                         <a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>

@@ -34,13 +34,13 @@
            {% for experiment in experiments %}
                <tr>
                    <td><a href="{% url 'experiment_details' experiment.exp_id %}">{{ experiment.name }}</a></td>
-                   <td>{% if experiment.template = "jspsych" %}
+                   <td>{% if experiment.template == "jspsych" %}
                        experiment
                        {% endif %}
-                       {% if experiment.template = "survey" %}
+                       {% if experiment.template == "survey" %}
                        survey
                        {% endif %}
-                       {% if experiment.template = "phaser" %}
+                       {% if experiment.template == "phaser" %}
                        game
                        {% endif %}
                    </td>

@@ -1,23 +1,17 @@
-from expdj.apps.turk.views import (edit_hit, delete_hit, expire_hit,
-    preview_hit, serve_hit, multiple_new_hit, end_assignment, finished_view,
-    not_consent_view, survey_submit, manage_hit, contact_worker)
-from expdj.apps.experiments.views import sync
-from django.views.generic.base import TemplateView
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.views.generic.base import TemplateView
 
 from expdj.apps.experiments.views import sync
-from expdj.apps.turk.views import (
-    edit_hit, delete_hit, expire_hit, preview_hit, serve_hit, multiple_new_hit,
-    end_assignment, finished_view, not_consent_view, survey_submit, manage_hit,
-    clone_hit, hit_detail
-)
 from expdj.apps.turk.api_views import BatteryResultAPIList
+from expdj.apps.turk.views import (clone_hit, contact_worker, delete_hit,
+                                   edit_hit, end_assignment, expire_hit,
+                                   finished_view, hit_detail, manage_hit,
+                                   multiple_new_hit, not_consent_view,
+                                   preview_hit, serve_hit, survey_submit)
 
-
-urlpatterns = patterns('',
+urlpatterns = [
     # HITS
-    url(r'^hits/(?P<bid>\d+|[A-Z]{8})/new$',edit_hit,name='new_hit'),
+    url(r'^hits/(?P<bid>\d+|[A-Z]{8})/new$', edit_hit, name='new_hit'),
     url(
         r'^hits/(?P<bid>\d+|[A-Z]{8})/(?P<hid>\d+|[A-Z]{8})/manage$',
         manage_hit,
@@ -43,13 +37,13 @@ urlpatterns = patterns('',
         hit_detail,
         name='hit_detail'
     ),
-    url(r'^hits/(?P<hid>\d+|[A-Z]{8})/delete$',delete_hit,name='delete_hit'),
-    url(r'^hits/(?P<hid>\d+|[A-Z]{8})/expire$',expire_hit,name='expire_hit'),
+    url(r'^hits/(?P<hid>\d+|[A-Z]{8})/delete$', delete_hit, name='delete_hit'),
+    url(r'^hits/(?P<hid>\d+|[A-Z]{8})/expire$', expire_hit, name='expire_hit'),
 
     # Turk Deployments
-    url(r'^accept/(?P<hid>\d+|[A-Z]{8})',serve_hit,name='serve_hit'),
-    url(r'^turk/(?P<hid>\d+|[A-Z]{8})',preview_hit,name='preview_hit'),
-    url(r'^turk/preview',not_consent_view,name='not_consent_view'),
+    url(r'^accept/(?P<hid>\d+|[A-Z]{8})', serve_hit, name='serve_hit'),
+    url(r'^turk/(?P<hid>\d+|[A-Z]{8})', preview_hit, name='preview_hit'),
+    url(r'^turk/preview', not_consent_view, name='not_consent_view'),
     url(
         r'^turk/end/(?P<rid>\d+|[A-Z]{8})',
         end_assignment,
@@ -60,14 +54,14 @@ urlpatterns = patterns('',
         survey_submit,
         name='survey_submit'
     ),
-    url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$',sync,name='sync_data'),
-    url(r'^sync/$',sync,name='sync_data'),
+    url(r'^sync/(?P<rid>\d+|[A-Z]{8})/$', sync, name='sync_data'),
+    url(r'^sync/$', sync, name='sync_data'),
     url(r'^finished$', finished_view, name="finished_view"),
-    url(r'^worker/contact/(?P<aid>\d+)',contact_worker,name='contact_worker'),
+    url(r'^worker/contact/(?P<aid>\d+)', contact_worker, name='contact_worker'),
 
     # New API
     url(r'^new_api/results/(?P<bid>\d+)/$',
         BatteryResultAPIList.as_view(),
         name='battery_result_api_list'
-    )
-)
+        )
+]

@@ -117,13 +117,13 @@
                      {{ experiment.order }}
                      {% endif %}
                    </td>
-                   <td>{% if experiment.template.template = "jspsych" %}
+                   <td>{% if experiment.template.template == "jspsych" %}
                        experiment
                        {% endif %}
-                       {% if experiment.template.template = "survey" %}
+                       {% if experiment.template.template == "survey" %}
                        survey
                        {% endif %}
-                       {% if experiment.template.template = "phaser" %}
+                       {% if experiment.template.template == "phaser" %}
                        game
                        {% endif %}
                    </td>
@@ -168,7 +168,7 @@
                       {% for hit in hits %}
                           <tr id="hit_info_{{ hit.id }}">  
                           <td>
-                          {% if hit.sandbox = True %}
+                          {% if hit.sandbox == True %}
                           <a href="https://requestersandbox.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>
                           {% else %}
                           <a href="https://requester.mturk.com/mturk/manageHIT?viewableEditPane=manageHIT_downloadResults&HITId={{ hit.mturk_id }}" target="_blank">{{ hit.title }}</a>
@@ -184,7 +184,7 @@
                             <a class='btn btn-xs btn-default' href='{% url 'manage_hit' battery.id hit.id %}'> Manage Hit</a>
                             <a class='btn btn-xs btn-default' href='{% url 'clone_hit' battery.id hit.id %}'> Clone Hit</a>
                             <a class='btn btn-xs btn-default' href='{% url 'expire_hit' hit.id %}' id="expire_hit"> Expire Hit</a>
-                            {% if hit.status = "D" %}
+                            {% if hit.status == "D" %}
                             <button class='btn btn-xs btn-danger' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>
                             {% else %}
                             <button class='btn btn-xs btn-danger disabled' href='{% url 'delete_hit' hit.id %}' id="delete_hit"> Delete Hit</button>
