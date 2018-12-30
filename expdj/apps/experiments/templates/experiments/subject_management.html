@@ -44,7 +44,7 @@
                             <tr>
                                <td>{{ blacklist.worker.id }}</td>
                                <td>{{ blacklist.flags|length }}</td>
-                               <td>{% if blacklist.active = True %}
+                               <td>{% if blacklist.active == True %}
                                     <span style="color:red;">blacklisted</span>
                                     {% else %}
                                     <span style="color:orangered;">pending</span>
@@ -80,7 +80,7 @@
                             <tr>
                                <td>{{ bonus.worker.id }}</td>
                                <td>{{ bonus.calculate_bonus }}</td>
-			       <td>{% if bonus.granted = False %}
+			       <td>{% if bonus.granted == False %}
                                    <span style="color:orangered;">not granted</span>
                                    {% else %}
                                    <span style="color:green">granted</span>

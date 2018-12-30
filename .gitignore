@@ -17,3 +17,12 @@
 /static/lib
 /static/fonts
 /static/experiments
+static/*
+
+*migrations*
+
+compose/nginx/ssl*
+
+*.cred
+
+/expdj/experiment_repo/*

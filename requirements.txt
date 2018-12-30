@@ -1,5 +1,5 @@
-Django==1.8.8
-psycopg2
+Django==1.11.17
+psycopg2-binary
 markdown
 matplotlib
 decorator==4.0.2
@@ -16,14 +16,13 @@ python-social-auth==0.2.7
 requests
 requests-oauthlib
 jsonfield
-expfactory
+expfactory<3
 boto==2.1.1
 django-dbbackup<2.3
 cognitiveatlas
 dropbox==1.6
 kombu
 opbeat
-djrill
 ua-parser
 user-agents
 django-user-agents
@@ -42,3 +41,5 @@ git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
 django-hstore==1.3.5
 django-datatables-view
 django-oauth-toolkit==0.9.0
+anyjson
+uwsgi

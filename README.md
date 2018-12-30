@@ -1,6 +1,8 @@
 ### Docker and The Experiment Factory
 
-![home](http://expfactory.github.io/static/images/expfactoryticketgray.png)
+**LEGACY** This repository is no longer actively maintained, and exists to support current implementations. We encourage users to create reproducible experiment containers with the redone [expfactory](https://expfactory.github.io) software. 
+
+![home](https://expfactory.github.io/expfactory/img/expfactoryticketyellow.png)
 
    >> Don't forget what happened to the researcher who suddenly got everything he wanted.
 

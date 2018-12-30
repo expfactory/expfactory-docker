@@ -1,21 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Basic unit tests for Turk App"""
-
-import os
 import datetime
+import os
 import tempfile
 
 import boto
 import django
-django_version = (django.VERSION[0] * 10.0 + django.VERSION[1] * 1.0) / 10
-from django.test.utils import override_settings
 from django.test import TestCase
+from django.test.utils import override_settings
 
-from cogpheno.apps.turk.utils import (PRODUCTION_HOST, PRODUCTION_WORKER_URL, SANDBOX_HOST,
-        SANDBOX_WORKER_URL, InvalidDjurkSettings, amazon_string_to_datetime,
-        get_host, get_connection, get_worker_url, is_sandbox)
+from cogpheno.apps.turk.utils import (PRODUCTION_HOST, PRODUCTION_WORKER_URL,
+                                      SANDBOX_HOST, SANDBOX_WORKER_URL,
+                                      InvalidDjurkSettings,
+                                      amazon_string_to_datetime,
+                                      get_connection, get_host, get_worker_url,
+                                      is_sandbox)
+
+"""Basic unit tests for Turk App"""
+
+
+django_version = (django.VERSION[0] * 10.0 + django.VERSION[1] * 1.0) / 10
 
 
 class CommonTests(TestCase):
@@ -28,9 +33,9 @@ class CommonTests(TestCase):
     def test_amazon_string_to_datetime(self):
         sample_date = '2012-04-04T22:31:03Z'
         self.assertEqual(
-                amazon_string_to_datetime(sample_date),
-                datetime.datetime(2012, 4, 4, 22, 31, 3))
-    #def amazon_string_to_datetime(amazon_string):
+            amazon_string_to_datetime(sample_date),
+            datetime.datetime(2012, 4, 4, 22, 31, 3))
+    # def amazon_string_to_datetime(amazon_string):
     #    amazon_iso_format = '%Y-%m-%dT%H:%M:%SZ'
     #    return datetime.datetime.strptime(
     #            amazon_string,
@@ -49,39 +54,39 @@ class CommonTests(TestCase):
             self.assertEqual(get_host(), PRODUCTION_HOST)
 
         with self.settings(DJURK={
-            'host': 'http://mechanicalturk.sandbox.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'http://mechanicalturk.sandbox.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertEqual(get_host(), SANDBOX_HOST)
 
         with self.settings(DJURK={
-            'host': 'https://mechanicalturk.sandbox.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'https://mechanicalturk.sandbox.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertEqual(get_host(), SANDBOX_HOST)
 
         with self.settings(DJURK={
-            'host': 'http://mechanicalturk.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'http://mechanicalturk.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertEqual(get_host(), PRODUCTION_HOST)
 
         with self.settings(DJURK={
-            'host': 'https://mechanicalturk.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'https://mechanicalturk.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertEqual(get_host(), PRODUCTION_HOST)
 
         with self.settings(DJURK={},
-                DJURK_CONFIG_FILE=self.djurk_config_filename):
+                           DJURK_CONFIG_FILE=self.djurk_config_filename):
             # Config file is empty
             self.assertEqual(get_host(), PRODUCTION_HOST)
 
         with self.settings(DJURK=None,
-                DJURK_CONFIG_FILE=self.djurk_config_filename):
+                           DJURK_CONFIG_FILE=self.djurk_config_filename):
             f = open(self.djurk_config_filename, 'w')
             f.write("[Connection]\nhost: %s\n" % SANDBOX_HOST)
             f.close()
             self.assertEqual(get_host(), SANDBOX_HOST)
 
         with self.settings(DJURK=None,
-                DJURK_CONFIG_FILE=self.djurk_config_filename):
+                           DJURK_CONFIG_FILE=self.djurk_config_filename):
             f = open(self.djurk_config_filename, 'w')
             f.write("[Connection]\nhost: %s\n" % PRODUCTION_HOST)
             f.close()
@@ -97,23 +102,23 @@ class CommonTests(TestCase):
             self.assertFalse(is_sandbox())
 
         with self.settings(DJURK={
-            'host': 'http://mechanicalturk.sandbox.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'http://mechanicalturk.sandbox.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertTrue(is_sandbox())
 
         with self.settings(DJURK={
-            'host': 'https://mechanicalturk.sandbox.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'https://mechanicalturk.sandbox.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertTrue(is_sandbox())
 
         with self.settings(DJURK={
-            'host': 'http://mechanicalturk.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'http://mechanicalturk.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertFalse(is_sandbox())
 
         with self.settings(DJURK={
-            'host': 'https://mechanicalturk.amazonaws.com'},
-                           DJURK_CONFIG_FILE=None):
+                'host': 'https://mechanicalturk.amazonaws.com'},
+                DJURK_CONFIG_FILE=None):
             self.assertFalse(is_sandbox())
 
     def test_get_connection(self):
@@ -132,16 +137,16 @@ class CommonTests(TestCase):
                                   'aws_secret_access_key': '456'}):
             mtc = get_connection()
             self.assertTrue(isinstance(get_connection(),
-                            boto.mturk.connection.MTurkConnection))
+                                       boto.mturk.connection.MTurkConnection))
 
         with self.settings(DJURK=None,
-                DJURK_CONFIG_FILE=self.djurk_config_filename):
+                           DJURK_CONFIG_FILE=self.djurk_config_filename):
             f = open(self.djurk_config_filename, 'w')
             f.write("[Connection]\naws_access_key_id: 123\n"
                     "aws_secret_access_key: 456\n")
             f.close()
             self.assertTrue(isinstance(get_connection(),
-                            boto.mturk.connection.MTurkConnection))
+                                       boto.mturk.connection.MTurkConnection))
 
     def test_get_worker_url(self):
         with self.settings(DJURK={'host': PRODUCTION_HOST},

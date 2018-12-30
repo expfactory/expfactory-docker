@@ -1,44 +1,37 @@
 """
 Django settings for expdj project.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.7/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import sys
-from datetime import timedelta
-import matplotlib
 import tempfile
+from datetime import timedelta
+
+import matplotlib
 from celery import Celery
 from kombu import Exchange, Queue
+
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
-DOMAIN_NAME_HTTP = "http://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
+DOMAIN_NAME = "https://expfactory.org"  # MUST BE HTTPS FOR MECHANICAL TURK
+DOMAIN_NAME_HTTP = "http://expfactory.org"  # MUST BE HTTPS FOR MECHANICAL TURK
 
 ADMINS = (('rblair', 'rosswilsonblair@gmail.com'),)
 
-MANAGERS = ADMINS
 
-# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
+MANAGERS = ADMINS
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = '/code/errors'
 
 DEBUG = False
 MTURK_ALLOW = True # Allow users to deploy to real Mturk (not just sandbox)
+
 TEMPLATE_DEBUG = False
 ALLOWED_HOSTS = ["*"]
-
-# Database
-# https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -67,16 +60,13 @@ INSTALLED_APPS = (
     'expdj.apps.turk',
     'expdj.apps.experiments',
     'expdj.apps.users',
-    'social.apps.django_app.default',
     'crispy_forms',
     'polymorphic',
     'guardian',
     'dbbackup',
-    'djrill',
     'djcelery',
     'rest_framework',
     'rest_framework.authtoken',
-    # 'opbeat.contrib.django',
 )
 
 
@@ -112,7 +102,6 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-    # 'opbeat.contrib.django.middleware.OpbeatAPMMiddleware',
 )
 
 ROOT_URLCONF = 'expdj.urls'
@@ -120,19 +109,17 @@ ROOT_URLCONF = 'expdj.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': (),
-        'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
-                                            "django.core.context_processors.debug",
-                                            "django.core.context_processors.i18n",
-                                            "django.core.context_processors.media",
-                                            "django.core.context_processors.static",
-                                            "django.core.context_processors.tz",
-                                            "django.contrib.messages.context_processors.messages",
-                                            'django.core.context_processors.request'),
-                    'loaders': ('django.template.loaders.filesystem.Loader',
-                                'django.template.loaders.app_directories.Loader',
-                                )}
-    }
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
 ]
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
@@ -140,34 +127,25 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 WSGI_APPLICATION = 'expdj.wsgi.application'
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.7/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 SITE_ID = 1
-ANONYMOUS_USER_ID = -1 # django-guardian
+ANONYMOUS_USER_ID = -1  # django-guardian
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.7/howto/static-files/
-
-MEDIA_ROOT = '/var/www/static'
+MEDIA_ROOT = './static'
 MEDIA_URL = '/static/'
-STATIC_ROOT = '/var/www/assets'
+STATIC_ROOT = './assets'
 STATIC_URL = '/assets/'
-
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
-
-#STATICFILES_DIRS = (
-#    ('site', os.path.join(BASE_DIR,'static')), #store site-specific media here.
-#)
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
@@ -176,14 +154,10 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            }
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
 }
-
-# Mandrill config
-#MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace with a different one in production
-#EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 # Celery config
 BROKER_URL = 'redis://redis:6379/0'
@@ -198,12 +172,12 @@ CELERY_QUEUES = (
 CELERY_IMPORTS = ('expdj.apps.turk.tasks', )
 
 # here is how to run a task regularly
-#CELERYBEAT_SCHEDULE = {
+# CELERYBEAT_SCHEDULE = {
 #    'task name': {
 #        'task': 'task_name',
 #        'schedule': timedelta(days=1)
 #    },
-#}
+# }
 
 CELERY_TIMEZONE = 'Europe/Berlin'
 
@@ -212,14 +186,14 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissions',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
-    'PAGE_SIZE':10,
+    'PAGE_SIZE': 10,
 }
 
 CSRF_COOKIE_SECURE = False
@@ -227,6 +201,8 @@ SESSION_COOKIE_SECURE = False
 
 # SSL ENABLED
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
+
+EXP_REPO = os.path.join(BASE_DIR, 'expdj/experiment_repo')
 
 # Bogus secret key.
 try:
