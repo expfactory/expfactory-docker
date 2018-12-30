@@ -42,7 +42,8 @@ redis:
   image: redis
 
 worker:
-  image: vanessa/expfactory
+  build: .
+  #image: vanessa/expfactory
   command: celery worker -A expdj.celery -Q default -n default@%h
   volumes:
     - .:/code

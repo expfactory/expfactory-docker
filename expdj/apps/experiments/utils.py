@@ -3,7 +3,7 @@ from expdj.apps.experiments.models import Experiment, ExperimentTemplate, \
   ExperimentBooleanVariable, ExperimentStringVariable
 from expdj.settings import STATIC_ROOT,BASE_DIR,MEDIA_ROOT
 from cognitiveatlas.api import get_task, get_concept
-from expfactory.vm import custom_battery_download
+# from expfactory.vm import custom_battery_download
 from expfactory.experiment import get_experiments
 from expfactory.survey import export_questions
 from expfactory.utils import copy_directory
@@ -25,10 +25,11 @@ media_dir = os.path.join(BASE_DIR,MEDIA_ROOT)
 # EXPERIMENT FACTORY PYTHON FUNCTIONS #####################################################
 
 def get_experiment_selection(repo_type="experiments"):
-    tmpdir = custom_battery_download(repos=[repo_type])
+    # tmpdir = custom_battery_download(repos=[repo_type])
+    tmpdir = "/code/install_experiment_repos/"
     experiments = get_experiments("%s/%s" %(tmpdir,repo_type),load=True,warning=False,repo_type=repo_type)
     experiments = [x[0] for x in experiments]
-    shutil.rmtree(tmpdir)
+    # shutil.rmtree(tmpdir)
     return experiments
 
 
@@ -76,7 +77,8 @@ def install_experiments(experiment_tags=None,repo_type="experiments"):
     # We will return list of experiments that did not install successfully
     errored_experiments = []
 
-    tmpdir = custom_battery_download(repos=[repo_type,"battery"])
+    # tmpdir = custom_battery_download(repos=[repo_type,"battery"])
+    tmpdir = "/code/install_experiment_repos/"
 
     # The git commit is saved with the experiment as the "version"
     repo = Repo("%s/%s" %(tmpdir,repo_type))
@@ -124,7 +126,7 @@ def install_experiments(experiment_tags=None,repo_type="experiments"):
         except:
             errored_experiments.append(experiment[0]["exp_id"])
 
-    shutil.rmtree(tmpdir)
+    # shutil.rmtree(tmpdir)
     return errored_experiments
 
 # EXPERIMENTS AND BATTERIES ###############################################################

@@ -23,11 +23,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DOMAIN_NAME = "https://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
 DOMAIN_NAME_HTTP = "http://expfactory.org" # MUST BE HTTPS FOR MECHANICAL TURK
 
-ADMINS = (('vsochat', 'vsochat@gmail.com'),)
+ADMINS = (('rblair', 'rosswilsonblair@gmail.com'),)
 
 MANAGERS = ADMINS
 
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/code/errors'
 
 DEBUG = False
 MTURK_ALLOW = True # Allow users to deploy to real Mturk (not just sandbox)
@@ -73,7 +76,7 @@ INSTALLED_APPS = (
     'djcelery',
     'rest_framework',
     'rest_framework.authtoken',
-    'opbeat.contrib.django',
+    # 'opbeat.contrib.django',
 )
 
 
@@ -109,7 +112,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-    'opbeat.contrib.django.middleware.OpbeatAPMMiddleware',
+    # 'opbeat.contrib.django.middleware.OpbeatAPMMiddleware',
 )
 
 ROOT_URLCONF = 'expdj.urls'
@@ -179,8 +182,8 @@ CACHES = {
 }
 
 # Mandrill config
-MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace with a different one in production
-EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+#MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace with a different one in production
+#EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 # Celery config
 BROKER_URL = 'redis://redis:6379/0'
