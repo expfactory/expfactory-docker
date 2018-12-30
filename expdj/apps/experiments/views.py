@@ -640,10 +640,6 @@ def sync(request, rid=None):
                 result.taskdata = complete_survey_result(
                     result.experiment.exp_id, data)
 
-            print("saving")
-            print(request.body)
-            print(result.taskdata)
-            print(data["taskdata"])
             result.save()
 
             # if the worker finished the current experiment
