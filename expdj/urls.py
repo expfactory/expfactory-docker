@@ -93,7 +93,7 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
 class ResultViewSet(viewsets.ModelViewSet):
     serializer_class = ResultSerializer
     def get_queryset(self):
-        return Result.objects.filter(battery__owner=request.user)
+        return Result.objects.filter(battery__owner=self.request.user.pk)
 
 
 # Routers provide an easy way of automatically determining the URL conf.
