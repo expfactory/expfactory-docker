@@ -8,14 +8,21 @@ import tempfile
 import boto
 import django
 from django.test import TestCase
-from django.test.utils import override_settings
 
+from expdj.apps.turk.utils import (PRODUCTION_HOST, PRODUCTION_WORKER_URL,
+                                  SANDBOX_HOST, SANDBOX_WORKER_URL,
+                                  amazon_string_to_datetime,
+                                  get_connection, get_host, get_worker_url,
+                                  is_sandbox)
+
+'''
 from cogpheno.apps.turk.utils import (PRODUCTION_HOST, PRODUCTION_WORKER_URL,
                                       SANDBOX_HOST, SANDBOX_WORKER_URL,
                                       InvalidDjurkSettings,
                                       amazon_string_to_datetime,
                                       get_connection, get_host, get_worker_url,
                                       is_sandbox)
+'''
 
 """Basic unit tests for Turk App"""
 
