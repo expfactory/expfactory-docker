@@ -23,7 +23,7 @@ from expdj.apps.experiments.models import (Battery, Experiment,
 from expdj.apps.turk.utils import (amazon_string_to_datetime, get_connection,
                                    get_credentials, get_time_difference,
                                    to_dict)
-from expdj.settings import BASE_DIR, DOMAIN_NAME
+from expdj.settings import DOMAIN_NAME
 
 
 def init_connection_callback(sender, **signal_args):
@@ -359,14 +359,14 @@ class HIT(models.Model):
         self.update()
 
     def set_reviewing(self, revert=None):
-        """Toggle HIT status between Reviewable and Reviewing"""
+        """ Toggle HIT status between Reviewable and Reviewing """
         if not self.has_connection():
             self.generate_connection()
         self.connection.set_reviewing(self.mturk_id, revert=revert)
         self.update()
 
     def generate_connection(self):
-        # Get the aws access id from the credentials file
+        """ Get the aws access id from the credentials file """
         AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID = get_credentials(
             battery=self.battery)
         self.connection = get_connection(
@@ -378,11 +378,19 @@ class HIT(models.Model):
         return False
 
     def send_hit(self):
-
+        """ Collect all the settings and call api to submit hit to aws """
         # First check for qualifications
-        qualifications = Qualifications()
+        # qualifications = Qualifications()
+        qualifications = []
         if self.qualification_adult:
-            qualifications.add(AdultRequirement("EqualTo", 1))
+            # qualifications.add(AdultRequirement("EqualTo", 1))
+            qualifications.append({
+                "QualificationTypeId": "00000000000000000060",
+                "Comparator": "EqualTo",
+                "IntegerValues": [1],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
+        '''
         else:
             qualifications.add(AdultRequirement("EqualTo", 0))
         if self.qualification_custom not in [None, ""]:
@@ -405,29 +413,31 @@ class HIT(models.Model):
                 LocaleRequirement(
                     "EqualTo",
                     self.qualification_locale))
+        '''
 
         # Domain name must be https
         url = "%s/turk/%s" % (DOMAIN_NAME, self.id)
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
 
-        if len(qualifications.requirements) > 0:
-            result = self.connection.create_hit(
-                title=self.title,
-                description=self.description,
-                keywords=self.keywords,
-                duration=datetime.timedelta(
-                    self.assignment_duration_in_hours / 24.0),
-                lifetime=datetime.timedelta(
-                    self.lifetime_in_hours / 24.0),
-                max_assignments=self.max_assignments,
-                question=questionform,
-                qualifications=qualifications,
-                reward=Price(
-                    amount=self.reward),
-                response_groups=(
-                    'Minimal',
-                    'HITDetail'))[0]
+        settings = {
+            'Title': self.title,
+            'Description': self.description,
+            'Keywords': self.keywords,
+            'AssignmentDurationInSeconds': int(self.assignment_duration_in_hours * 60 * 60),
+            'LifetimeInSeconds': int(self.lifetime_in_hours * 60 * 60),
+            'MaxAssignments': self.max_assignments,
+            'Question': str(vars(questionform)),
+            'QualificationRequirements': qualifications,
+            'Reward': str(self.reward)
+        }
+        ''' no equivelent in boto3?
+            'response_groups': (
+                'Minimal',
+                'HITDetail')
+        '''
+        if qualifications:
+            result = self.connection.create_hit(**settings)[0]
 
         else:
             result = self.connection.create_hit(
@@ -482,7 +492,7 @@ class HIT(models.Model):
         if mturk_hit is None or not hasattr(mturk_hit, "HITStatus"):
             hit = self.connection.get_hit(self.mturk_id)[0]
         else:
-            assert isinstance(mturk_hit, boto.mturk.connection.HIT)
+            # assert isinstance(mturk_hit, boto.mturk.connection.HIT)
             hit = mturk_hit
 
         self.status = HIT.reverse_status_lookup[hit.HITStatus]
@@ -564,13 +574,17 @@ class Assignment(models.Model):
         blank=True,
         help_text="The status of the assignment")
     auto_approval_time = models.DateTimeField(null=True, blank=True, help_text=(
-        "If results have been submitted, this is the date and time, in UTC,  the results of the assignment are considered approved automatically if they have not already been explicitly approved or rejected by the requester"))
+        "If results have been submitted, this is the date and time, in UTC, "\
+        "the results of the assignment are considered approved automatically"\
+        "if they have not already been explicitly approved or rejected by the requester"))
     accept_time = models.DateTimeField(null=True, blank=True, help_text=(
         "The date and time, in UTC, the Worker accepted the assignment"))
     submit_time = models.DateTimeField(null=True, blank=True, help_text=(
-        "If the Worker has submitted results, this is the date and time, in UTC, the assignment was submitted"))
+        "If the Worker has submitted results, this is the date and time, in "\
+        "UTC, the assignment was submitted"))
     approval_time = models.DateTimeField(null=True, blank=True, help_text=(
-        "If requester has approved the results, this is the date and time, in UTC, the results were approved"))
+        "If requester has approved the results, this is the date and time, in "\
+        "UTC, the results were approved"))
     rejection_time = models.DateTimeField(null=True, blank=True, help_text=(
         "If requester has rejected the results, this is the date and time, in UTC, the results were rejected"))
     deadline = models.DateTimeField(null=True, blank=True, help_text=(
@@ -642,9 +656,11 @@ class Assignment(models.Model):
                         if other_assignment.worker_id == a.WorkerId:
                             other_assignment.update(a)
         else:
+            ''' 
             assert isinstance(
                 mturk_assignment,
                 boto.mturk.connection.Assignment)
+            '''
             assignment = mturk_assignment
 
         if assignment is not None:
@@ -675,7 +691,9 @@ class Assignment(models.Model):
 
 
 class Result(models.Model):
-    '''A result holds a battery id and an experiment template, to keep track of the battery/experiment combinations that a worker has completed'''
+    '''A result holds a battery id and an experiment template, to keep track
+        of the battery/experiment combinations that a worker has completed
+    '''
     taskdata = JSONField(
         null=True, blank=True, load_kwargs={
             'object_pairs_hook': collections.OrderedDict})
@@ -741,7 +759,8 @@ class Result(models.Model):
             (True,
              'Granted')),
         default=False,
-        verbose_name="the function assign_experiment_credit has been run to allocate credit for this result")
+        verbose_name="the function assign_experiment_credit has been run to " \
+                "allocate credit for this result")
 
     class Meta:
         verbose_name = "Result"
@@ -779,7 +798,13 @@ class Bonus(models.Model):
         help_text="dictionary of experiments with bonus amounts",
         load_kwargs={
             'object_pairs_hook': collections.OrderedDict})
-    # {u'test_task': {'description': u'performance_var True EQUALS True', 'experiment_id': 113, 'amount': 3.0} # amount in dollars/cents
+    '''
+    {u'test_task': {
+        'description': u'performance_var True EQUALS True',
+        'experiment_id': 113,
+        'amount': 3.0
+    } # amount in dollars/cents
+    '''
     granted = models.BooleanField(
         choices=(
             (False,
@@ -794,10 +819,11 @@ class Bonus(models.Model):
         return "<%s_%s>" % (self.battery, self.worker)
 
     def calculate_bonus(self):
+        ''' calculate bonus regardless of experiment_id key '''
         if self.amounts is not None:
             amounts = dict(self.amounts)
             total = 0
-            for experiment_id, record in amounts.iteritems():
+            for _, record in amounts.iteritems():
                 if "amount" in record:
                     total = total + record["amount"]
             return total
