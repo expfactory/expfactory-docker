@@ -45,7 +45,6 @@ class DisposeException(Exception):
     """Unable to Dispose of HIT Exception"""
 
     def __init__(self, value):
-        super()
         self.parameter = value
 
     def __unicode__(self):
@@ -381,9 +380,17 @@ class HIT(models.Model):
     def send_hit(self):
         """ Collect all the settings and call api to submit hit to aws """
         # First check for qualifications
-        qualifications = Qualifications()
+        # qualifications = Qualifications()
+        qualifications = []
         if self.qualification_adult:
-            qualifications.add(AdultRequirement("EqualTo", 1))
+            # qualifications.add(AdultRequirement("EqualTo", 1))
+            qualifications.append({
+                "QualificationTypeId": "00000000000000000060",
+                "Comparator": "EqualTo",
+                "IntegerValues": [1],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
+        '''
         else:
             qualifications.add(AdultRequirement("EqualTo", 0))
         if self.qualification_custom not in [None, ""]:
@@ -406,29 +413,31 @@ class HIT(models.Model):
                 LocaleRequirement(
                     "EqualTo",
                     self.qualification_locale))
+        '''
 
         # Domain name must be https
         url = "%s/turk/%s" % (DOMAIN_NAME, self.id)
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
 
-        if qualifications.requirements:
-            result = self.connection.create_hit(
-                title=self.title,
-                description=self.description,
-                keywords=self.keywords,
-                duration=datetime.timedelta(
-                    self.assignment_duration_in_hours / 24.0),
-                lifetime=datetime.timedelta(
-                    self.lifetime_in_hours / 24.0),
-                max_assignments=self.max_assignments,
-                question=questionform,
-                qualifications=qualifications,
-                reward=Price(
-                    amount=self.reward),
-                response_groups=(
-                    'Minimal',
-                    'HITDetail'))[0]
+        settings = {
+            'Title': self.title,
+            'Description': self.description,
+            'Keywords': self.keywords,
+            'AssignmentDurationInSeconds': int(self.assignment_duration_in_hours * 60 * 60),
+            'LifetimeInSeconds': int(self.lifetime_in_hours * 60 * 60),
+            'MaxAssignments': self.max_assignments,
+            'Question': str(vars(questionform)),
+            'QualificationRequirements': qualifications,
+            'Reward': str(self.reward)
+        }
+        ''' no equivelent in boto3?
+            'response_groups': (
+                'Minimal',
+                'HITDetail')
+        '''
+        if qualifications:
+            result = self.connection.create_hit(**settings)[0]
 
         else:
             result = self.connection.create_hit(
