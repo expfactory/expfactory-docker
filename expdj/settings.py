@@ -8,6 +8,11 @@ import sys
 import tempfile
 from datetime import timedelta
 
+try:
+    from .secrets import *
+except:
+    from .bogus_secrets import *
+
 import matplotlib
 from celery import Celery
 from kombu import Exchange, Queue
@@ -20,7 +25,6 @@ DOMAIN_NAME = "https://expfactory.org"  # MUST BE HTTPS FOR MECHANICAL TURK
 DOMAIN_NAME_HTTP = "http://expfactory.org"  # MUST BE HTTPS FOR MECHANICAL TURK
 
 ADMINS = (('rblair', 'rosswilsonblair@gmail.com'),)
-
 
 MANAGERS = ADMINS
 
@@ -68,37 +72,20 @@ INSTALLED_APPS = (
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'social.backends.facebook.FacebookOAuth2',
-    'social.backends.google.GoogleOAuth2',
     'guardian.backends.ObjectPermissionBackend'
 )
 
-SOCIAL_AUTH_PIPELINE = (
-    'social.pipeline.social_auth.social_details',
-    'social.pipeline.social_auth.social_uid',
-    'social.pipeline.social_auth.auth_allowed',
-    'social.pipeline.social_auth.social_user',
-    'social.pipeline.user.get_username',
-    'social.pipeline.social_auth.associate_by_email',  # <--- enable this one
-    'social.pipeline.user.create_user',
-    'social.pipeline.social_auth.associate_user',
-    'social.pipeline.social_auth.load_extra_data',
-    'social.pipeline.user.user_details'
-)
 
-SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
-
-
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
 )
+
 
 ROOT_URLCONF = 'expdj.urls'
 
@@ -200,12 +187,6 @@ SESSION_COOKIE_SECURE = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTOCOL', 'https')
 
 EXP_REPO = os.path.join(BASE_DIR, 'expdj/experiment_repo')
-
-# Bogus secret key.
-try:
-    from secrets import *
-except ImportError:
-    from bogus_secrets import *
 
 # Local settings
 try:

@@ -72,7 +72,7 @@ def check_mturk_access(request):
 
 
 def check_battery_create_permission(request):
-    if not request.user.is_anonymous():
+    if not request.user.is_anonymous:
         if request.user.is_superuser:
             return True
 
@@ -85,7 +85,7 @@ def check_battery_create_permission(request):
 
 
 def check_battery_delete_permission(request, battery):
-    if not request.user.is_anonymous():
+    if not request.user.is_anonymous:
         if request.user == battery.owner:
             return True
         if request.user.is_superuser:
@@ -94,7 +94,7 @@ def check_battery_delete_permission(request, battery):
 
 
 def check_battery_edit_permission(request, battery):
-    if not request.user.is_anonymous():
+    if not request.user.is_anonymous:
         if request.user == battery.owner or request.user in battery.contributors.all():
             return True
         if request.user.is_superuser:
@@ -209,11 +209,11 @@ def view_battery(request, bid):
 
     # Generate anonymous link
     anon_link = "%s/batteries/%s/%s/anon" % (
-        DOMAIN_NAME, bid, hashlib.md5(battery.name).hexdigest())
+        DOMAIN_NAME, bid, hashlib.md5(battery.get_name()).hexdigest())
 
     # Generate gmail auth link
     gmail_link = "%s/batteries/%s/%s/auth" % (
-        DOMAIN_NAME, bid, hashlib.md5(battery.name).hexdigest())
+        DOMAIN_NAME, bid, hashlib.md5(battery.get_name()).hexdigest())
 
     # Determine permissions for edit and deletion
     edit_permission = check_battery_edit_permission(request, battery)
@@ -334,7 +334,7 @@ def serve_battery_anon(request, bid, keyid):
     '''serve an anonymous local battery, userid is generated upon going to link'''
     # Check if the keyid is correct
     battery = get_battery(bid, request)
-    uid = hashlib.md5(battery.name).hexdigest()
+    uid = hashlib.md5(battery.get_name()).hexdigest()
     if uid == keyid:
         userid = uuid.uuid4()
         worker = get_worker(userid, create=True)
@@ -348,12 +348,12 @@ def serve_battery_gmail(request, bid):
     '''serves a battery, creating user with gmail'''
     # Check if the keyid is correct
     battery = get_battery(bid, request)
-    uid = hashlib.md5(battery.name).hexdigest()
+    uid = hashlib.md5(battery.get_name()).hexdigest()
     if "keyid" in request.POST and "gmail" in request.POST:
         keyid = request.POST["keyid"]
         address = request.POST["gmail"]
         if uid == keyid:
-            userid = hashlib.md5(address).hexdigest()
+            userid = hashlib.md5(address.encode("utf-8")).hexdigest()
             worker = get_worker(userid, create=True)
             return redirect("intro_battery", bid=bid, userid=userid)
         else:

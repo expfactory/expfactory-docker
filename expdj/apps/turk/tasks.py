@@ -155,7 +155,7 @@ def get_bonus_reason(bonus):
     '''
     amounts = dict(bonus.amounts)
     reason = ""
-    for experiment_name, record in amounts.iteritems():
+    for experiment_name, record in amounts.items():
         new_reason = "%s: granted $%s because %s\n" % (
             experiment_name, record["amount"], record["description"])
         reason = "%s%s" % (reason, new_reason)

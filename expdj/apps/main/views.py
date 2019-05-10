@@ -59,7 +59,7 @@ def get_token(request):
 
 # Error Pages ############################################################
 
-def handler404(request):
+def handler404(request, exception):
     response = render(request, 'main/404.html', {})
     response.status_code = 404
     return response

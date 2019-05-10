@@ -110,9 +110,8 @@ urlpatterns = [url(r'^', include(main_urls)),
                url(r'^sitemap\.xml$', index, {'sitemaps': sitemaps}),
                url(r'^sitemap-(?P<section>.+)\.xml$', sitemap, {'sitemaps': sitemaps}),
                url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
-               url(r'^admin/', include(admin.site.urls))
+               url(r'^admin/', admin.site.urls),
                ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 if settings.DEBUG:
     '''

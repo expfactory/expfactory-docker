@@ -39,11 +39,11 @@
                                 {% if request.user.is_authenticated %}
                                 <li><a href="{% url 'experiments' %}">Experiments</a>
                                 {% else %}
-                                <li><a href="https://expfactory.github.io/table.html">Experiments</a>
+                                <li><a href="https://expfactory.github.io/experiments/">Experiments</a>
                                 {% endif %}
                                 <ul>
                                     <li><a href="{% url 'experiments' %}">Installed Experiments</a></li>
-                                    <li><a href="https://expfactory.github.io/table.html">Available Experiments</a></li>
+                                    <li><a href="https://expfactory.github.io/experiments/">Available Experiments</a></li>
                                     {% if request.user.is_superuser %}
                                         <li><a href="{% url 'add_experiment_template' %}">Add Experiment Templates</a></li>
                                         <li><a href="{% url 'add_survey_template' %}">Add Survey Templates</a></li>

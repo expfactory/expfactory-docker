@@ -3,7 +3,7 @@ from functools import wraps
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as djUser
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http.response import HttpResponseRedirect, JsonResponse
 from django.shortcuts import (get_object_or_404, redirect, render,
                               render_to_response)
@@ -12,7 +12,6 @@ from rest_framework import status
 
 from .forms import UserCreateForm, UserEditForm
 from .models import User
-
 
 def to_json_response(response):
     status_code = response.status_code
@@ -84,7 +83,7 @@ def create_user(request, template_name='registration/signup.html'):
 
 def view_profile(request, username=None):
     if not username:
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return redirect('%s?next=%s' % (reverse('login'), request.path))
         else:
             user = request.user
