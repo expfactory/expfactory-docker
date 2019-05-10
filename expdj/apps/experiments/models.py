@@ -3,7 +3,7 @@ import operator
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import DO_NOTHING, Q
@@ -135,14 +135,16 @@ class ExperimentTemplate(models.Model):
         null=True,
         blank=True,
         verbose_name="performance variable",
-        help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.")
+        help_text="the javascript variable, if specified, in the browser that is designated to assess task performance.",
+        on_delete=models.CASCADE)
     rejection_variable = models.ForeignKey(
         ExperimentVariable,
         related_name="rejection_variable",
         null=True,
         blank=True,
         verbose_name="rejection variable",
-        help_text="the javascript variable, if specified for the experiment, in the browser that is designated to assess the degree of credit a user deserves for the task.")
+        help_text="the javascript variable, if specified for the experiment, in the browser that is designated to assess the degree of credit a user deserves for the task.",
+        on_delete=models.CASCADE)
     publish = models.BooleanField(choices=((False, 'Do not publish'),
                                            (True, 'Publish')),
                                   default=True, verbose_name="Publish")
@@ -179,7 +181,7 @@ class CreditCondition(models.Model):
         ("LESSTHANEQUALTO", operator.le),
         ("NOTEQUALTO", operator.ne),
     )
-    variable = models.ForeignKey(ExperimentVariable, null=False, blank=False)
+    variable = models.ForeignKey(ExperimentVariable, null=False, blank=False, on_delete=models.CASCADE)
     value = models.CharField(
         "user selected value",
         max_length=200,
@@ -274,7 +276,7 @@ class Battery(models.Model):
         blank=True,
         null=True,
         help_text="Use HTML syntax to give your instructions formatting.")
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, on_delete=DO_NOTHING)
     contributors = models.ManyToManyField(
         User,
         related_name="battery_contributors",
@@ -341,6 +343,10 @@ class Battery(models.Model):
         help_text=("Batteries that must not be completed in order for "
                    "this battery to be attempted")
     )
+
+    def get_name(self):
+        '''return an encoded version of the name, intended for hashing.'''
+        return self.name.encode('utf-8')
 
     def get_absolute_url(self):
         return_cid = self.id

@@ -5,3 +5,4 @@ TURK = {
     'debug': 1
 }
 SECRET_KEY = 'bogus'
+DEBUG = True

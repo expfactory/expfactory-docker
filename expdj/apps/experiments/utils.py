@@ -439,7 +439,7 @@ def complete_survey_result(exp_id, taskdata):
     experiment_folder = "%s/%s/%s" % (media_dir, "surveys", exp_id)
     question_lookup = export_questions(experiment, experiment_folder)
     final_data = {}
-    for queskey, quesval in taskdata.iteritems():
+    for queskey, quesval in taskdata.items():
         if queskey in question_lookup:
             complete_question = question_lookup[queskey]
             complete_question["response"] = quesval[0]

@@ -167,7 +167,7 @@ class HIT(models.Model):
         null=False,
         blank=False,
         on_delete=DO_NOTHING)
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, on_delete=DO_NOTHING)
     mturk_id = models.CharField(
         "HIT ID",
         max_length=255,
@@ -554,9 +554,11 @@ class Assignment(models.Model):
         Worker,
         null=True,
         blank=True,
-        help_text="The ID of the Worker who accepted the HIT")
+        help_text="The ID of the Worker who accepted the HIT",
+        on_delete=DO_NOTHING)
     hit = models.ForeignKey(HIT, null=True, blank=True,
-                            related_name='assignments')
+                            related_name='assignments',
+                            on_delete=DO_NOTHING)
     status = models.CharField(
         max_length=1,
         choices=STATUS_CHOICES,
@@ -688,7 +690,8 @@ class Result(models.Model):
         Worker,
         null=False,
         blank=False,
-        related_name='result_worker')
+        related_name='result_worker',
+        on_delete=DO_NOTHING)
     experiment = models.ForeignKey(
         ExperimentTemplate,
         help_text="The Experiment Template completed by the worker in the battery",
@@ -706,7 +709,8 @@ class Result(models.Model):
         Assignment,
         null=True,
         blank=True,
-        related_name='assignment')
+        related_name='assignment',
+        on_delete=DO_NOTHING)
     finishtime = models.DateTimeField(null=True, blank=True, help_text=(
         "The date and time, in UTC, the Worker finished the result"))
     current_trial = models.PositiveIntegerField(null=True, blank=True, help_text=(
@@ -766,13 +770,15 @@ class Bonus(models.Model):
         Worker,
         null=False,
         blank=False,
-        help_text="The ID of the Worker who is receiving bonus")
+        help_text="The ID of the Worker who is receiving bonus",
+        on_delete=DO_NOTHING)
     battery = models.ForeignKey(
         Battery,
         help_text="Battery reciving bonuses for",
         verbose_name="Battery of experiments for bonus",
         null=False,
-        blank=False)
+        blank=False,
+        on_delete=DO_NOTHING)
     amounts = JSONField(
         null=True,
         blank=True,
@@ -797,7 +803,7 @@ class Bonus(models.Model):
         if self.amounts is not None:
             amounts = dict(self.amounts)
             total = 0
-            for experiment_id, record in amounts.iteritems():
+            for experiment_id, record in amounts.items():
                 if "amount" in record:
                     total = total + record["amount"]
             return total
@@ -815,7 +821,8 @@ class Blacklist(models.Model):
         Worker,
         null=False,
         blank=False,
-        help_text="The ID of the Worker who is or is pending blacklising")
+        help_text="The ID of the Worker who is or is pending blacklising",
+        on_delete=DO_NOTHING)
     blacklist_time = models.DateTimeField(
         null=True, blank=True, help_text=("Time of blacklist"))
     battery = models.ForeignKey(
@@ -823,7 +830,8 @@ class Blacklist(models.Model):
         help_text="Battery blacklisted from",
         verbose_name="Battery of experiments",
         null=False,
-        blank=False)
+        blank=False,
+        on_delete=DO_NOTHING)
     flags = JSONField(
         null=True,
         blank=True,

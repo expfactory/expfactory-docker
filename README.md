@@ -10,8 +10,24 @@
 
    >> He started using Docker.
 
+
+## Development Quick Start
+
+There is currently a second [docker-compose-dev.yml](docker-compose-dev.yml) file
+that can be used to reproduce the production version, but without the requirement of ssl.
+Make sure that you build the base containers:
+
+```bash
+$ docker build -t vanessa/expfactory .
+```
+
+And then bring up the containers:
+
+```bash
+$ docker-compose -f docker-compose-dev.yml up -d
+```
+
 ## Setup for Local Development
-Thanks to @NeuroVault for these steps.
 
 ### Installing dependencies
 1. Fork the [main repository](https://github.com/expfactory/expfactory-docker)

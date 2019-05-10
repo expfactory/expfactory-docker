@@ -6,7 +6,7 @@ from optparse import make_option
 import requests
 from django.contrib.auth.decorators import login_required
 from django.core.management.base import BaseCommand
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http.response import (Http404, HttpResponse, HttpResponseForbidden,
                                   HttpResponseNotAllowed, HttpResponseRedirect)
 from django.shortcuts import (get_object_or_404, redirect, render,
