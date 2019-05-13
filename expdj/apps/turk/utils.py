@@ -21,6 +21,7 @@ def to_dict(input_ordered_dict):
 
 PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
 SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'
+SANDBOX_HOST = u'mturk-requester-sandbox.us-east-1.amazonaws.com'
 
 PRODUCTION_WORKER_URL = u'https://www.mturk.com'
 SANDBOX_WORKER_URL = u'https://workersandbox.mturk.com'

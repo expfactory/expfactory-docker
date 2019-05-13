@@ -322,11 +322,11 @@ def get_battery_intro(battery, show_advertisement=True):
         if battery.advertisement is not None:
             instruction_forms.append(
                 {"title": "Advertisement", "html": battery.advertisement})
-    if battery.consent is not None:
-        instruction_forms.append({"title": "Consent", "html": battery.consent})
     if battery.instructions is not None:
         instruction_forms.append(
             {"title": "Instructions", "html": battery.instructions})
+    if battery.consent is not None:
+        instruction_forms.append({"title": "Consent", "html": battery.consent})
     return instruction_forms
 
 

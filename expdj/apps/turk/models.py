@@ -301,7 +301,7 @@ class HIT(models.Model):
         """
         # Check for new results and cache a copy in Django model
         self.update(do_update_assignments=True)
-        self.connection.dispose_hit(self.mturk_id)
+        self.connection.delete_hit(HITId=self.mturk_id)
 
     def dispose(self):
         """Dispose of a HIT that is no longer needed.
@@ -339,14 +339,16 @@ class HIT(models.Model):
                         self.mturk_id, assignment.mturk_id))
 
         # Checks pass. Dispose of HIT and update status
-        self.connection.dispose_hit(self.mturk_id)
+        self.connection.delete_hit(HITId=self.mturk_id)
         self.update()
 
     def expire(self):
         """Expire a HIT that is no longer needed as Mechanical Turk service"""
         if not self.has_connection():
             self.generate_connection()
-        self.connection.expire_hit(self.mturk_id)
+        # expire hit no longer a function in boto3
+        # self.connection.expire_hit(self.mturk_id)
+        self.connection.update_expiration_for_hit(HITId=self.mturk_id, ExpireAt=datetime.datetime.now())
         self.update()
 
     def extend(self, assignments_increment=None, expiration_increment=None):
@@ -419,6 +421,11 @@ class HIT(models.Model):
         url = "%s/turk/%s" % (DOMAIN_NAME, self.id)
         frame_height = 900
         questionform = ExternalQuestion(url, frame_height)
+        question_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+<ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd">
+  <ExternalURL>{}</ExternalURL>
+  <FrameHeight>0</FrameHeight>
+</ExternalQuestion>'''.format(url)
 
         settings = {
             'Title': self.title,
@@ -427,7 +434,8 @@ class HIT(models.Model):
             'AssignmentDurationInSeconds': int(self.assignment_duration_in_hours * 60 * 60),
             'LifetimeInSeconds': int(self.lifetime_in_hours * 60 * 60),
             'MaxAssignments': self.max_assignments,
-            'Question': str(vars(questionform)),
+            # 'Question': str(vars(questionform)),
+            'Question': question_xml,
             'QualificationRequirements': qualifications,
             'Reward': str(self.reward)
         }
@@ -437,7 +445,8 @@ class HIT(models.Model):
                 'HITDetail')
         '''
         if qualifications:
-            result = self.connection.create_hit(**settings)[0]
+            result = self.connection.create_hit(**settings)['HIT']
+            print(result)
 
         else:
             result = self.connection.create_hit(
@@ -457,7 +466,7 @@ class HIT(models.Model):
                     'HITDetail'))[0]
 
         # Update our hit object with the aws HIT
-        self.mturk_id = result.HITId
+        self.mturk_id = result['HITId']
 
         # When we generate the hit, we won't have any assignments to update
         self.update(mturk_hit=result)
@@ -490,27 +499,27 @@ class HIT(models.Model):
         """
         self.generate_connection()
         if mturk_hit is None or not hasattr(mturk_hit, "HITStatus"):
-            hit = self.connection.get_hit(self.mturk_id)[0]
+            hit = self.connection.get_hit(HITId=self.mturk_id)['HIT']
         else:
             # assert isinstance(mturk_hit, boto.mturk.connection.HIT)
             hit = mturk_hit
 
-        self.status = HIT.reverse_status_lookup[hit.HITStatus]
-        self.reward = hit.Amount
-        self.assignment_duration_in_seconds = hit.AssignmentDurationInSeconds
-        self.auto_approval_delay_in_seconds = hit.AutoApprovalDelayInSeconds
-        self.max_assignments = hit.MaxAssignments
-        self.creation_time = amazon_string_to_datetime(hit.CreationTime)
-        self.description = hit.Description
-        self.title = hit.Title
-        self.hit_type_id = hit.HITTypeId
-        self.keywords = hit.Keywords
-        if hasattr(self, 'NumberOfAssignmentsCompleted'):
-            self.number_of_assignments_completed = hit.NumberOfAssignmentsCompleted
-        if hasattr(self, 'NumberOfAssignmentsAvailable'):
-            self.number_of_assignments_available = hit.NumberOfAssignmentsAvailable
-        if hasattr(self, 'NumberOfAssignmentsPending'):
-            self.number_of_assignments_pending = hit.NumberOfAssignmentsPending
+        self.status = HIT.reverse_status_lookup[hit['HITStatus']]
+        self.reward = hit['Reward']
+        self.assignment_duration_in_seconds = hit['AssignmentDurationInSeconds']
+        self.auto_approval_delay_in_seconds = hit['AutoApprovalDelayInSeconds']
+        self.max_assignments = hit['MaxAssignments']
+        self.creation_time = hit['CreationTime']
+        self.description = hit['Description']
+        self.title = hit['Title']
+        self.hit_type_id = hit['HITTypeId']
+        self.keywords = hit['Keywords']
+        if 'NumberOfAssignmentsCompleted' in hit.keys():
+            self.number_of_assignments_completed = hit['NumberOfAssignmentsCompleted']
+        if 'NumberOfAssignmentsAvailable' in hit.keys():
+            self.number_of_assignments_available = hit['NumberOfAssignmentsAvailable']
+        if 'NumberOfAssignmentsPending' in hit.keys():
+            self.number_of_assignments_pending = hit['NumberOfAssignmentsPending']
         # 'CurrencyCode', 'Reward', 'Expiration', 'expired']
 
         self.save()
