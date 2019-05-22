@@ -17,6 +17,7 @@ requests
 requests-oauthlib
 jsonfield
 expfactory<3
+boto3
 boto==2.1.1
 django-dbbackup<2.3
 cognitiveatlas
