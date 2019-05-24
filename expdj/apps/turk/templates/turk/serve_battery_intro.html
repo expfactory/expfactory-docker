@@ -22,13 +22,17 @@ $(document).ready(function(){
     var complete = "1";
     $("#next_button").click(function() {
 
-        if (complete == "complete"){
+        if (complete == "3"){
 
             {% if assignment_id %}
                 window.open("{{ start_url }}")
+                // window.location.assign("{{ start_url }}")
             {% else %}
                 window.open("{% url 'not_consent_view' %}",fullscreen=1)
+                // window.location.assign("{% url 'not_consent_view' %}")
             {% endif %}
+            $("#next_button").addClass("hidden")
+            $("#previous_button").addClass("hidden")
         }
         complete = $("#next_button").attr("data-step")
     });
