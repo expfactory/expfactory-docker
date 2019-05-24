@@ -3,13 +3,6 @@
 import collections
 import datetime
 
-import boto
-from boto.mturk.price import Price
-from boto.mturk.qualification import (AdultRequirement, LocaleRequirement,
-                                      NumberHitsApprovedRequirement,
-                                      PercentAssignmentsApprovedRequirement,
-                                      Qualifications, Requirement)
-from boto.mturk.question import ExternalQuestion
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -351,20 +344,22 @@ class HIT(models.Model):
         self.connection.update_expiration_for_hit(HITId=self.mturk_id, ExpireAt=datetime.datetime.now())
         self.update()
 
+    ''' Does not appear to be in use currently
     def extend(self, assignments_increment=None, expiration_increment=None):
         """Increase the maximum assignments or extend the expiration date"""
         if not self.has_connection():
             self.generate_connection()
-        self.connection.extend_hit(self.mturk_id,
-                                   assignments_increment=assignments_increment,
-                                   expiration_increment=expiration_increment)
+        self.connection.update_expiration_for_hit(
+            HITId=self.mturk_id,
+            ExpireAt=self.
         self.update()
+    '''
 
     def set_reviewing(self, revert=None):
         """ Toggle HIT status between Reviewable and Reviewing """
         if not self.has_connection():
             self.generate_connection()
-        self.connection.set_reviewing(self.mturk_id, revert=revert)
+        self.connection.update_hit_review_status(HITId=self.mturk_id, Revert=revert)
         self.update()
 
     def generate_connection(self):
@@ -381,46 +376,47 @@ class HIT(models.Model):
 
     def send_hit(self):
         """ Collect all the settings and call api to submit hit to aws """
-        # First check for qualifications
-        # qualifications = Qualifications()
         qualifications = []
         if self.qualification_adult:
-            # qualifications.add(AdultRequirement("EqualTo", 1))
             qualifications.append({
                 "QualificationTypeId": "00000000000000000060",
                 "Comparator": "EqualTo",
                 "IntegerValues": [1],
                 "ActionsGuarded": "DiscoverPreviewAndAccept"
             })
-        '''
-        else:
-            qualifications.add(AdultRequirement("EqualTo", 0))
-        if self.qualification_custom not in [None, ""]:
-            qualifications.add(
-                Requirement(
-                    self.qualification_custom,
-                    self.qualification_custom_operator,
-                    self.qualification_custom_value,
-                    required_to_preview=True))
         if self.qualification_number_hits_approved is not None:
-            qual_number_hits = NumberHitsApprovedRequirement(
-                "GreaterThan", self.qualification_number_hits_approved)
-            qualifications.add(qual_number_hits)
-        if self.qualification_percent_assignments_approved is not None:
-            qual_perc_approved = PercentAssignmentsApprovedRequirement(
-                "GreaterThan", self.qualification_percent_assignments_approved)
-            qualifications.add(qual_perc_approved)
+            qualifications.append({
+                "QualificationTypeId": "00000000000000000040",
+                "Comparator": "GreaterThanOrEqualTo",
+                "IntegerValues": [self.qualification_number_hits_approve],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
+        if self.qualification_custom not in [None, ""]:
+            qualifications.append({
+                "QualificationTypeId": self.qualification_custom,
+                "Comparator": self.qualification_cursom_operator,
+                "IntegerValues": [self.qualification_custom_value],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
         if self.qualification_locale != 'None':
-            qualifications.add(
-                LocaleRequirement(
-                    "EqualTo",
-                    self.qualification_locale))
-        '''
-
+            qualifications.append({
+                "QualificationTypeId": "00000000000000000071",
+                "Comparator": "EqualTo",
+                "LocaleValues": [{
+                    "Country": self.qualification_locale,
+                }],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
+        if self.qualification_percent_assignments_approved is not None:
+            qualifications.append({
+                "QualificationTypeId": "000000000000000000L0",
+                "Comparator": "GreaterThanOrEqualTo",
+                "IntegerValues": [self.qualification_percent_assignments_approved],
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
+            })
         # Domain name must be https
         url = "%s/turk/%s" % (DOMAIN_NAME, self.id)
         frame_height = 900
-        questionform = ExternalQuestion(url, frame_height)
         question_xml = '''<?xml version="1.0" encoding="UTF-8"?>
 <ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd">
   <ExternalURL>{}</ExternalURL>
@@ -434,9 +430,7 @@ class HIT(models.Model):
             'AssignmentDurationInSeconds': int(self.assignment_duration_in_hours * 60 * 60),
             'LifetimeInSeconds': int(self.lifetime_in_hours * 60 * 60),
             'MaxAssignments': self.max_assignments,
-            # 'Question': str(vars(questionform)),
             'Question': question_xml,
-            'QualificationRequirements': qualifications,
             'Reward': str(self.reward)
         }
         ''' no equivelent in boto3?
@@ -444,26 +438,12 @@ class HIT(models.Model):
                 'Minimal',
                 'HITDetail')
         '''
-        if qualifications:
-            result = self.connection.create_hit(**settings)['HIT']
-            print(result)
+        if len(qualifications) > 1:
+            settings['QualificationRequirements'] = qualifications,
+        elif len(qualifications) == 1:
+            settings['QualificationRequirements'] = qualifications[0],
 
-        else:
-            result = self.connection.create_hit(
-                title=self.title,
-                description=self.description,
-                keywords=self.keywords,
-                duration=datetime.timedelta(
-                    self.assignment_duration_in_hours / 24.0),
-                lifetime=datetime.timedelta(
-                    self.lifetime_in_hours / 24.0),
-                max_assignments=self.max_assignments,
-                question=questionform,
-                reward=Price(
-                    amount=self.reward),
-                response_groups=(
-                    'Minimal',
-                    'HITDetail'))[0]
+        result = self.connection.create_hit(**settings)['HIT']
 
         # Update our hit object with the aws HIT
         self.mturk_id = result['HITId']
@@ -529,13 +509,15 @@ class HIT(models.Model):
 
     def update_assignments(self, page_number=1, page_size=10, update_all=True):
         self.generate_connection()
-        assignments = self.connection.get_assignments(self.mturk_id,
-                                                      page_size=page_size,
-                                                      page_number=page_number)
+        assignments = self.connection.list_assignments_for_hit(
+            HITId=self.mturk_id,
+            MaxResults=page_size,
+            NextToken=page_number
+        )['Assignments']
         for mturk_assignment in assignments:
-            assert mturk_assignment.HITId == self.mturk_id
+            assert mturk_assignment['HITId'] == self.mturk_id
             djurk_assignment = Assignment.objects.get_or_create(
-                mturk_id=mturk_assignment.AssignmentId, hit=self)[0]
+                mturk_id=mturk_assignment['AssignmentId'], hit=self)[0]
             djurk_assignment.update(mturk_assignment, hit=self)
         if update_all and int(assignments.PageNumber) *\
                 page_size < int(assignments.TotalNumResults):
@@ -615,25 +597,29 @@ class Assignment(models.Model):
     def approve(self, feedback=None):
         """Thin wrapper around Boto approve function."""
         self.hit.generate_connection()
-        self.hit.connection.approve_assignment(
-            self.mturk_id, feedback=feedback)
+        kargs = {'AssignmentId': self.mturk_id}
+        # if feedback == None or feedback == '':
+        #    kargs['RequesterFeedback'] = feedback
+            
+        self.hit.connection.approve_assignment(**kargs)
         self.update()
 
     def reject(self, feedback=None):
         """Thin wrapper around Boto reject function."""
         self.hit.generate_connection()
-        self.hit.connection.reject_assignment(self.mturk_id, feedback=feedback)
+        self.hit.connection.reject_assignment(AssignmentId=self.mturk_id, RequesterFeedback=feedback)
         self.update()
 
     def bonus(self, value=0.0, feedback=None):
         """Thin wrapper around Boto bonus function."""
         self.hit.generate_connection()
 
-        self.hit.connection.grant_bonus(
-            self.worker_id,
-            self.mturk_id,
-            bonus_price=boto.mturk.price.Price(amount=value),
-            reason=feedback)
+        self.hit.connection.send_bonus(
+            WorkerId='self.worker_id',
+            AssignmentId='self.mturk_id',
+            BonusAmount=str(value),
+            Reason=feedback
+        )
         self.update()
 
     def update(self, mturk_assignment=None, hit=None):
@@ -650,19 +636,19 @@ class Assignment(models.Model):
         assignment = None
 
         if mturk_assignment is None:
-            hit = self.hit.connection.get_hit(self.hit.mturk_id)[0]
-            for a in self.hit.connection.get_assignments(hit.HITId):
+            hit = self.hit.connection.get_hit(HITId=self.hit.mturk_id)['HIT']
+            for a in self.hit.connection.list_assignments_for_hit(HITId=hit['HITId'])['Assignments']:
                 # While we have the query, we may as well update
-                if a.AssignmentId == self.mturk_id:
+                if a['AssignmentId'] == self.mturk_id:
                     # That's this record. Hold onto so we can update below
                     assignment = a
                 else:
                     other_assignments = Assignment.objects.filter(
-                        mturk_id=a.AssignmentId)
+                        mturk_id=a['AssignmentId'])
                     # Amazon can reuse Assignment ids, so there is an
                     # occasional duplicate
                     for other_assignment in other_assignments:
-                        if other_assignment.worker_id == a.WorkerId:
+                        if other_assignment.worker_id == a['WorkerId']:
                             other_assignment.update(a)
         else:
             ''' 
@@ -673,21 +659,20 @@ class Assignment(models.Model):
             assignment = mturk_assignment
 
         if assignment is not None:
-            self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
+            self.status = self.reverse_status_lookup[assignment['AssignmentStatus']]
             self.worker_id = get_worker(assignment.WorkerId)
-            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
-            self.accept_time = amazon_string_to_datetime(assignment.AcceptTime)
-            self.auto_approval_time = amazon_string_to_datetime(
-                assignment.AutoApprovalTime)
-            self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)
+            self.submit_time = assignment['SubmitTime']
+            self.accept_time = assignment['AcceptTime']
+            self.auto_approval_time = assignment['AutoApprovalTime']
+            self.submit_time = assignment['SubmitTime']
 
             # Different response groups for query
-            if hasattr(assignment, 'RejectionTime'):
-                self.rejection_time = amazon_string_to_datetime(
-                    assignment.RejectionTime)
-            if hasattr(assignment, 'ApprovalTime'):
-                self.approval_time = amazon_string_to_datetime(
-                    assignment.ApprovalTime)
+            # if hasattr(assignment, 'RejectionTime'):
+            if 'RejectionTime' in assignment.keys():
+                self.rejection_time = assignment['RejectionTime']
+            # if hasattr(assignment, 'ApprovalTime'):
+            if 'ApprovalTime' in assignment.keys():
+                self.approval_time = assignment['ApprovalTime']
 
         self.save()
 
