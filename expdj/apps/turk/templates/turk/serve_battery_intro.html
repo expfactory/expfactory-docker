@@ -22,8 +22,7 @@ $(document).ready(function(){
     var complete = "1";
     $("#next_button").click(function() {
 
-        if (complete == "3"){
-
+        if (complete == "3" || complete == "complete"){
             {% if assignment_id %}
                 window.open("{{ start_url }}")
                 // window.location.assign("{{ start_url }}")

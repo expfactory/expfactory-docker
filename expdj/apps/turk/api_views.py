@@ -17,7 +17,7 @@ class BatteryResultAPIList(generics.ListAPIView):
 
     def get_queryset(self):
         battery_id = self.kwargs.get('bid')
-        if (Battery.objects.get(pk=battery_id).owner is not self.request.user.pk):
+        if (Battery.objects.get(pk=battery_id).owner.id is not self.request.user.pk):
             raise exceptions.PermissionDenied()
         return Result.objects.filter(battery__id=battery_id)
 

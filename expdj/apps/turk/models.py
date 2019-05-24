@@ -394,7 +394,7 @@ class HIT(models.Model):
         if self.qualification_custom not in [None, ""]:
             qualifications.append({
                 "QualificationTypeId": self.qualification_custom,
-                "Comparator": self.qualification_cursom_operator,
+                "Comparator": self.qualification_custom_operator,
                 "IntegerValues": [self.qualification_custom_value],
                 "ActionsGuarded": "DiscoverPreviewAndAccept"
             })
@@ -438,10 +438,11 @@ class HIT(models.Model):
                 'Minimal',
                 'HITDetail')
         '''
+        print(qualifications)
         if len(qualifications) > 1:
-            settings['QualificationRequirements'] = qualifications,
+            settings['QualificationRequirements'] = qualifications
         elif len(qualifications) == 1:
-            settings['QualificationRequirements'] = qualifications[0],
+            settings['QualificationRequirements'] = qualifications[0]
 
         result = self.connection.create_hit(**settings)['HIT']
 
