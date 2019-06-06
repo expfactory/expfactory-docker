@@ -2,10 +2,10 @@
     Experiments left in battery: <div id="remain_exp"></div><br/>
     Current assignment status: <div id="assignment_status"></div><br/>
 
-    {% if amazon_host == "mechanicalturk.amazonaws.com" %}
-    <form action="https://www.mturk.com/mturk/externalSubmit" method="POST" id="external_submit_form">
-    {% else %}
+    {% if sandbox %}
     <form action="https://workersandbox.mturk.com/mturk/externalSubmit" method="POST" id="external_submit_form">
+    {% else %}
+    <form action="https://www.mturk.com/mturk/externalSubmit" method="POST" id="external_submit_form">
     {% endif %}
             <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
             <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>

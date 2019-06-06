@@ -41,7 +41,7 @@ class WorkerExperiments(APIView):
         if len(exps) ==  0 and not marked_complete:
             all_assignments.filter(completed=False).update(completed=True)
             submit = True
-            updated_assign_experiment_credit.apply_async([worker_id, hit.battery_id], countdown=60)
+            updated_assign_experiment_credit.apply_async([worker_id, hit.battery_id, hit_id], countdown=60)
         elif len(exps) == 0 and marked_complete:
             status = 'Submit Attempted'
 

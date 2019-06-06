@@ -18,7 +18,7 @@
 
 {% include "experiments/serve_battery_runjs.html" %}
 
-{% if amazon_host == "mechanicalturk.amazonaws.com" %}
+{% if amazon_host == "mturk-requester.us-east-1.amazonaws.com" %}
 <form action="https://www.mturk.com/mturk/externalSubmit" method="POST" id="turkey_form">
 {% else %}
 <form action="https://workersandbox.mturk.com/mturk/externalSubmit" method="POST" id="turkey_form">

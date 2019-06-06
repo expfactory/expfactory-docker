@@ -30,7 +30,7 @@ from expdj.apps.turk.tasks import (assign_experiment_credit,
                                    get_unique_experiments)
 from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
                                    get_worker_experiments, get_worker_url)
-from expdj.settings import BASE_DIR, MEDIA_ROOT, STATIC_ROOT
+from expdj.settings import BASE_DIR, DOMAIN_NAME, MEDIA_ROOT, STATIC_ROOT
 
 media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
@@ -206,6 +206,7 @@ def serve_hit(request, hid):
 
         # Add variables to the context
         aws["amazon_host"] = host
+        aws["sandbox"] = hit.sandbox
         aws["uniqueId"] = result.id
 
         # If this is the last experiment, the finish button will link to a
@@ -244,7 +245,8 @@ def preview_hit(request, hid):
         context = get_amazon_variables(request)
         intro = get_battery_intro(battery)
         status_template = Template('{% include "turk/status_monitor.html" %}')
-        context["status_url"] =  "https://testing.expfactory.org/new_api/worker_experiments/{}/{}/".format('A3NNB4LWIKA3BQ', hit.mturk_id)
+        context["status_url"] =  "{}/new_api/worker_experiments/{}/{}/".format(DOMAIN_NAME, context["worker_id"], hit.mturk_id)
+        context["sandbox"] = hit.sandbox
         status_context = Context(context)
         intro.append({'title': 'Assignment Status', 'html': status_template.render(status_context)})
 

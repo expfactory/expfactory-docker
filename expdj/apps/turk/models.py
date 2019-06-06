@@ -346,7 +346,7 @@ class HIT(models.Model):
 
     ''' Does not appear to be in use currently
     def extend(self, assignments_increment=None, expiration_increment=None):
-        """Increase the maximum assignments or extend the expiration date"""
+        # Increase the maximum assignments or extend the expiration date
         if not self.has_connection():
             self.generate_connection()
         self.connection.update_expiration_for_hit(
@@ -396,7 +396,7 @@ class HIT(models.Model):
                 "QualificationTypeId": self.qualification_custom,
                 "Comparator": self.qualification_custom_operator,
                 "IntegerValues": [self.qualification_custom_value],
-                "ActionsGuarded": "DiscoverPreviewAndAccept"
+                "ActionsGuarded": "Accept"
             })
         if self.qualification_locale != 'None':
             qualifications.append({
@@ -438,11 +438,7 @@ class HIT(models.Model):
                 'Minimal',
                 'HITDetail')
         '''
-        print(qualifications)
-        if len(qualifications) > 1:
-            settings['QualificationRequirements'] = qualifications
-        elif len(qualifications) == 1:
-            settings['QualificationRequirements'] = qualifications[0]
+        settings['QualificationRequirements'] = qualifications
 
         result = self.connection.create_hit(**settings)['HIT']
 
@@ -661,7 +657,7 @@ class Assignment(models.Model):
 
         if assignment is not None:
             self.status = self.reverse_status_lookup[assignment['AssignmentStatus']]
-            self.worker_id = get_worker(assignment.WorkerId)
+            self.worker = get_worker(assignment['WorkerId'])
             self.submit_time = assignment['SubmitTime']
             self.accept_time = assignment['AcceptTime']
             self.auto_approval_time = assignment['AutoApprovalTime']

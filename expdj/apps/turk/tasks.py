@@ -60,16 +60,17 @@ def assign_experiment_credit(worker_id):
                 grant_bonus(result.id)
 
 @shared_task
-def updated_assign_experiment_credit(worker_id, battery_id):
+def updated_assign_experiment_credit(worker_id, battery_id, hit_id):
     ''' We want to approve an asignment for a given worker/battery if:
         1) No assignment is marked as complete
         2) And no assignment at the AWS API is marked as approved
         3) And there is at least one assignment at the AWS API that is approved
     '''
     battery = Battery.objects.get(id=battery_id)
+    hit = HIT.objects.get(mturk_id=hit_id)
     all_assignments = Assignment.objects.filter(worker_id=worker_id, hit__battery_id=battery_id)
     AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery)
-    conn = get_connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID)
+    conn = get_connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID, hit)
     submitted = []
     approved = False
     for assignment in all_assignments:
@@ -94,6 +95,7 @@ def updated_assign_experiment_credit(worker_id, battery_id):
         submitted = submitted[1:]
 
     for x in submitted:
+        print("attemtpting to reject {}".format(x.mturk_id))
         response = conn.reject_assignment(
             AssignmentId=x.mturk_id,
             RequesterFeedback='Already attempted to approve another HIT for the same set of experiments'
