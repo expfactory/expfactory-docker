@@ -34,7 +34,8 @@ Pillow
 python-openid
 django-sendfile
 django-polymorphic
-celery[redis]
+redis<3
+celery>=3.1.15,<4.0
 django-celery
 django-cleanup
 django-chosen
