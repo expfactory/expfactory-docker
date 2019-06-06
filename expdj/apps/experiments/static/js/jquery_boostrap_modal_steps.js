@@ -8,7 +8,7 @@
             btnCancelHtml: 'Cancel',
             btnPreviousHtml: 'Previous',
             btnNextHtml: 'Next',
-            btnLastStepHtml: 'Start Experiment',
+            btnLastStepHtml: 'Next',
             disableNextButton: false,
             completeCallback: function(){
               $("#start_experiment_button").click();

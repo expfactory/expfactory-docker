@@ -19,7 +19,7 @@
                {{ instruction_form.html | safe }}<br>
                <br>
                {% if instruction_form.title == "Consent" %}
-                   <button id="disagree_button" type="button" class="btn btn-default">Disagree</button>
+                   <button id="disagree_button" type="button" class="btn btn-default" onClick="alert('Thank you. Please close the browser window if you do not consent to participate.')">Disagree</button>
                {% endif %}
            </div>
           </div>
