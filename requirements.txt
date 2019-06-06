@@ -17,7 +17,8 @@ requests
 requests-oauthlib
 jsonfield
 expfactory<3
-boto==2.1.1
+boto3
+boto
 django-dbbackup<2.3
 cognitiveatlas
 dropbox==1.6
@@ -33,7 +34,8 @@ Pillow
 python-openid
 django-sendfile
 django-polymorphic
-celery[redis]
+redis<3
+celery>=3.1.15,<4.0
 django-celery
 django-cleanup
 django-chosen

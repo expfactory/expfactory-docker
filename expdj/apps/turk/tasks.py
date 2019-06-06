@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import os
 
 import numpy
-from boto.mturk.price import Price
 from celery import Celery, shared_task
 from django.conf import settings
 from django.utils import timezone
@@ -15,6 +14,7 @@ from expdj.apps.experiments.models import Battery, ExperimentTemplate
 from expdj.apps.experiments.utils import get_experiment_type
 from expdj.apps.turk.models import (HIT, Assignment, Blacklist, Bonus, Result,
                                     get_worker)
+from expdj.apps.turk.utils import get_worker_experiments, get_connection, get_credentials
 from expdj.settings import TURK
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expdj.settings')
@@ -68,6 +68,47 @@ def assign_experiment_credit(worker_id):
             except Exception as e:
                 print(e)
 
+@shared_task
+def updated_assign_experiment_credit(worker_id, battery_id, hit_id):
+    ''' We want to approve an asignment for a given worker/battery if:
+        1) No assignment is marked as complete
+        2) And no assignment at the AWS API is marked as approved
+        3) And there is at least one assignment at the AWS API that is approved
+    '''
+    battery = Battery.objects.get(id=battery_id)
+    hit = HIT.objects.get(mturk_id=hit_id)
+    all_assignments = Assignment.objects.filter(worker_id=worker_id, hit__battery_id=battery_id)
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID = get_credentials(battery)
+    conn = get_connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID, hit)
+    submitted = []
+    approved = False
+    for assignment in all_assignments:
+        try:
+            aws_assignment = conn.get_assignment(AssignmentId=assignment.mturk_id)['Assignment']
+            if aws_assignment['AssignmentStatus'] == 'Submitted':
+                submitted.append(assignment)
+            if aws_assignment['AssignmentStatus'] == 'Approved':
+                approved = True
+                continue
+        except Exception as e:
+            print(e)
+            continue
+        
+    if len(submitted) == 0:
+        return
+
+    if not approved:
+        submitted[0].approve()
+        submitted[0].completed = True
+        submitted[0].save()
+        submitted = submitted[1:]
+
+    for x in submitted:
+        print("attemtpting to reject {}".format(x.mturk_id))
+        response = conn.reject_assignment(
+            AssignmentId=x.mturk_id,
+            RequesterFeedback='Already attempted to approve another HIT for the same set of experiments'
+        )
 
 @shared_task
 def check_blacklist(result_id):
@@ -182,10 +223,9 @@ def grant_bonus(result_id):
     try:
         bonus = Bonus.objects.get(worker=worker, battery=battery)
         amount = bonus.calculate_bonus()
-        price = Price(amount)
         reason = get_bonus_reason(bonus)
         result.assignment.hit.connection.grant_bonus(
-            worker.id, result.assignment.mturk_id, price, reason)
+            worker.id, result.assignment.mturk_id, amount, reason)
         bonus.granted = True
         bonus.save()
     except Bonus.DoesNotExist:
