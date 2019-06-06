@@ -2,7 +2,7 @@ from django.conf.urls import url
 from django.views.generic.base import TemplateView
 
 from expdj.apps.experiments.views import sync
-from expdj.apps.turk.api_views import BatteryResultAPIList
+from expdj.apps.turk.api_views import BatteryResultAPIList, WorkerExperiments
 from expdj.apps.turk.views import (clone_hit, contact_worker, delete_hit,
                                    edit_hit, end_assignment, expire_hit,
                                    finished_view, hit_detail, manage_hit,
@@ -60,8 +60,15 @@ urlpatterns = [
     url(r'^worker/contact/(?P<aid>\d+)', contact_worker, name='contact_worker'),
 
     # New API
-    url(r'^new_api/results/(?P<bid>\d+)/$',
+    url(
+        r'^new_api/results/(?P<bid>\d+)/$',
         BatteryResultAPIList.as_view(),
         name='battery_result_api_list'
-        )
+    ),
+    url(
+        r'^new_api/worker_experiments/(?P<worker_id>[A-Za-z0-9]+)/(?P<hit_id>[A-Za-z0-9]+)/$',
+        WorkerExperiments.as_view(),
+        name='worker_experiments'
+    ),
+
 ]

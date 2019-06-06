@@ -11,6 +11,7 @@ from django.http.response import (Http404, HttpResponse, HttpResponseForbidden,
                                   HttpResponseNotAllowed, HttpResponseRedirect)
 from django.shortcuts import (get_object_or_404, redirect, render,
                               render_to_response)
+from django.template import Context, Template
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from expfactory.battery import get_experiment_run, get_load_static
@@ -29,7 +30,7 @@ from expdj.apps.turk.tasks import (assign_experiment_credit,
                                    get_unique_experiments)
 from expdj.apps.turk.utils import (get_connection, get_credentials, get_host,
                                    get_worker_experiments, get_worker_url)
-from expdj.settings import BASE_DIR, MEDIA_ROOT, STATIC_ROOT
+from expdj.settings import BASE_DIR, DOMAIN_NAME, MEDIA_ROOT, STATIC_ROOT
 
 media_dir = os.path.join(BASE_DIR, MEDIA_ROOT)
 
@@ -69,7 +70,6 @@ def get_amazon_variables(request):
             "assignment_id": assignment_id,
             "hit_id": hit_id,
             "turk_submit_to": turk_submit_to}
-
 
 @login_required
 def manage_hit(request, bid, hid):
@@ -169,9 +169,11 @@ def serve_hit(request, hid):
         # worker time runs out to allocate credit
         if already_created:
             assignment.accept_time = datetime.now()
+            ''' we now attempt to assign credit when we tell them its ok to submit
             if hit.assignment_duration_in_hours is not None:
                 assign_experiment_credit.apply_async(
                     [worker.id], countdown=360 * (hit.assignment_duration_in_hours))
+            '''
             assignment.save()
 
         # Does the worker have experiments remaining for the hit?
@@ -204,6 +206,7 @@ def serve_hit(request, hid):
 
         # Add variables to the context
         aws["amazon_host"] = host
+        aws["sandbox"] = hit.sandbox
         aws["uniqueId"] = result.id
 
         # If this is the last experiment, the finish button will link to a
@@ -240,8 +243,14 @@ def preview_hit(request, hid):
         hit = get_hit(hid, request)
         battery = hit.battery
         context = get_amazon_variables(request)
+        intro = get_battery_intro(battery)
+        status_template = Template('{% include "turk/status_monitor.html" %}')
+        context["status_url"] =  "{}/new_api/worker_experiments/{}/{}/".format(DOMAIN_NAME, context["worker_id"], hit.mturk_id)
+        context["sandbox"] = hit.sandbox
+        status_context = Context(context)
+        intro.append({'title': 'Assignment Status', 'html': status_template.render(status_context)})
 
-        context["instruction_forms"] = get_battery_intro(battery)
+        context["instruction_forms"] = intro
         context["hit_uid"] = hid
         context["start_url"] = "/accept/%s/?assignmentId=%s&workerId=%s&turkSubmitTo=%s&hitId=%s" % (
             hid, context["assignment_id"], context["worker_id"], context["turk_submit_to"], context["hit_id"])

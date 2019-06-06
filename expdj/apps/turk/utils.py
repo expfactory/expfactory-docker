@@ -4,9 +4,7 @@ import json
 import os
 
 import pandas
-from boto.mturk.connection import MTurkConnection
-from boto.mturk.price import Price
-from boto.mturk.question import ExternalQuestion
+import boto3
 from django.conf import settings
 
 from expdj.apps.experiments.models import Experiment
@@ -21,8 +19,10 @@ def to_dict(input_ordered_dict):
     return json.loads(json.dumps(input_ordered_dict))
 
 
-PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
-SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'
+# PRODUCTION_HOST = u'mechanicalturk.amazonaws.com'
+PRODUCTION_HOST= u'mturk-requester.us-east-1.amazonaws.com'
+# SANDBOX_HOST = u'mechanicalturk.sandbox.amazonaws.com'
+SANDBOX_HOST = u'mturk-requester-sandbox.us-east-1.amazonaws.com'
 
 PRODUCTION_WORKER_URL = u'https://www.mturk.com'
 SANDBOX_WORKER_URL = u'https://workersandbox.mturk.com'
@@ -98,13 +98,14 @@ def get_connection(aws_access_key_id, aws_secret_access_key, hit=None):
     """Create connection based upon settings/configuration parameters"""
 
     host = get_host(hit)
-    debug = get_debug(hit)
-
-    return MTurkConnection(
+    # debug = get_debug(hit)
+    return boto3.client(
+        'mturk',
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
-        host=host,
-        debug=debug)
+        endpoint_url='https://' + host,
+        region_name='us-east-1'
+    )
 
 
 def get_app_url():
