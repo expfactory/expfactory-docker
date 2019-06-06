@@ -1,7 +1,7 @@
 Django==1.11.17
-psycopg2-binary
+psycopg2 --no-binary :all:
 markdown
-matplotlib
+matplotlib<3
 decorator==4.0.2
 django-guardian
 django-crispy-forms
