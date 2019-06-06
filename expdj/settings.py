@@ -155,7 +155,12 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',
+        'TIMEOUT': 60,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
     }
 }
 
@@ -166,6 +171,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_DEFAULT_QUEUE = 'default'
+CELERY_TASK_PROTOCOL = 1 
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
@@ -193,7 +199,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
+
 }
 
 CSRF_COOKIE_SECURE = False
