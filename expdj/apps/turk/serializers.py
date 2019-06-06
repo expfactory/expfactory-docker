@@ -49,6 +49,11 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
     def get_taskdata(self, result):
         return to_dict(result.taskdata)
 
+    def setup_eager_loading(cls, queryset):
+        """ Perform necessary eager loading of data. """
+        queryset = queryset.prefetch_related('experiment', 'battery', 'worker')
+        return queryset
+
     class Meta:
         model = Result
         fields = (
@@ -72,3 +77,5 @@ class WorkerResultsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Worker
         fields = ('id', 'results')
+
+

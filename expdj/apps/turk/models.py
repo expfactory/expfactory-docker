@@ -648,6 +648,7 @@ class Assignment(models.Model):
             assignment = mturk_assignment
 
         if assignment is not None:
+            print(assignment.AssignmentStatus)
             self.status = self.reverse_status_lookup[assignment.AssignmentStatus]
             self.worker_id = get_worker(assignment.WorkerId)
             self.submit_time = amazon_string_to_datetime(assignment.SubmitTime)

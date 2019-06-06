@@ -48,16 +48,25 @@ def assign_experiment_credit(worker_id):
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
     if len(results) > 0:
-        result = results[0]
+        print("")
+        print("")
+        print("found results")
+        result = results.last()
         if result.assignment is not None:
+            print("found assignment")
+            print(result.assignment.id)
             result.assignment.hit.generate_connection()
             result.assignment.update()
-            if result.assignment.status == "S":
+            try:
+                # if result.assignment.status == "S":
+                print("trying to approve assignment")
                 # Approve and grant bonus
                 result.assignment.approve()
                 result.assignment.completed = True
                 result.assignment.save()
                 grant_bonus(result.id)
+            except Exception as e:
+                print(e)
 
 
 @shared_task
