@@ -8,12 +8,13 @@ data:
 
 uwsgi:
   restart: always
-  image: vanessa/expfactory
+  build: .
   volumes_from:
     - data
   volumes:
     - .:/code
     - ./static:/var/www/static
+    - ./assets:/var/www/assets
   links:
     - redis
     - db
@@ -30,9 +31,9 @@ nginx:
     - ./compose/nginx/ssl/certs:/etc/ssl/certs:ro
     - ./compose/nginx/acme-challenge:/var/www/.well-known/acme-challenge:ro
     - ./compose/nginx/ssl/private:/etc/ssl/private:ro
-  volumes_from:
-    - uwsgi
-    - data
+    - .:/code
+    - ./static:/var/www/static
+    - ./assets:/var/www/assets
   links:
     - uwsgi
     - db
