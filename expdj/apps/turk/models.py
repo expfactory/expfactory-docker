@@ -79,7 +79,11 @@ def get_worker(worker_id, create=True):
     if create:
         worker, _ = Worker.objects.update_or_create(id=worker_id)
     else:
-        worker = Worker.objects.filter(id=worker_id)[0]
+        worker = Worker.objects.filter(id=worker_id)
+        if worker.count() is 0:
+            return None
+        else:
+            worker = worker[0]
 
     if worker.last_visit_time is not None:  # minutes
         time_difference = get_time_difference(worker.last_visit_time, now)
@@ -388,7 +392,7 @@ class HIT(models.Model):
             qualifications.append({
                 "QualificationTypeId": "00000000000000000040",
                 "Comparator": "GreaterThanOrEqualTo",
-                "IntegerValues": [self.qualification_number_hits_approve],
+                "IntegerValues": [self.qualification_number_hits_approved],
                 "ActionsGuarded": "DiscoverPreviewAndAccept"
             })
         if self.qualification_custom not in [None, ""]:
