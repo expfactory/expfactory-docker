@@ -16,13 +16,13 @@ python-social-auth==0.2.7
 requests
 requests-oauthlib
 jsonfield
-expfactory<3
+git+https://github.com/rwblair/expfactory-python@patch-3#egg=expfactory
 boto3
 boto
 django-dbbackup<2.3
 cognitiveatlas
 dropbox==1.6
-kombu
+kombu<4
 opbeat
 ua-parser
 user-agents
