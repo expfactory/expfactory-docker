@@ -4,8 +4,10 @@
 
     {% if sandbox %}
     <form action="https://workersandbox.mturk.com/mturk/externalSubmit" method="POST" id="external_submit_form">
+            <input type='hidden' name='submitBtn' id='submitBtn' class='enableOnComplete'/>
     {% else %}
     <form action="https://www.mturk.com/mturk/externalSubmit" method="POST" id="external_submit_form">
+            <input type='hidden' name='submitBtn' id='submitBtn' class='enableOnComplete'/>
     {% endif %}
             <input type="hidden" id="assignmentId" value="{{ assignment_id }}" name="assignmentId"/>
             <input type="hidden" id="workerId" value="{{ worker_id }}" name="workerId"/>
@@ -22,15 +24,24 @@
                         console.log(data);
                         $("#remain_exp").text(data.experiments.length);
                         $("#assignment_status").text(data.assignment_status);
-                        if ((data.experiments.length === 0) && (data.assignment_status == "Not Submitted") && data.submit) {
+                        
+    {% if sandbox %}
+                        if (data.experiments.length === 0) {
                             $("#external_submit_form").submit(); 
+                            $('.enableOnComplete').attr('type', 'submit');
                         }
+    {% else %}
+                        if (data.experiments.length === 0) {
+                            $("#external_submit_form").submit(); 
+                            $('.enableOnComplete').attr('type', 'submit');
+                        }
+    {% endif %}
                     },
                     dataType: "json",
                     complete: poll,
-                    timeout: 2000
+                    timeout: 12000
                 })
-            }, 10000);
+            }, 15000);
         })();
     </script>
 </div>

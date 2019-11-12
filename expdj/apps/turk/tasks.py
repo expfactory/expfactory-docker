@@ -44,6 +44,7 @@ def assign_experiment_credit(worker_id):
       3) worker is deemed to have poorly completed some N experiments in a row
       4) worker does not complete experiments, HIT time runs out
     '''
+    return
     # Look up all result objects for worker
     worker = get_worker(worker_id)
     results = Result.objects.filter(worker=worker)
