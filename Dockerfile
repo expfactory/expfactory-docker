@@ -20,6 +20,8 @@ RUN apt-get remove -y gfortran
 RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pip uninstall --yes numpy
+RUN pip install numpy
 
 ADD . /code/
 
