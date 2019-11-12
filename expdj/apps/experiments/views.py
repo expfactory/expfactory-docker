@@ -161,6 +161,9 @@ def update_experiment_template(request, eid):
             experiments = ExperimentTemplate.objects.all()
             context = {"experiments": experiments,
                        "message": message}
+        delete_permission = check_experiment_edit_permission(request)
+        context['delete_permission'] = delete_permission
+
     return render(request, "experiments/all_experiments.html", context)
 
 
@@ -386,6 +389,8 @@ def intro_battery(request, bid, userid=None):
 
     if request.user_agent.is_pc:
 
+        if (userid is not None) and (get_worker(userid, create=False) is None):
+            raise Http404
         battery = get_battery(bid, request)
         context = {"instruction_forms": get_battery_intro(battery),
                    "start_url": "/batteries/%s/%s/accept" % (bid, userid),
