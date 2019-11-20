@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.functions import Length
 from django.http import Http404
 from django.http.response import HttpResponseForbidden
 from rest_framework import exceptions, generics, viewsets
@@ -49,3 +50,16 @@ class WorkerExperiments(APIView):
             status = 'Submit Attempted'
 
         return Response({'experiments': exps, 'assignment_status': status, 'submit': submit})
+
+class WorkerExperimentsFull(APIView):
+    # experiments complete/incomplete, length of taskdata
+    def get(self, request, worker_id, bid):
+        try:
+            worker = Worker.objects.get(id=worker_id)
+            # assignment = Assignment.objects.get(hit__mturk_id=hit_id)
+            all_assignments = Assignment.objects.filter(worker_id=worker_id, hit__battery_id=bid)
+        except ObjectDoesNotExist:
+            raise Http404
+        results = Result.objects.filter(battery__id=bid).annotate(len_taskdata=Length('taskdata')).values('experiment', 'completed', 'len_taskdata')
+        completed = results.filter(completed=True).count();
+        return Response({'total_completed': completed, 'results': results})

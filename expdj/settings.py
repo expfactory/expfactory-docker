@@ -140,6 +140,7 @@ MEDIA_ROOT = './static'
 MEDIA_URL = '/static/'
 STATIC_ROOT = './assets'
 STATIC_URL = '/assets/'
+
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
