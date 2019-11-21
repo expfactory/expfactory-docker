@@ -3,7 +3,8 @@ from django.db.models.functions import Length
 from django.http import Http404
 from django.http.response import HttpResponseForbidden
 from rest_framework import exceptions, generics, viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -63,3 +64,14 @@ class WorkerExperimentsFull(APIView):
         results = Result.objects.filter(battery__id=bid).annotate(len_taskdata=Length('taskdata')).values('experiment', 'completed', 'len_taskdata')
         completed = results.filter(completed=True).count();
         return Response({'total_completed': completed, 'results': results})
+
+class BatteryWorkers(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, bid):
+        try:
+            battery = Battery.objects.get(id=bid)
+        except ObjectDoesNotExist:
+            raise Http404
+        results = Assignment.objects.filter(hit__battery_id=bid).order_by('worker')
+        return Response(results)
