@@ -60,6 +60,6 @@ class WorkerExperimentsFull(APIView):
             all_assignments = Assignment.objects.filter(worker_id=worker_id, hit__battery_id=bid)
         except ObjectDoesNotExist:
             raise Http404
-        results = Result.objects.filter(battery__id=bid).annotate(len_taskdata=Length('taskdata')).values('experiment', 'completed', 'len_taskdata')
+        results = Result.objects.filter(battery__id=bid, worker__id=worker_id).annotate(len_taskdata=Length('taskdata')).values('experiment', 'completed', 'len_taskdata')
         completed = results.filter(completed=True).count();
-        return Response({'total_completed': completed, 'results': results})
+        return Response({'_total_completed': completed, 'results': results})
