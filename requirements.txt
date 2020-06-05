@@ -1,4 +1,4 @@
-Django==1.11.17
+Django==1.11.29
 psycopg2-binary
 markdown
 matplotlib
