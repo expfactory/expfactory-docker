@@ -400,7 +400,7 @@ class HIT(models.Model):
                 "QualificationTypeId": self.qualification_custom,
                 "Comparator": self.qualification_custom_operator,
                 "IntegerValues": [self.qualification_custom_value],
-                "ActionsGuarded": "Accept"
+                "ActionsGuarded": "DiscoverPreviewAndAccept"
             })
         if self.qualification_locale != 'None':
             qualifications.append({

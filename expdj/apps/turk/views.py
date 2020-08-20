@@ -113,7 +113,7 @@ def manage_hit(request, bid, hid):
 
     return render(request, "turk/manage_hit.html", context)
 
-
+@ensure_csrf_cookie
 def serve_hit(request, hid):
     '''serve_hit runs the experiment after accepting a hit
     :param hid: the hit id
